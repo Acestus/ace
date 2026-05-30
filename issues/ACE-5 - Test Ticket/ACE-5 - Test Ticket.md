@@ -1,17 +1,19 @@
 ---
 LINEAR: ACE-5
-title: Test Ticket
+title: Test Ticket — sync pipeline verified
 team: Acestus
 state: Backlog
 flow: queue
 urgency: 4
-due: None
+importance: 5
+due:
 created: 2026-05-29
 ---
 
 ## Description
 
-This is a test issue created to verify the Linear integration is working.
+Verify the markdown-as-source-of-truth sync pipeline for both Linear issues and Notion pages.
+Changes committed to main trigger CI workflows that push updates to their respective services.
 
 ## Actions
 
@@ -19,8 +21,13 @@ This is a test issue created to verify the Linear integration is working.
 
 WORKLOG: Stub created from Linear ACE-5
 
+WORKLOG: Pipeline built — notion_sync.py, linear_sync.py, CI workflows wired up.
+
 ## Follow-up
 
 Status: Backlog
 TODO:
-- [ ] Review and scope work
+- [x] Create Linear issue
+- [x] Build sync scripts
+- [x] Wire up GitHub Actions workflows
+- [ ] Confirm CI runs green on push
