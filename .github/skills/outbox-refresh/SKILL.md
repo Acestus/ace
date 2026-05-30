@@ -1,6 +1,6 @@
 ---
 name: outbox-refresh
-description: 'Regenerate per-stakeholder outbox files from flow:waiting issue markdown. Produces newspaper-lede cards (Lede / Status / Next / Links) in planner/outbox/{slug}.md. Use when the user says "refresh outbox", "rebuild outbox", "update outbox for backlog meeting", "fill the outbox", or before a 1:1/manager sync.'
+description: 'Regenerate per-stakeholder outbox files from flow:waiting (In Review) issue markdown. Produces newspaper-lede cards (Lede / Status / Next / Links) in planner/outbox/{slug}.md. Use when the user says "refresh outbox", "rebuild outbox", "update outbox for backlog meeting", "fill the outbox", or before a 1:1/manager sync.'
 argument-hint: 'Optional: --no-catchall, --manager "Name", --dry-run'
 ---
 
@@ -19,13 +19,13 @@ This is what feeds backlog 1:1s, especially the <APPROVER_NAME> manager sync. Ev
 
 ## Workflow
 
-1. **Refresh the markdown.** `python3 scripts/outbox_refresh.py` — rebuilds `planner/outbox/*.md` from the source `issues/` files. Each card carries a prominent `💬 Comment on Jira →` link.
-2. **Publish to Confluence.** `python3 scripts/outbox_publish.py` — mirrors each outbox file to a child page under **WWeeks → WWeeks Outbox** in the IPM space. Idempotent; updates existing pages in place.
+1. **Refresh the markdown.** `python3 scripts/outbox_refresh.py` — rebuilds `planner/outbox/*.md` from the source `issues/` files. Each card carries a prominent `💬 Comment on Linear →` link.
+2. **Publish to Notion.** `python3 scripts/outbox_publish.py` — mirrors each outbox file to a child page under **WWeeks → WWeeks Outbox** in the IPM space. Idempotent; updates existing pages in place.
 3. Open `planner/outbox/INDEX.md` and copy the URL of the stakeholder you're meeting with — paste it into the calendar invite or Teams chat.
-4. During the meeting, share the Confluence page and walk the cards. **Every direction or decision gets typed straight into the Jira ticket as a comment** — click `💬 Comment on Jira →` on the card; you land on the ticket; add the comment there. That's the durable record. The Confluence page is just the read-only meeting agenda.
-5. Commit and push (`planner/outbox/INDEX.md` reflects the latest Confluence URLs).
+4. During the meeting, share the Notion page and walk the cards. **Every direction or decision gets typed straight into the Linear ticket as a comment** — click `💬 Comment on Linear →` on the card; you land on the ticket; add the comment there. That's the durable record. The Notion page is just the read-only meeting agenda.
+5. Commit and push (`planner/outbox/INDEX.md` reflects the latest Notion URLs).
 
-The data flow is one-way: `issues/` → `planner/outbox/*.md` → Confluence. Steering captured during the meeting lives in Jira (where every stakeholder, including future-me on rounds, can already see it). No round-trip sync needed.
+The data flow is one-way: `issues/` → `planner/outbox/*.md` → Notion. Steering captured during the meeting lives in Linear (where every stakeholder, including future-me on rounds, can already see it). No round-trip sync needed.
 
 ## Standard Commands
 
@@ -39,7 +39,7 @@ python3 scripts/outbox_publish.py
 # Preview routing without writing files
 python3 scripts/outbox_refresh.py --dry-run
 
-# Preview Confluence calls without making them
+# Preview Notion calls without making them
 python3 scripts/outbox_publish.py --dry-run
 
 # Skip <APPROVER_NAME> manager catch-all (only route by explicit stakeholder)
@@ -51,14 +51,14 @@ python3 scripts/outbox_refresh.py --manager "Some Other Manager"
 
 ## Sharing With Stakeholders
 
-After `outbox_publish.py` runs, each person/bucket has a dedicated Confluence
+After `outbox_publish.py` runs, each person/bucket has a dedicated Notion
 page. Open `planner/outbox/INDEX.md` for the URL table — copy the link to the
 stakeholder's page when chasing a response (e.g. in a Teams DM to <APPROVER_NAME>
 <APPROVER_NAME>, paste their `Outbox · <APPROVER_NAME>` URL — he sees every ticket I'm
 waiting on him for as newspaper-lede cards, each with a direct `💬 Comment on
-Jira →` link).
+Linear →` link).
 
-Page IDs persist in `planner/outbox/.confluence-pages.json` so subsequent
+Page IDs persist in `planner/outbox/.notion-pages.json` so subsequent
 publishes update the same pages. **Do not delete that file** — without it the
 script would create duplicate pages instead of updating the existing ones.
 
@@ -90,11 +90,11 @@ _Waiting since 2026-05-25 · 1d ago_
 
 M365 Copilot Teams Meetings agent enablement gives <ORG_NAME> users native transcript recap, action items, and cross-platform knowledge retrieval — satisfying Graham's ask without any custom Graph or OBO authentication development. Before licenses can be ordered, GLBA compliance requires an AI Use Policy and Vendor Risk Assessment reviewed and approved by <APPROVER_NAME>.
 
-**Status.** flow:waiting — waiting on <APPROVER_NAME> to approve AI Use Policy and Vendor Risk Assessment on Confluence
-**Next.** <APPROVER_NAME> reviews AI Use Policy (Confluence <PAGE_ID>) and Risk Assessment (<PAGE_ID>) and adds approval comment
+**Status.** flow:waiting — waiting on <APPROVER_NAME> to approve AI Use Policy and Vendor Risk Assessment on Notion
+**Next.** <APPROVER_NAME> reviews AI Use Policy (Notion <PAGE_ID>) and Risk Assessment (<PAGE_ID>) and adds approval comment
 
 **Links:**
-- [Confluence — AI Use Policy](https://...)
+- [Notion — AI Use Policy](https://...)
 - [Microsoft data boundary documentation](https://...)
 
 **Linked issues:**
@@ -111,7 +111,7 @@ If a ticket renders with a thin lede or no Status/Next, **fix it at the source**
 - The `## Draft Messages` block is the operator's scratchpad. Never edit anything above it.
 - If a card looks thin, the fix is in the **source issue markdown**, not the outbox file. The outbox file is generated.
 - The manager catch-all is the default. Disable with `--no-catchall` only when intentionally producing a partial view.
-- Outbox files do NOT sync back to Jira — they are purely a local routing/staging surface for follow-up messages.
+- Outbox files do NOT sync back to Linear — they are purely a local routing/staging surface for follow-up messages.
 
 ## Composes
 
@@ -124,18 +124,3 @@ outbox-refresh
 
 
 ---
-
-## SDP Awareness (Lanes 4–6)
-
-ServiceDesk Plus work runs as a parallel set of three swimlanes (Lane 4 🔴 SDP-Urgent, Lane 5 🟠 SDP-Approval, Lane 6 🟢 SDP-Background). SDP case files live under `cases/{display_id}/`. The header `OWNER: jira | sdp` decides which side holds the WIP slot:
-
-- `OWNER: sdp` (default) — the SDP case is the WIP owner; counts against the SDP lane cap
-- `OWNER: jira` — the SDP case is a **shadow** of a linked <PROJECT>-XXX issue; does NOT count against any SDP lane cap
-
-When this skill needs to enumerate or render the operator's work, it MUST union both sources (`issues/` + `cases/`) and dedupe by cross-link (`JIRA:` header in cases, `SDP:` header in issues). Shadows are surfaced as "(shadow of <PROJECT>-XXX)" annotations, not as independent slots.
-
-For lane-routing and rounds claims, see `rounds` and `sdp-dispatcher`. The shared `/tmp/rounds-claims.json` uses keys `lane1`–`lane5` shared across Jira and SDP tickets (single ticket per lane, regardless of system).
-
-Voice wall: SDP `COMMENT:` lines are **end-user voice** (plain language). Jira COMMENT lines are internal investigative voice. This skill must preserve that distinction wherever it emits or summarizes comments.
-
-For SDP-specific dispatch, render, or close-out, hand off to: `rounds`, `sdp-dispatcher`, `sdp-investigator`, `sdp-worklog`, `sdp-router`.

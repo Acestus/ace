@@ -1,5 +1,5 @@
 ---
-description: "End-to-end workflow for creating new Confluence topic articles from Loom transcripts, case work, and IaC stacks. Use when the user asks to create a new topic article, generate an article from transcripts, or categorize videos into a new domain article."
+description: "End-to-end workflow for creating new Notion topic articles from Loom transcripts, case work, and IaC stacks. Use when the user asks to create a new topic article, generate an article from transcripts, or categorize videos into a new domain article."
 applyTo: "confluence/**/*.md"
 ---
 
@@ -7,7 +7,7 @@ applyTo: "confluence/**/*.md"
 
 ## Purpose
 
-Defines the end-to-end process for creating a new Confluence topic article — from identifying the domain, gathering source material (Loom transcripts, case work, IaC stacks), through authoring, fact-checking, publishing, and cross-linking.
+Defines the end-to-end process for creating a new Notion topic article — from identifying the domain, gathering source material (Loom transcripts, case work, IaC stacks), through authoring, fact-checking, publishing, and cross-linking.
 
 Topic articles are thematic knowledge articles that consolidate related Loom video walkthroughs and technical content into a single readable reference. Each article covers one infrastructure domain (e.g., networking, CI/CD, AI). All topic articles live under parent page `<PAGE_ID>` in space `IPM`.
 
@@ -47,7 +47,7 @@ To identify unassigned videos:
 
 ## Phase 2 — Reserve the Page
 
-Create a stub page on Confluence to obtain the page ID before writing any content. The page ID is used in file names, asset directories, `!plantuml` paths, and cross-links — having it early eliminates post-publish renaming and placeholder tokens.
+Create a stub page on Notion to obtain the page ID before writing any content. The page ID is used in file names, asset directories, `!plantuml` paths, and cross-links — having it early eliminates post-publish renaming and placeholder tokens.
 
 ### Create the Stub
 
@@ -163,7 +163,7 @@ Prose content — architecture decisions, patterns, CLI examples.
 
 ### Authoring Rules
 
-- **No H1 heading** — the Confluence page title is set via `--title` during creation
+- **No H1 heading** — the Notion page title is set via `--title` during creation
 - **Summary paragraph** — one paragraph, no filler, state what the article covers and why it matters
 - **Metrics table** — 3–5 rows of key facts (technologies, patterns, counts)
 - **Numbered sections** — each section covers one coherent sub-topic
@@ -172,7 +172,7 @@ Prose content — architecture decisions, patterns, CLI examples.
 - **Code blocks** — include real CLI commands, code snippets, or configuration patterns demonstrated in the videos
 - **Tables** — use tables for comparisons, decision frameworks, and component summaries
 - **Links** — link first mention of each key Azure/Microsoft service to its Microsoft Learn documentation page (3–10 links per article, outside of code blocks and embed directives)
-- **Related Pages** — link to 3+ related articles using Confluence page URLs
+- **Related Pages** — link to 3+ related articles using Notion page URLs
 - **Video Walkthroughs** — always the last section, collecting all embeds for quick scanning
 
 ### Writing Standard Content from Transcripts
@@ -207,7 +207,7 @@ Follow `plantuml-style.instructions.md`:
 
 ### Content
 
-The diagram should show the high-level architecture of the domain — key Azure services, data flow, and integration points. Keep it to 5–10 nodes. The diagram is rendered to PNG by the publish script and uploaded as a Confluence page attachment.
+The diagram should show the high-level architecture of the domain — key Azure services, data flow, and integration points. Keep it to 5–10 nodes. The diagram is rendered to PNG by the publish script and uploaded as a Notion page attachment.
 
 ---
 
@@ -392,6 +392,6 @@ Use this checklist before marking an article as complete:
 - [ ] No links inside code blocks, embed directives, or table headers
 - [ ] 3+ related page cross-links in `## Related Pages` using real page ID
 - [ ] Reciprocal links added to existing related articles
-- [ ] Full content published to Confluence via `publish-markdown-to-confluence.py`
+- [ ] Full content published to Notion via `publish-markdown-to-confluence.py`
 - [ ] Topic Article Registry updated in `confluence-live-docs.instructions.md`
 - [ ] `BACKLOG.md` updated

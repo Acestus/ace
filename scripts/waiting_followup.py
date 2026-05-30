@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-waiting_followup.py — Report stale Jira waiting tickets by stakeholder.
+waiting_followup.py — Report stale Linear waiting tickets by stakeholder.
 
 Usage:
     python3 scripts/waiting_followup.py --report
@@ -121,7 +121,7 @@ def run_jql(jql: str, auth: str) -> list[dict]:
             with urllib.request.urlopen(req) as resp:
                 result = json.loads(resp.read())
         except urllib.error.HTTPError as error:
-            http_fail(error, api_name="Jira", key="search/jql", operation="POST search/jql",
+            http_fail(error, api_name="Linear", key="search/jql", operation="POST search/jql",
                       common_causes=JIRA_COMMON_CAUSES)
         batch = result.get("issues", [])
         issues.extend(batch)
@@ -454,7 +454,7 @@ def print_drafts(entries: list[dict], warnings: list[str]):
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Report Jira waiting tickets by stakeholder")
+    parser = argparse.ArgumentParser(description="Report Linear waiting tickets by stakeholder")
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--report", action="store_true", help="Print grouped report (default)")
     mode.add_argument("--draft", action="store_true", help="Draft follow-up messages by stakeholder")

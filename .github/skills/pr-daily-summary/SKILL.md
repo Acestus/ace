@@ -1,19 +1,19 @@
 ---
 name: pr-daily-summary
-description: 'Generate a daily pull request summary for standup. Fetches yesterday''s merged and opened PRs across the <GITHUB_ORG> org, formats a readable summary, and publishes to Confluence. Use when the user says "PR summary", "yesterday''s PRs", "daily PR report", "standup PRs", or "what got merged yesterday?"'
-argument-hint: 'Optionally specify a date (YYYY-MM-DD) or say "publish" to push to Confluence'
+description: 'Generate a daily pull request summary for standup. Fetches yesterday''s merged and opened PRs across the <GITHUB_ORG> org, formats a readable summary, and publishes to Notion. Use when the user says "PR summary", "yesterday''s PRs", "daily PR report", "standup PRs", or "what got merged yesterday?"'
+argument-hint: 'Optionally specify a date (YYYY-MM-DD) or say "publish" to push to Notion'
 ---
 
 # PR Daily Summary Skill
 
-Generate a standup-ready summary of yesterday's pull requests across the <GITHUB_ORG> GitHub org. Publishes to a rolling Confluence page for historical reference.
+Generate a standup-ready summary of yesterday's pull requests across the <GITHUB_ORG> GitHub org. Publishes to a rolling Notion page for historical reference.
 
 ## When to Use
 
 - User says "PR summary", "yesterday's PRs", "daily PR report", "standup PRs"
 - User says "what got merged yesterday?" or "PR activity"
 - Start of day when reviewing overnight team activity
-- Posting standup updates to Confluence
+- Posting standup updates to Notion
 
 ---
 
@@ -46,7 +46,7 @@ Present the summary and confirm it looks right before publishing. Highlight:
 - Any repos with high activity
 - Any notable authors or patterns
 
-### Step 3 — Publish to Confluence
+### Step 3 — Publish to Notion
 
 Once the user confirms (or if they said "publish" up front):
 
@@ -67,7 +67,7 @@ The script **prepends** the new day's summary at the top of the page, so most re
 
 Tell the user:
 - How many PRs were summarized
-- The Confluence page URL
+- The Notion page URL
 - That the page is updated
 
 ---
@@ -113,13 +113,13 @@ The summary is designed to be read in 1–3 minutes at standup:
 
 ## Setup
 
-### First-Time Confluence Page Creation
+### First-Time Notion Page Creation
 
 If no page exists yet, create one:
 
 ```bash
 cd /home/wweeks/git/projects
-python3 scripts/create-confluence-page.py confluence/PR-Daily-Summary.md \
+python3 scripts/create-notion-page.py notion/PR-Daily-Summary.md \
   --space-key IPM \
   --parent-id <PAGE_ID> \
   --title "Daily Pull Request Summary — <GITHUB_ORG>"
@@ -147,7 +147,7 @@ Or via systemd timer for better reliability.
 
 - Uses `gh search prs` which requires the `gh` CLI to be authenticated
 - Fetches from all non-archived, non-fork repos in the org
-- Confluence publish prepends (newest at top) — the page becomes a rolling history
+- Notion publish prepends (newest at top) — the page becomes a rolling history
 - No PII or secrets in the output — just PR metadata
 - Rate limits: GitHub search API allows ~30 requests/minute; one run uses 2 queries
 
@@ -157,7 +157,7 @@ Or via systemd timer for better reliability.
 
 ```
 pr-daily-summary
-├── confluence-updater    (manual section updates if needed)
+├── notion-updater    (manual section updates if needed)
 └── start-my-day          (can be called as part of morning routine)
 ```
 

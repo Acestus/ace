@@ -13,7 +13,7 @@ Manage Azure Privileged Identity Management (PIM) role assignments — check eli
 - User says "check PIM for X", "does Y have the PIM role", "set up PIM access"
 - Working tickets about PIM assignment configuration (<PROJECT>-342, <PROJECT>-357, <TICKET-ID> pattern)
 - Confirming a user's PIM eligible/active state before closing a ticket
-- Writing or updating a PIM runbook section in Confluence
+- Writing or updating a PIM runbook section in Notion
 
 ---
 
@@ -75,7 +75,7 @@ python3 scripts/entra_lookup.py --group "azpim-prd-edmlevel1"
 
 After resolving a PIM ticket, update the runbook:
 ```bash
-python3 scripts/confluence_update_page.py \
+python3 scripts/notion_update_page.py \
   --page-id {RUNBOOK_PAGE_ID} \
   --replace-section "Access Setup" \
   "Updated {DATE}: {RESOURCE} — {USER} added to {GROUP} with {ROLE} eligible via PIM."

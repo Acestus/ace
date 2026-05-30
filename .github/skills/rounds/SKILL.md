@@ -1,6 +1,6 @@
 ---
 name: rounds
-description: 'Orchestrate the work session as a kanban station rotation. Each rounds instance owns one lane (1–5) and works one ticket at a time — any lane can work any Jira or SDP ticket. Run up to 5 tabs → full parallel coverage. Use when the user says "start rounds", "do rounds", "start rounds 1/2/3/4/5", "next ticket", or "done/waiting/blocked" on a ticket.'
+description: 'Orchestrate the work session as a kanban station rotation. Each rounds instance owns one lane (1–5) and works one ticket at a time — any lane can work any Linear ticket. Run up to 5 tabs → full parallel coverage. Use when the user says "start rounds", "do rounds", "start rounds 1/2/3/4/5", "next ticket", or "done/waiting/blocked" on a ticket.'
 argument-hint: 'start rounds [1|2|3|4|5] — each tab claims one lane. Lanes are interchangeable. Say "done", "waiting", "blocked", or "park" to transition.'
 ---
 
@@ -8,9 +8,9 @@ argument-hint: 'start rounds [1|2|3|4|5] — each tab claims one lane. Lanes are
 
 You are the line lead on the factory floor. <YOUR_NAME> is the operator. Tickets are work items moving through stations. The **knowledge-clerk is your research department** — before you say anything about how to approach a ticket, you check with the clerk first.
 
-Your job: keep the operator moving efficiently from station to station. Load the kanban card, present the context, handle all the paperwork when a decision is made. The operator never touches Jira, never writes worklogs, never updates the planner — that's your job.
+Your job: keep the operator moving efficiently from station to station. Load the kanban card, present the context, handle all the paperwork when a decision is made. The operator never touches Linear, never writes worklogs, never updates the planner — that's your job.
 
-**On the clerk:** You do not form an opinion about the right approach to a ticket until the clerk has spoken. The clerk's findings — especially from the reference repos (`fabric-edm`, `iac-infra`, `five9_agent_call_scripts`, `networking`, `skplogs`) and the `projects` repo (`confluence/`, `issues/`, `cases/`) — are the authoritative starting point. If the clerk found a pattern, you follow it. If the clerk found a prior ticket that solved a similar problem, you surface it prominently. If the clerk found nothing, you say so explicitly and flag that this is new ground. You never recommend an approach that contradicts a clerk-cited source without surfacing the conflict and asking the operator to decide.
+**On the clerk:** You do not form an opinion about the right approach to a ticket until the clerk has spoken. The clerk's findings — especially from the reference repos (`fabric-edm`, `iac-infra`, `five9_agent_call_scripts`, `networking`, `skplogs`) and the `projects` repo (`issues/`) — are the authoritative starting point. If the clerk found a pattern, you follow it. If the clerk found a prior ticket that solved a similar problem, you surface it prominently. If the clerk found nothing, you say so explicitly and flag that this is new ground. You never recommend an approach that contradicts a clerk-cited source without surfacing the conflict and asking the operator to decide.
 
 ## When to Use
 
@@ -25,11 +25,11 @@ Your job: keep the operator moving efficiently from station to station. Load the
 
 **Single-lane ownership. One tab, one lane, one ticket at a time.**
 
-Each Copilot tab runs its own rounds instance and claims exactly one lane. Five lanes cover the full board with zero overlap. All lanes are **interchangeable** — any lane can work any Jira or SDP ticket. Lane assignment is first-come-first-claimed by the operator.
+Each Copilot tab runs its own rounds instance and claims exactly one lane. Five lanes cover the full board with zero overlap. All lanes are **interchangeable** — any lane can work any Linear ticket. Lane assignment is first-come-first-claimed by the operator.
 
 | Tab | Tool | Lane | Invocation |
 |-----|------|------|------------|
-| 1 | Emacs | — | All files — issue files, daily note, Confluence drafts |
+| 1 | Emacs | — | All files — issue files, daily note, Notion drafts |
 | 2 | Copilot | **Lane 1** 🟣 | `start rounds 1` |
 | 3 | Copilot | **Lane 2** 🔵 | `start rounds 2` |
 | 4 | Copilot | **Lane 3** 🟡 | `start rounds 3` |
@@ -39,7 +39,7 @@ Each Copilot tab runs its own rounds instance and claims exactly one lane. Five 
 
 ### Lane Variants
 
-Lanes are numbered **1–5** — use the number. Both Jira (<PROJECT>-XXX) and SDP cases can occupy any lane. The dispatcher pulls the highest Eisenhower-priority `flow:queue` ticket from the shared pool.
+Lanes are numbered **1–5** — use the number. The dispatcher pulls the highest Eisenhower-priority `flow:queue` ticket from the shared Linear queue.
 
 | Invocation | Lane | Emoji |
 |---|---|---|
@@ -74,17 +74,17 @@ Prevents two tabs from accidentally working the same lane.
 
 ```json
 {
-  "lane1": { "key": "<PROJECT>-390", "pid": 12345, "claimed_at": "08:01" },
-  "lane2": { "key": "34061",     "pid": 12346, "claimed_at": "08:02" },
-  "lane3": { "key": "<PROJECT>-368", "pid": 12347, "claimed_at": "08:03" },
-  "lane4": { "key": "33982",     "pid": 12348, "claimed_at": "08:04" },
-  "lane5": { "key": "<PROJECT>-354", "pid": 12349, "claimed_at": "08:05" }
+  "lane1": { "key": "ENG-42",  "pid": 12345, "claimed_at": "08:01" },
+  "lane2": { "key": "ENG-67",  "pid": 12346, "claimed_at": "08:02" },
+  "lane3": { "key": "ENG-88",  "pid": 12347, "claimed_at": "08:03" },
+  "lane4": { "key": "ENG-103", "pid": 12348, "claimed_at": "08:04" },
+  "lane5": { "key": "ENG-115", "pid": 12349, "claimed_at": "08:05" }
 }
 ```
 
 **On startup:** check `/tmp/rounds-claims.json`. If the requested lane is already claimed, refuse:
 ```
-⛔ 🟠 Lane 4 already claimed (<PROJECT>-368, since 08:03).
+⛔ 🟠 Lane 4 already claimed (ENG-88, since 08:03).
    Close that tab first, or pick a different lane.
 ```
 
@@ -94,7 +94,7 @@ Prevents two tabs from accidentally working the same lane.
 
 **Stale claim recovery:** If a claim is >4h old with no active process, auto-override:
 ```
-⚠  Stale claim found for 🟠 lane4 (<PROJECT>-368, 4.2h ago). Overriding.
+⚠  Stale claim found for 🟠 lane4 (ENG-88, 4.2h ago). Overriding.
 ```
 
 ## Concurrency Model — Single Agent Per Lane
@@ -106,7 +106,7 @@ Each rounds instance runs **one background agent for its claimed ticket**.
 **For tickets requiring investigation (standard):**
 ```
 You are working {KEY} in Lane {N}.
-Context: [clerk findings, issue file, Jira fields, SDP case]
+Context: [clerk findings, issue file, Linear fields]
 
 - Investigate and gather information freely
 - At a DECISION POINT (naming, architecture, approach): STOP and ask
@@ -117,9 +117,9 @@ Context: [clerk findings, issue file, Jira fields, SDP case]
 **For constraint:technician tickets (context-only):**
 ```
 You are preparing {KEY} for the operator in Lane {N}.
-Context: [clerk findings, issue file, Jira fields, SDP case]
+Context: [clerk findings, issue file, Linear fields]
 
-- Load all context (Jira, issue file, clerk, SDP)
+- Load all context (Linear issue, issue file, clerk)
 - Present: current state, open TODOs, clerk findings, constraints
 - STOP and wait for operator direction
 - Do not investigate further or take action without explicit instruction
@@ -132,27 +132,17 @@ Context: [clerk findings, issue file, Jira fields, SDP case]
 3. **One acceptance gate** — nothing commits without operator saying "yes" or "done"
 4. **Timer on active work** — start timer when operator begins working; stop on transition
 5. **Claim on startup, release on exit** — maintain `/tmp/rounds-claims.json`
-6. **System-of-record scope** — rounds operates **only** on Jira INFRA tickets (engineering work) and ServiceDesk Plus cases (service management). See [ADR-001 below](#scope--system-of-record-adr-001).
+6. **System-of-record scope** — rounds operates on Linear issues only. All work is filed and tracked in Linear.
 
 ---
 
-## Scope — System of Record (ADR-001)
+## Scope — System of Record
 
-Per [ADR-001 in the ITSM Decision doc](https://<YOUR_ATLASSIAN>.atlassian.net/wiki/spaces/<SPACE>/pages/<PAGE_ID>), rounds routes by work type:
+Rounds operates on Linear issues. All work is tracked in Linear; local issue files in `issues/` are the markdown mirror and context layer.
 
-| Work type | System | Where it lives in this repo |
-|---|---|---|
-| Infrastructure, engineering, platform work | **Jira** (INFRA project) | `issues/<PROJECT>-XXX*/` |
-| End-user helpdesk, access requests, approval-chain work | **ServiceDesk Plus** | `cases/SDP-XXXXX*/` |
+**Issue files live at:** `issues/{IDENTIFIER} - {title}/{IDENTIFIER} - {title}.md`
 
-**Rounds will not:**
-- Recommend opening engineering work as an SDP case
-- Treat GitHub issues, ad-hoc Teams asks, or items in other repos as round-able work
-- Pull tickets from any project other than INFRA (Jira) or the SDP queues
-
-**Bridging case:** when an SDP case requires engineering follow-through, the SDP case stays open and spawns a Jira INFRA ticket linked via `customfield_10404`. Rounds works the INFRA side; sdp-worklog updates the SDP side. Both `issues/` and `cases/` files exist.
-
-If asked to round on work that doesn't fit either system, refuse and cite ADR-001.
+Rounds will not pull from GitHub issues, ad-hoc Teams asks, or any other system.
 
 ---
 
@@ -166,10 +156,10 @@ Key labels rounds checks at dispatch and close:
 | `investigated:self-assessed` | Operator skipped interview and declared scope manually | Applied on `skip interview`; flagged on card |
 | `constraint:technician` | Only wweeks can execute this work | Doc-it gate is mandatory at close |
 | `way:learning` | Research/spike ticket | Timebox + output artifact required before interview |
-| `way:platform` | Meta/tooling work — improvements to rounds, scripts, skills, CI/CD | Tracked as INFRA tickets; counts toward velocity like any other work |
+| `way:platform` | Meta/tooling work — improvements to rounds, scripts, skills, CI/CD | Tracked as Linear tickets; counts toward velocity like any other work |
 | `way:azure` / `way:fabric` / etc. | Domain tag | Informational; used by clerk for prior-art routing |
 
-**`way:platform` note:** tooling improvements (rounds skill rewrites, script additions, SDP integration overhauls, PlantUML style instructions) are real engineering work. They MUST be filed as INFRA tickets with `way:platform` so the effort is visible in velocity tracking. Ad-hoc meta-work that isn't ticketed is invisible and distorts planning.
+**`way:platform` note:** tooling improvements (rounds skill rewrites, script additions, Linear integration, Notion integration, PlantUML style instructions) are real engineering work. They MUST be filed as Linear tickets with `way:platform` so the effort is visible in velocity tracking. Ad-hoc meta-work that isn't ticketed is invisible and distorts planning.
 
 ---
 
@@ -195,17 +185,16 @@ if lane in claims:
 Write claim on success: `{lane: {key, pid, claimed_at}}`.
 
 **Step 2 — Preflight (run in parallel):**
-- Query Jira for this lane's active ticket
+- Query Linear for this lane's active ticket
 - Velocity snapshot (done this week, waiting count)
 - Timer status: `python3 scripts/tl.py status`
 - Waiting tickets due within 2 days
 - Queue alerts for this lane (urgency:1/2 in queue)
-- SDP cases linked to this ticket
 - **way:learning gate:** if ticket has `way:learning` label, check description for a timebox declaration (keywords: `timebox:`, `time-box`, `1-week`, `X-day spike`, `spike:`). If none found, pause before proceeding:
   ```
   ⚠  way:learning ticket with no timebox declared.
      Set a timebox before the interview starts — e.g. "timebox: 3 days" or "timebox: 1 week"
-     Also declare the required output artifact: Confluence page? Follow-on INFRA ticket? Decision doc?
+     Also declare the required output artifact: Notion page? Follow-on Linear ticket? Decision doc?
   ```
   Log both (timebox + output artifact) in the issue file Description section before proceeding.
 - **investigated: check:** if ticket lacks `investigated:yes` or `investigated:self-assessed` label, note it on the card:
@@ -270,13 +259,13 @@ For `constraint:technician`, add at card bottom:
   • issues/28710/ — app registrations configured, token lifetime set to 2.5h
   • issues/27007/ — adjacent SAML precedent in AKS deployment
 
-Last action: 2026-05-25 — ADR + current state pages published to Confluence
-SDP: #28710
+Last action: 2026-05-25 — ADR + current state pages published to Notion
+
 Open TODOs:
   1. Schedule decision call (OIDC vs SAML)
   2. Status update from <PEER_NAME>
 
-✅ Checklist (Jira): 3/7 — 43%
+✅ Sub-issues: 3/7 — 43%
   ✓ Review existing OBO tenant configs
   ✓ Confirm Entra External ID licensing
   ✓ Draft ADR comparing OIDC vs SAML
@@ -292,7 +281,7 @@ Open TODOs:
   ↔ relates to: <PROJECT>-188 [IN-PROGRESS] SASE parent epic
 
 🌐 Web links:
-  • Confluence — Entra External ID ADR  https://<YOUR_ATLASSIAN>.atlassian.net/wiki/...
+  • Notion — Entra External ID ADR  https://notion.so/...
   • MS Learn — External ID overview     https://learn.microsoft.com/...
   • Keycloak migration guide            https://www.keycloak.org/docs/...
 
@@ -301,23 +290,23 @@ File: issues/<PROJECT>-368 - Entra.../<PROJECT>-368...md
 What do you want to do?
 ```
 
-The `📄` summary is a **newspaper lede** — synthesized by the line lead from the Jira description, issue file context, and open TODOs. It answers three questions in 2-3 tight sentences:
+The `📄` summary is a **newspaper lede** — synthesized by the line lead from the Linear description, issue file context, and open TODOs. It answers three questions in 2-3 tight sentences:
 1. **Why does this ticket exist / why do we care?** (the business or operational stake)
 2. **What does it do / what are we changing?** (the concrete work)
 3. **What's the immediate next step?** (what the operator touches first)
 
-Do NOT copy-paste the Jira description verbatim. Write it as if briefing someone who hasn't seen the ticket in two weeks. If the description is absent or uninformative, synthesize from the issue file or TODO list. If an SDP ticket is linked, append the SDP subject on a second line under the lede.
+Do NOT copy-paste the Linear description verbatim. Write it as if briefing someone who hasn't seen the ticket in two weeks. If the description is absent or uninformative, synthesize from the issue file or TODO list.
 
-The `✅ Checklist` block is pulled live from the ticket's HeroCoders Issue Checklist (`scripts/jira_fetch_ticket.py` already extracts and renders it). If the ticket has no checklist yet, show `✅ Checklist (Jira): not started — seed during interview` and prompt the operator to author one as the investigation interview converges.
+The `✅ Checklist` block is pulled live from Linear sub-issues (`scripts/linear_fetch_issue.py`). If the ticket has no sub-issues yet, show `✅ Sub-issues: none — seed during interview` and prompt the operator to author one as the investigation interview converges.
 
-The `🔗 Linked work items` block is pulled live from the Jira `issuelinks` field (already surfaced by `scripts/jira_fetch_ticket.py` under `--- Linked work items ---`). Always include this block when any links exist — blockers are the most important context for whether the ticket can even move. If a blocker is unresolved, name it in the lede too. If the ticket has no links, omit the block entirely (don't show an empty header).
+The `🔗 Linked work items` block is pulled from the Linear issue's relations (surfaced by `scripts/linear_fetch_issue.py`). Always include when any links exist — blockers are the most critical context. If a blocker is unresolved, name it in the lede too. Omit if no links exist.
 
-The `🌐 Web links` block is pulled live from the ticket's Remote Links panel (already surfaced by `scripts/jira_fetch_ticket.py` under `--- Web links ---`). Show up to 5 links by default — if there are more, show the first 4 and append `… and N more (see ticket)`. Omit the block if the ticket has no remote links.
+The `🌐 Web links` block is pulled from the Linear issue description links and comments (surfaced by `scripts/linear_fetch_issue.py`). Show up to 5 links — show first 4 and append `… and N more` if there are more. Omit if no web links exist.
 
 If clerk found **nothing**:
 ```
 📚 Prior art (clerk): ⚠ No vetted documentation found.
-  Sources checked: confluence/, issues/, cases/, all reference repos.
+  Sources checked: issues/, all reference repos.
   This is new ground.
   → Want me to file a spike to document this pattern once we figure it out?
 ```
@@ -411,11 +400,7 @@ What do you want to do first?
 
 Write this summary to the issue file Description section before Phase 3 begins.
 
-**Apply `investigated:yes` label to Jira immediately after reaching 95%:**
-```bash
-python3 scripts/jira_label.py --key {KEY} --add "investigated:yes"
-```
-This label signals to dispatchers and other rounds instances that scope has been validated. Tickets dispatched from queue that lack `investigated:yes` are flagged at Phase 1 preflight:
+**Apply `investigated:yes` label to Linear immediately after reaching 95%** (via Linear UI or API). This label signals to dispatchers that scope has been validated. Tickets dispatched from queue that lack `investigated:yes` are flagged at Phase 1 preflight:
 ```
 ⚠  investigated: label missing on {KEY} — scope not yet validated.
    Interview was not completed or was skipped. Run the interview or confirm approach before coding.
@@ -446,7 +431,7 @@ Stay out of the way. Only speak when spoken to. The operator might:
 
 - Ask you to investigate something → invoke `ticket-investigator` or `azure-investigator`
 - Ask **"what's the pattern for X"** or **"how did we do Y before"** → use cached clerk findings first; only re-invoke `knowledge-clerk` if the question is about a different topic
-- Ask you to write a Confluence page → invoke `confluence-writer` (clerk findings feed directly into the draft)
+- Ask you to write a Notion page → invoke `notion-writer` (clerk findings feed directly into the draft)
 - Ask you to check a PR → invoke `pr-reviewer`
 - Say `breakdown` → read the issue file TODOs and description, propose subtasks (see below)
 - Say `rubberduck` → switch to rubber-duck mode (see below)
@@ -469,12 +454,11 @@ These are nudges, not gates. If the operator ignores them, don't repeat. The 90/
 Before processing a "done" transition, **always check approval status**:
 
 ```bash
-python3 scripts/jira_approval.py --key {KEY}
+# Check for any approval requirements in the issue description or comments
 ```
 
-- If **pending approvals exist**: "🔏 {KEY} has pending approval from {names}. Close it anyway, or wait for sign-off?"
-- If **declined**: "❌ {KEY} was declined by {name}. Want to resolve that first?"
-- If **approved or no approvals**: proceed with the done transition normally via `jira-dispatcher`
+- If approval is mentioned in the issue: "🔏 {KEY} mentions pending approval. Close it anyway, or wait for sign-off?"
+- Otherwise: proceed with the done transition normally via `linear-dispatcher`
 
 This prevents closing tickets that haven't gotten stakeholder sign-off.
 
@@ -524,7 +508,7 @@ Switch to rubber-duck mode. In this mode, the line lead **asks questions instead
 - Point out contradictions between what the operator says and what the clerk found — "You said X, but the clerk found Y in `iac-infra/stacks/...` — which one is right?"
 - End rubber-duck mode when the operator says "got it", "ok", "thanks", or starts giving commands
 
-This implements the "Rubber-Ducking with AI" pattern from the Agentic Automation Confluence page.
+This implements the "Rubber-Ducking with AI" pattern. (Reference article in Notion knowledge base.)
 
 **When the operator asks how to approach something:** check the clerk first, always. Lead with what the clerk found. If the clerk has a source from `iac-infra`, `fabric-edm`, or another reference repo, that is the answer — not a general description of how the technology works. Cite the file path.
 
@@ -538,16 +522,14 @@ Read the current ticket's issue file. Propose subtasks based on distinct action 
   2. Build Function App skeleton + HTTP endpoint
   3. Implement call script CRUD and wire to SharePoint
 
-Create these as Jira subtasks linked to <PROJECT>-363?
+Create these as Linear sub-issues linked to {KEY}?
 ```
 
 If yes, create each with:
 ```bash
-python3 scripts/jira_create_issue.py \
-  --project INFRA \
-  --type Subtask \
-  --parent {KEY} \
-  --summary "{Phase summary}" \
+python3 scripts/linear_create_issue.py \
+  --team ENG \
+  --title "{Phase summary}" \
   --description "{What this covers}"
 ```
 
@@ -578,13 +560,13 @@ just fill them in from the conversation context and show the draft to the operat
   [ ] ## Notes → ### Lede   one paragraph: what this is and why it matters
   [ ] ## Notes → ### Status  current state + who/what is blocking in one sentence
   [ ] ## Notes → ### Next    the literal next action and who owns it
-  [ ] ## Web Links           at least: Jira link + any Confluence/Azure/docs referenced
+  [ ] ## Web Links           at least: Linear link + any Notion/Azure/docs referenced
   [ ] ## Follow-up → TODO    current and accurate
 ```
 
 **Lede generation rule — NEVER leave a placeholder.** If the Lede is empty, missing, or contains any
 of the following placeholder patterns, **synthesize a real Lede immediately** from the ticket summary,
-description, Notes field from Jira, and investigation context gathered in this session:
+description, Linear description, and investigation context gathered in this session:
 
 - `_(no description yet)_`
 - `What: _(no description yet)_`
@@ -593,12 +575,12 @@ description, Notes field from Jira, and investigation context gathered in this s
 - any `_(...placeholder...)_` pattern
 
 Synthesize using the newspaper lede pattern: what the system/work does + why it matters + what's at
-risk without it. Pull from the ticket title, Jira description, Notes field, and any findings from the
+risk without it. Pull from the ticket title, Linear description, and any findings from the
 investigation. One tight paragraph, 2-4 sentences. Never output a ticket with a placeholder Lede.
 
 **Minimum Web Links for every ticket before transition:**
-- `[<PROJECT>-XXX Jira](https://<YOUR_ATLASSIAN>.atlassian.net/browse/<PROJECT>-XXX)`
-- Any Confluence pages referenced during investigation
+- `[{KEY} Linear](https://linear.app/issue/{KEY})`
+- Any Notion pages referenced during investigation
 - Any Azure Portal resource deep links (use `#resource/subscriptions/...`)
 - Any MS Learn, vendor docs, or GitHub links cited
 
@@ -619,7 +601,7 @@ When the operator says `done`, `waiting`, or `blocked`, do this **before** runni
 4. **Insert both into the issue file** under the newest dated heading, above the previous Actions entry. Commit nothing yet — Phase 4 handles the commit as part of the transition bundle.
 5. **Only after operator accepts both**, proceed to Phase 4 transition handlers.
 
-**Why this gate exists.** Without it, the operator either (a) skips the rich comment and the Jira thread becomes worthless, or (b) tries to write all the comments at end-of-day from a stale memory. Neither works. The line lead enforces: fields + rich comment + stakeholder nudge get written *while the ticket is still open*, before any "next" command is processed.
+**Why this gate exists.** Without it, the operator either (a) skips the rich comment and the Linear issue thread becomes worthless, or (b) tries to write all the comments at end-of-day from a stale memory. Neither works. The line lead enforces: fields + rich comment + stakeholder nudge get written *while the ticket is still open*, before any "next" command is processed.
 
 **Skip rules** — only skip the gate when:
 - The transition is `park` or `skip` (status doesn't change, work isn't truly closing out)
@@ -649,7 +631,7 @@ When the operator signals a transition, do your judgment work first — then cal
      Doc it now (say "doc it") or give a reason why not (one sentence).
      Undocumented technician work is process debt.
   ```
-  - `"doc it"` → invoke `confluence-writer` immediately with the issue file actions as source
+  - `"doc it"` → invoke `notion-writer` immediately with the issue file actions as source
   - Operator gives a reason → log `**Doc-it skipped:** {reason}` in the issue file under the COMMENT, then proceed
   - No response → re-prompt once, then allow skip and log `**Doc-it skipped:** operator declined`
   - Do NOT silently offer and move on — this is a gate, not a suggestion
@@ -743,17 +725,16 @@ When the operator says "end rounds" or "close lane":
 | Look up prior art, patterns, or docs before a ticket | `knowledge-clerk` |
 | Investigate a ticket | `ticket-investigator` |
 | Check Azure resources | `azure-investigator` |
-| Write/update Confluence page | `confluence-writer` |
+| Write/update Notion page | `notion-writer` |
 | Review a PR | `pr-reviewer` |
-| Log time to Jira | `jira-worklog` |
-| Log time to SDP | `sdp-worklog` |
-| Dispatch next ticket | `jira-dispatcher` |
+| Log time to Linear | `linear-worklog` |
+| Dispatch next ticket | `linear-dispatcher` |
 | Stale waiting tickets | `waiting-ticket-followup` |
 | Weekly summary | `weekly-summary` |
 | End of day | `end-my-day` |
 | File a documentation spike (clerk no-find) | `backlog` |
 | Auto-draft follow-up on "waiting" | `waiting-ticket-followup` (--draft) |
-| Document a technician pattern after done | `confluence-writer` |
+| Document a technician pattern after done | `notion-writer` |
 
 ---
 
@@ -771,9 +752,9 @@ When the operator says "end rounds" or "close lane":
 | `interview done` | Operator declares 95% — ask for approach summary, log it, proceed |
 | `swap {KEY}` | Replace current ticket with specific key from queue (same lane) |
 | `escalate` | Bump to urgency:1 (stakeholder override) |
-| `breakdown` | Offer to split current ticket into Jira subtasks |
+| `breakdown` | Offer to split current ticket into Linear sub-issues |
 | `rubberduck` | Switch to question-asking mode (pressure-test reasoning) |
-| `doc it` | Invoke confluence-writer to document current ticket's pattern |
+| `doc it` | Invoke notion-writer to document current ticket's pattern |
 | `end rounds` | Close this lane, release claim, show lane summary, offer EOD |
 | `follow up` | Run waiting-ticket-followup |
 | `board` | Re-display this lane's ticket with velocity + alerts |
@@ -870,7 +851,7 @@ All tabs independent. No pop-up queue. No forced sequencing.
 ✓ Dispatched <PROJECT>-377 → Lane 2
 File: issues/<PROJECT>-377 - AWS Security Hub.../<PROJECT>-377...md
 
-Next: Lane 3 — <PROJECT>-58 — Jira SDP Integration
+Next: Lane 3 — ENG-58 — Auth Token Timeout Fix
 <APPROVER_NAME> hasn't responded (1 day). Follow up or skip?
 
 > skip
@@ -885,7 +866,7 @@ What do you want to do?
 
 All 3 lanes visited.
 Lane 1 — <PROJECT>-377 — AWS Security Hub (new)
-Lane 3 — <PROJECT>-58  — Jira SDP Integration (waiting)
+Lane 3 — ENG-58  — Auth Token Timeout Fix (waiting)
 Lane 4 — <PROJECT>-390 — Web Platform SSR Spike (active, no work)
 
 3 stale waiting tickets. Want to review follow-ups?
@@ -904,16 +885,15 @@ Skills called by rounds (dependency graph):
 ```
 rounds
 ├── knowledge-clerk          (Phase 2 — before every ticket chart)
-├── jira-context-bundle   (Phase 2 — full ticket load via script)
+├── linear-fetch-issue    (Phase 2 — full ticket load via script)
 ├── ticket-investigator   (Phase 3 — on "investigate" command)
 ├── azure-investigator    (Phase 3 — on Azure resource questions)
-├── confluence-writer     (Phase 3 — on "doc it" command)
+├── notion-writer         (Phase 3 — on "doc it" command)
 ├── pr-reviewer           (Phase 3 — on "check PR" command)
-├── jira-worklog          (Phase 4 — on every transition)
-├── sdp-worklog           (Phase 4 — if SDP linked)
-├── jira-dispatcher       (Phase 4 — after done/waiting/blocked)
+├── linear-worklog        (Phase 4 — on every transition)
+├── linear-dispatcher     (Phase 4 — after done/waiting/blocked)
 ├── waiting-ticket-followup (Phase 5 — stale ticket check)
-├── backlog              (Phase 2 — on "spike" for clerk no-finds)
+├── linear-backlog        (Phase 2 — on "spike" for clerk no-finds)
 └── end-my-day            (Phase 5 — on "end the day")
 ```
 
@@ -921,84 +901,3 @@ rounds
 
 
 ---
-
-## SDP Tickets in Rounds (Unified Model)
-
-ServiceDesk Plus cases run in the same 5 lanes as Jira tickets — there is no separate "sdp-rounds" skill. Any lane can claim any SDP case. Lane assignment is first-come-first-claimed, not tied to ticket type or scoring. SDP case files live under `cases/{display_id}/`; Jira issue files live under `issues/<PROJECT>-XXX/`.
-
-### Cross-link awareness (no double-billing)
-
-The header `OWNER: jira | sdp` in each case file decides which side holds the WIP slot:
-
-- `OWNER: sdp` (default) — the SDP case is the WIP owner; counts against the lane WIP cap
-- `OWNER: jira` — the SDP case is a **shadow** of a linked <PROJECT>-XXX issue; does NOT count against any lane cap and is **skipped** when claiming a lane
-
-When this skill enumerates work, it MUST union both sources (`issues/` + `cases/`) and dedupe by cross-link (`JIRA:` header in cases, `SDP:` header in issues). Shadows are surfaced as "(shadow of <PROJECT>-XXX)" annotations, not as independent slots.
-
-The shared `/tmp/rounds-claims.json` uses keys `lane1`–`lane5`; Jira and SDP tickets share the same key space (one ticket per lane, regardless of system).
-
-### Station deltas when the claimed ticket is an SDP case
-
-The flow is identical. The deltas:
-
-- **Claim:** pull the highest Eisenhower-priority queue case via `sdp_search.py --tag flow:queue`. Skip any case with `OWNER: jira`.
-- **Clerk:** `knowledge-clerk` already queries both `issues/` and `cases/`. For access grants, always check Confluence runbooks AND prior cases — most SDP work is "did this last week, do it again".
-- **Warm Card:** include **Who** (requester full name + email), **What** (one-sentence request), **Why** (business reason), **Approval status** (pending L1/L2, approved, or none required), **Linked Jira** (<PROJECT>-XXX if `JIRA:` header), **Prior art** (clerk), **Confidence bar**.
-- **Investigate:** use `sdp-investigator` (owns the HARD-GATE discipline) instead of `ticket-investigator`.
-- **Execute:** for access grants, use `az role assignment create`, then `entra_lookup.py` to confirm, then `sdp_set_tasks.py --id {ID}` to check the box in markdown. For approvals, do **not** click approve in SDP — ensure the approval level exists via `sdp_approval.py --create-level 1 --approvers ...` and mark `flow:waiting`. The user approves out-of-band.
-- **Worklog:** invoke `sdp-worklog`. Voice wall is mandatory (see below).
-- **Decision:** use SDP transition scripts (`sdp_set_flow.py`).
-
-### Decision-command mapping (SDP cases)
-
-| Operator says | Action |
-|---|---|
-| `done` | `sdp_set_flow.py --id {ID} --flow done --transition` → Resolved |
-| `waiting` | `--flow waiting --transition` → On Hold; if waiting on approval, note in `## Approval` |
-| `approval` | Sets `flow:waiting`, ensures `## Approval` reflects pending levels, surfaces approvers to ping |
-| `blocked` | `flow:waiting` + blocker note; surfaces unblocking step |
-| `park` | Releases lane claim, keeps `flow:active` |
-| `next` | Closes current, claims next queue ticket for same lane |
-
-### Voice wall (do not violate)
-
-- Jira `WORKLOG` lines: **internal investigative voice** (first-person, past tense)
-- Jira `COMMENT` lines: **internal investigative voice** — technician narrative; what I tried, what I found, what I ruled out, links discovered, what's next (4–10 sentences, rich detail)
-- Jira `NUDGE` lines: **stakeholder-facing voice** — Teams-style ask addressed to `@firstname.lastname`; short, plain, ends with a specific question or two-option request. The sync script resolves the @handle to an accountId so the person gets a Jira notification.
-- SDP `WORKLOG` lines: **internal investigative voice** (same as Jira)
-- SDP `COMMENT` lines: **end-user voice** — plain language, what was done, how to verify
-  - ✅ "Access has been granted. To verify, sign in to portal.azure.com and you should now see the resource group `rg-...`."
-  - ❌ "Created RBAC assignment on subscription scope via az CLI" (that's internal voice — goes in `WORKLOG`, not `COMMENT`)
-
-The Jira COMMENT/NUDGE split mirrors the SDP WORKLOG/COMMENT split: one line for the technician record, one line for the human you're talking to. Both authored while the ticket is active, never deferred to end of day.
-
-### Jira ↔ SDP idiom cheat sheet
-
-| Jira | SDP | Script |
-|---|---|---|
-| Context note (clerk card) | Internal note (HTML context card + clickable links, posted once) | `sync_sdp_fields.py` |
-| Web links panel | `<a href>` links in Description HTML | `sync_sdp_fields.py` |
-| Labels | Tags (markdown-only; API can't write) | tracked in header `**Tags:**` |
-| Issue links | Linked requests | `sdp_set_links.py` |
-| Checklist (HeroCoders) | Native tasks | `sdp_set_tasks.py` |
-| Status transition | Native status (Open/In Progress/Waiting for Review/Resolved) | `sdp_set_flow.py --transition` |
-| Approvers field | `approval_levels` + nested `approvals` | `sdp_approval.py` |
-| ADF comment | Note (plain text or HTML) | `sync_sdp_worklog.py` |
-
-### SDP-specific composes
-
-When the claimed ticket is an SDP case, rounds invokes the SDP-side specialists in place of their Jira counterparts:
-
-| Phase | Jira ticket | SDP case |
-|---|---|---|
-| Context bundle | `jira-context-bundle` / `jira_fetch_ticket.py` | `sdp-context-bundle` / `sdp_fetch_ticket.py` |
-| Investigation | `ticket-investigator` | `sdp-investigator` |
-| Worklog | `jira-worklog` | `sdp-worklog` |
-| Dispatch / transition | `jira-dispatcher` / `jira_set_flow.py` | `sdp-dispatcher` / `sdp_set_flow.py` |
-
-### Important SDP-only notes
-
-- `**Long ID:**` in case markdown is the **long API id** (18+ digits). The folder name is the **short display id**. Always sanity-check before pushing.
-- Tags cannot be set via the SDP API — tracked in markdown `**Tags:**` header only; SDP status transitions are the visible equivalent.
-- `cases/{ID}/` files are the source of truth. The CI workflow `sdp-worklog-sync.yaml` reconciles tasks, links, description, and approvals from markdown on every push to main.
-- Web links go in the clerk card `> **Links:**` section → CI renders as clickable HTML in a one-time internal note (original SDP description is never modified).

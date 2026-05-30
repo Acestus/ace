@@ -2,11 +2,11 @@
 applyTo: 'confluence/**/*.md'
 ---
 
-# Confluence Live Doc Workflow
+# Notion Live Doc Workflow
 
 ## Purpose
 
-Guidelines for editing Confluence Live Docs as local markdown files. Pages are downloaded as ADF (Atlassian Document Format), converted to markdown for editing in VS Code, then uploaded back as ADF. These rules ensure clean round-trip conversion.
+Guidelines for editing Notion Live Docs as local markdown files. Pages are downloaded as ADF (Atlassian Document Format), converted to markdown for editing in VS Code, then uploaded back as ADF. These rules ensure clean round-trip conversion.
 
 ## File Naming
 
@@ -16,7 +16,7 @@ Guidelines for editing Confluence Live Docs as local markdown files. Pages are d
 
 ## YAML Frontmatter — Tags
 
-Every confluence markdown file **must** include YAML frontmatter with a `tags:` list. These are synced to Confluence as page labels on upload.
+Every confluence markdown file **must** include YAML frontmatter with a `tags:` list. These are synced to Notion as page labels on upload.
 
 ```yaml
 ---
@@ -30,7 +30,7 @@ tags:
 
 ### Version Field (Conflict Detection)
 
-The `version:` field tracks the Confluence page version this file was last synced with. The upload script uses it to detect conflicts:
+The `version:` field tracks the Notion page version this file was last synced with. The upload script uses it to detect conflicts:
 
 - **On upload:** If `version:` exists, the script compares it to the remote version. If they differ, the upload is **aborted** with a conflict error — someone else edited the page since the last download.
 - **After successful upload:** The script automatically updates `version:` in the file to the new remote version.
@@ -60,15 +60,15 @@ The `version:` field tracks the Confluence page version this file was last synce
 
 ## Markdown Formatting for ADF Compatibility
 
-The markdown-to-ADF converter supports a specific subset of markdown. Follow these rules to ensure content renders correctly when uploaded to Confluence Live Docs.
+The markdown-to-ADF converter supports a specific subset of markdown. Follow these rules to ensure content renders correctly when uploaded to Notion Live Docs.
 
 ### No H1 Heading in Content
 
-Do **not** include a `# Title` (H1) heading at the top of the markdown body. Confluence Live Docs already display the page title above the content. An H1 in the body creates a duplicate title that looks ugly. Start content with a subtitle, intro paragraph, or `##` heading instead.
+Do **not** include a `# Title` (H1) heading at the top of the markdown body. Notion Live Docs already display the page title above the content. An H1 in the body creates a duplicate title that looks ugly. Start content with a subtitle, intro paragraph, or `##` heading instead.
 
 ### Supported Elements
 
-- **Headings:** `##` through `######` — use H2 and below in the body (H1 is the page title, shown by Confluence)
+- **Headings:** `##` through `######` — use H2 and below in the body (H1 is the page title, shown by Notion)
 - **Paragraphs:** Plain text with blank line separation
 - **Bold / Italic / Code:** `**bold**`, `*italic*`, `` `inline code` ``
 - **Links:** `[text](url)` — converted to ADF link marks
@@ -80,7 +80,7 @@ Do **not** include a `# Title` (H1) heading at the top of the markdown body. Con
 
 ### Embeds and Smart Links
 
-The converter supports three custom directives for embedding external content as Confluence Smart Links:
+The converter supports three custom directives for embedding external content as Notion Smart Links:
 
 | Syntax | ADF Node | Rendering |
 |---|---|---|
@@ -88,9 +88,9 @@ The converter supports three custom directives for embedding external content as
 | `!card[label](url)` or `!card url` | `blockCard` | Rich preview card (title, description, thumbnail) |
 | `[text](!card:url)` | `inlineCard` | Inline Smart Link within a paragraph |
 
-**All `!embed` directives produce `embedCard` nodes in ADF.** Confluence's Smart Link system unfurls the URL into the appropriate rendering — video player for Loom/YouTube, interactive preview for others. Requires the **Loom Marketplace app** to be installed in the Atlassian instance for Loom URLs to render as embedded players.
+**All `!embed` directives produce `embedCard` nodes in ADF.** Notion's Smart Link system unfurls the URL into the appropriate rendering — video player for Loom/YouTube, interactive preview for others. Requires the **Loom Marketplace app** to be installed in the Atlassian instance for Loom URLs to render as embedded players.
 
-> **Do NOT use the `widget` macro** (`extension` node with `extensionKey: "widget"`) for video embeds on Live Docs. The `widget` macro is a legacy Confluence macro that renders as a broken gear icon on Live Doc pages. Use `embedCard` instead — it renders correctly on both Live Docs and classic pages.
+> **Do NOT use the `widget` macro** (`extension` node with `extensionKey: "widget"`) for video embeds on Live Docs. The `widget` macro is a legacy Notion macro that renders as a broken gear icon on Live Doc pages. Use `embedCard` instead — it renders correctly on both Live Docs and classic pages.
 
 ```markdown
 !embed[Architecture Walkthrough](https://www.loom.com/share/146853a963c44f3db845378242497cb2)
@@ -103,9 +103,9 @@ The converter supports three custom directives for embedding external content as
 !embed[Project Overview Video](https://<org_short>fg.sharepoint.com/:v:/s/Infrastructure/IQDg...)
 ```
 
-This renders as an `embedCard` in ADF, which Confluence unfurls into an embedded video player (requires SharePoint ↔ Atlassian integration to be configured in the tenant).
+This renders as an `embedCard` in ADF, which Notion unfurls into an embedded video player (requires SharePoint ↔ Atlassian integration to be configured in the tenant).
 
-**Fallback:** If the embed doesn't render as a player (integration not enabled, unsupported URL), Confluence shows it as a rich link card instead. You can also use `!card` explicitly if you only want the card preview.
+**Fallback:** If the embed doesn't render as a player (integration not enabled, unsupported URL), Notion shows it as a rich link card instead. You can also use `!card` explicitly if you only want the card preview.
 
 ### Status Lozenges
 
@@ -157,7 +157,7 @@ Instead, use the `!plantuml(path)` directive. At publish time the script renders
 
 - The path is relative to the workspace root (resolved from the markdown file's directory first, then one level up).
 - Maintain the `.puml` source file under `assets/<page_id>/` in the repo — see `plantuml-style.instructions.md` for diagram conventions.
-- SVG is **not** supported — Confluence shows "preview unavailable" for SVG attachments in `media` nodes. The script renders PNG.
+- SVG is **not** supported — Notion shows "preview unavailable" for SVG attachments in `media` nodes. The script renders PNG.
 - On `--dry-run`, PlantUML rendering and upload are skipped.
 
 ### Elements That Do NOT Round-Trip
@@ -201,15 +201,15 @@ These documents are authored by a **cloud infrastructure engineer** who is the S
 | `scripts/publish-markdown-to-confluence.py` | Convert markdown → ADF, publish, and sync labels from frontmatter |
 | `scripts/update-confluence-page.ps1` | Update a page with raw HTML (non-Live Doc pages) |
 | `scripts/create-confluence-page.py` | Create a new page from markdown, sync labels, rename file with page ID |
-| `scripts/test-connection.ps1` | Verify Confluence API credentials |
+| `scripts/test-connection.ps1` | Verify Notion API credentials |
 
 ## VS Code Tasks
 
 Use the VS Code tasks (`.vscode/tasks.json`) to run scripts without memorizing commands:
 
-- **Confluence: Upload Markdown** — uploads the current editor file
-- **Confluence: Upload Markdown (Dry Run)** — saves ADF output without uploading
-- **Confluence: Get Page** — downloads a page by ID
+- **Notion: Upload Markdown** — uploads the current editor file
+- **Notion: Upload Markdown (Dry Run)** — saves ADF output without uploading
+- **Notion: Get Page** — downloads a page by ID
 
 ## Topic Article Structure
 
@@ -262,7 +262,7 @@ Content with !embed directives for Loom videos.
 
 ### Key Conventions
 
-- **No H1 heading** — the Confluence page title is set during creation
+- **No H1 heading** — the Notion page title is set during creation
 - **Architecture diagram** goes between the metrics table and `### Contents`
 - **Related Pages** section goes before the final Video Walkthroughs section
 - **Video Walkthroughs** is always the last section, collecting all embeds for easy scanning
@@ -299,12 +299,12 @@ Content with !embed directives for Loom videos.
 
 ## Creating a New Page
 
-New pages are created **as the very first step** to obtain the page ID. The page starts as a stub and is published with full content later. **Never use placeholder filenames or temporary page IDs** — always create the Confluence page and get the real ID before writing article content.
+New pages are created **as the very first step** to obtain the page ID. The page starts as a stub and is published with full content later. **Never use placeholder filenames or temporary page IDs** — always create the Notion page and get the real ID before writing article content.
 
 ### Workflow
 
 1. **Create a stub markdown file** — use a descriptive filename like `My-New-Topic.md` with minimal frontmatter (`tags:` only, no `version:` needed)
-2. **Do NOT add an H1 heading** — the `--title` argument becomes the Confluence page title
+2. **Do NOT add an H1 heading** — the `--title` argument becomes the Notion page title
 3. **Run the create script:**
 
 ```bash
@@ -316,7 +316,7 @@ python3 scripts/create-confluence-page.py confluence/My-New-Topic.md \
 
 4. **The script automatically:**
    - Creates the page with stub content
-   - Syncs frontmatter tags as Confluence labels
+   - Syncs frontmatter tags as Notion labels
    - Renames the file to `{pageId}-{Sanitized-Title}.md`
    - Writes `version: 1` into the frontmatter
 5. **Create the asset directory:** `mkdir -p assets/{pageId}`
@@ -365,11 +365,11 @@ When creating multiple pages under the same parent, create them sequentially (on
 
 ## Cross-Linking Between Pages
 
-Every article should link to at least **3 related pages** in the `confluence/` directory. Cross-links improve discoverability and create a navigable knowledge graph in Confluence.
+Every article should link to at least **3 related pages** in the `confluence/` directory. Cross-links improve discoverability and create a navigable knowledge graph in Notion.
 
 ### Link Format
 
-Use the Confluence page URL with the page ID:
+Use the Notion page URL with the page ID:
 
 ```markdown
 [Page Title](https://<YOUR_ATLASSIAN>.atlassian.net/wiki/spaces/<SPACE>/pages/{pageId})
@@ -410,7 +410,7 @@ After editing an existing page (adding cross-links, updating tags, fixing conten
 python3 scripts/publish-markdown-to-confluence.py confluence/{pageId}-{Title}.md
 ```
 
-Use `--force` if the local `version:` field is behind the remote version (someone edited the page on Confluence since the last sync).
+Use `--force` if the local `version:` field is behind the remote version (someone edited the page on Notion since the last sync).
 
 ### Publishing All Pages
 

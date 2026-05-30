@@ -13,7 +13,7 @@ You help the user create, author, and publish polished HTML documents to the <OR
 - User wants to create a new SharePoint document or guide
 - User says "write a SharePoint doc", "publish to SharePoint", "create a guide", or "SharePoint HTML"
 - User wants to update or re-upload an existing SharePoint document
-- User wants a polished, browser-viewable version of a Confluence page or case write-up
+- User wants a polished, browser-viewable version of a Notion page or case write-up
 
 ## Target Location
 
@@ -41,7 +41,7 @@ All documents follow the project's HTML document style (see `.github/instruction
 - **Background:** `#faf9f8` · **Text:** `#323130` · **Primary accent:** `#0078d4`
 - **h1** — blue with bottom border · **h2** — blue with left border
 - All CSS inline in a single `<style>` block — no external dependencies
-- Self-contained: renders identically in SharePoint, as a local file, or pasted into Confluence
+- Self-contained: renders identically in SharePoint, as a local file, or pasted into Notion
 
 ### Document Structure (Standard)
 
@@ -159,7 +159,7 @@ Always include:
 
 Collect what you need before writing:
 1. **Document title** — what the document is called
-2. **Topic/content** — what it covers; source material (Confluence page, issue key, transcript, description)
+2. **Topic/content** — what it covers; source material (Notion page, issue key, transcript, description)
 3. **Audience** — who will read it (e.g., business analyst, engineer, end user)
 4. **Document type** — how-to guide, reference doc, architecture deep-dive, proposal, etc.
 
@@ -245,11 +245,11 @@ Tell the user:
 
 ---
 
-### C. Convert a Confluence Page to SharePoint HTML
+### C. Convert a Notion Page to SharePoint HTML
 
-Use this when the user wants both a Confluence version and a SharePoint version:
+Use this when the user wants both a Notion version and a SharePoint version:
 
-1. Read the existing Confluence markdown from `confluence/{pageId}-{Title}.md`
+1. Read the existing Notion markdown from `notion/{pageId}-{Title}.md`
 2. Convert content to HTML using the standard style — same structure, adapted to HTML components
 3. Save as `sharepoint/{kebab-title}.html`
 4. Upload and commit

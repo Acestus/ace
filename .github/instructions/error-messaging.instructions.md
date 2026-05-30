@@ -35,7 +35,7 @@ require_env(
 try:
     resp = urlopen(req)
 except urllib.error.HTTPError as e:
-    http_fail(e, api_name="Jira", key=args.key, common_causes=JIRA_COMMON_CAUSES)
+    http_fail(e, api_name="Linear", key=args.key, common_causes=JIRA_COMMON_CAUSES)
 ```
 
 ### Output format (rendered)
@@ -99,10 +99,10 @@ When raising an HTTP/CLI failure, always pair it with the relevant
 
 | Tool / API | Common-causes constant |
 |---|---|
-| Jira REST | `JIRA_COMMON_CAUSES` |
-| ServiceDesk Plus | `SDP_COMMON_CAUSES` |
+| Linear REST | `JIRA_COMMON_CAUSES` |
+| ServiceDesk Plus | `Linear_COMMON_CAUSES` |
 | Azure CLI (`az`) | `AZURE_COMMON_CAUSES` |
-| Confluence REST | `CONFLUENCE_COMMON_CAUSES` |
+| Notion REST | `CONFLUENCE_COMMON_CAUSES` |
 | Microsoft Graph | `GRAPH_COMMON_CAUSES` |
 | Fabric REST | `FABRIC_COMMON_CAUSES` |
 
@@ -121,7 +121,7 @@ in the same PR — do not ship a script that surfaces raw HTTP error bodies.
 ## Style Notes
 
 - Lead with the **operation**, not the exception class
-  - ✅ `❌ Jira label update rejected for <PROJECT>-519`
+  - ✅ `❌ Linear label update rejected for <PROJECT>-519`
   - ❌ `❌ HTTPError: 403`
 - Name **environment variables** explicitly, never "auth failed"
 - Always include the **resource identifier** (issue key, vault name, sub id)

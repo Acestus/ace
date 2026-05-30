@@ -1,7 +1,7 @@
 ---
 name: pr-reviewer
 description: 'Review GitHub pull requests with an automated checklist. Pulls diff, checks CI, scans for secrets, validates size, and generates findings. Use when the user says "review PR", "check my PRs", "is this PR ready", or wants to run a code review.'
-argument-hint: 'Specify a PR number (e.g., 25) and optionally a repo (owner/repo) or Jira key for issue linkage'
+argument-hint: 'Specify a PR number (e.g., 25) and optionally a repo (owner/repo) or Linear key for issue linkage'
 ---
 
 # PR Reviewer
@@ -54,7 +54,7 @@ This checks:
 - sensitive paths like `.env`, `scripts/`, `.github/workflows/`
 - secret patterns in the diff
 - PR size
-- Jira key in the PR body
+- Linear key in the PR body
 - README/docs coverage when code changed
 
 ### 2. Read the finding, then decide
@@ -70,7 +70,7 @@ python3 scripts/gh_pr.py --approve 25 --body "LGTM"
 **Request changes:**
 
 ```bash
-python3 scripts/gh_pr.py --request-changes 25 --body "Fix the workflow permissions and add the Jira key."
+python3 scripts/gh_pr.py --request-changes 25 --body "Fix the workflow permissions and add the Linear key."
 ```
 
 **Comment:**
@@ -87,9 +87,9 @@ python3 scripts/gh_pr.py --merge 25 --squash
 
 Standard: review first, then act. Don't approve blind.
 
-## Integration with jira-worklog
+## Integration with linear-worklog
 
-If the PR maps to a Jira issue, write the findings straight into the issue file:
+If the PR maps to a Linear issue, write the findings straight into the issue file:
 
 ```bash
 python3 scripts/pr_review.py --pr 25 --to-issue <PROJECT>-400
@@ -161,9 +161,9 @@ These are not suggestions. If any hard-stop condition is met, the PR is not merg
 ## Learning Feedback
 
 After every review (approve or request-changes):
-1. If the same issue type was flagged on 3+ recent PRs (e.g., missing Jira key, docs not updated), surface it:
+1. If the same issue type was flagged on 3+ recent PRs (e.g., missing Linear key, docs not updated), surface it:
    ```
-   📝 Pattern: "Missing Jira link" flagged on 3 of last 5 PRs.
+   📝 Pattern: "Missing Linear link" flagged on 3 of last 5 PRs.
       → Suggest: add branch naming convention or PR template update?
    ```
 2. If a PR introduces a pattern worth capturing (new reusable workflow, new auth pattern), flag it for the clerk:

@@ -16,7 +16,7 @@ The clerk does not build or deploy anything. It finds, reads, and summarizes.
 
 - Rounds skill calls it before presenting a ticket chart — "what do we already know about this?"
 - User asks "how did we do X before" or "is there a pattern for Y"
-- Before writing a Confluence page — check if one already exists
+- Before writing a Notion page — check if one already exists
 - Before a new ticket — check if a precedent or architecture exists
 - Any time the right approach is unclear
 
@@ -36,7 +36,7 @@ python3 scripts/<org_short>_clerk.py --topic "{topic}"
 python3 scripts/<org_short>_clerk.py --topic "{topic}" --depth full
 
 # Limit to a specific tier
-python3 scripts/<org_short>_clerk.py --topic "{topic}" --source confluence
+python3 scripts/<org_short>_clerk.py --topic "{topic}" --source notion
 python3 scripts/<org_short>_clerk.py --topic "{topic}" --source repo
 python3 scripts/<org_short>_clerk.py --topic "{topic}" --source issues
 python3 scripts/<org_short>_clerk.py --topic "{topic}" --source docs
@@ -54,11 +54,11 @@ The skill reads the script output directly and surfaces it. No post-processing n
 
 Work through these sources **in order**. Stop when you find something relevant. If the first source is thin, check the next — don't skip ahead.
 
-### 1. Confluence Directory (this repo)
+### 1. Notion Directory (this repo)
 
 ```bash
-ls /home/wweeks/git/projects/confluence/
-grep -ril "{topic}" /home/wweeks/git/projects/confluence/
+ls /home/wweeks/git/projects/notion/
+grep -ril "{topic}" /home/wweeks/git/projects/notion/
 ```
 
 Files are named `{pageId}-{title}.md`. Read the ones that match. These are the most current internal docs — written by <YOUR_NAME>, published to the team.
@@ -75,24 +75,24 @@ Files are named `{pageId}-{title}.md`. Read the ones that match. These are the m
 
 ```bash
 grep -ril "{topic}" /home/wweeks/git/projects/issues/
-grep -ril "{topic}" /home/wweeks/git/projects/cases/
+grep -ril "{topic}" /home/wweeks/git/projects/issues/
 ```
 
-Issue files (`issues/INFRA-*/`) contain investigation notes, blockers, decisions, and workarounds from real tickets. Cases (`cases/*/`) are SDP tickets with resolution history. Both are gold for "how did we solve this last time."
+Issue files (`issues/INFRA-*/`) contain investigation notes, blockers, decisions, and workarounds from real tickets. Cases (`issues/*/`) are  tickets with resolution history. Both are gold for "how did we solve this last time."
 
 **Search pattern:**
 ```bash
 # Find by keyword across issues and cases
-grep -ril "{keyword}" /home/wweeks/git/projects/issues/ /home/wweeks/git/projects/cases/ \
+grep -ril "{keyword}" /home/wweeks/git/projects/issues/ /home/wweeks/git/projects/issues/ \
   | head -10
 
 # Read the most relevant match
 cat "/home/wweeks/git/projects/issues/{match}/"*.md | head -100
 ```
 
-### 2b. SDP Ticket Context (live API)
+### 2b.  Ticket Context (live API)
 
-When a case file has an `SDP_ID:` field, or when the topic relates to an SDP ticket number, fetch the ticket description directly:
+When a case file has an `_ID:` field, or when the topic relates to an  ticket number, fetch the ticket description directly:
 
 ```bash
 cd /home/wweeks/git/projects && export $(grep -v '^#' .env | xargs)
@@ -100,7 +100,7 @@ cd /home/wweeks/git/projects && export $(grep -v '^#' .env | xargs)
 # Fetch by display ID (short number)
 python3 scripts/sdp_fetch_ticket.py --id {ticket_id}
 
-# Fetch by long SDP ID (from case file SDP_ID field)
+# Fetch by long  ID (from case file _ID field)
 python3 scripts/sdp_fetch_ticket.py --long-id {long_id}
 
 # Search by keyword
@@ -109,18 +109,18 @@ python3 scripts/sdp_fetch_ticket.py --search "{keyword}"
 
 This gives you the ticket subject, description, requester, and status — use it to understand what the case is actually about without requiring the operator to look it up.
 
-### 2c. Jira History — Prior Art Search
+### 2c. Linear History — Prior Art Search
 
-Always check Jira for prior tickets related to the topic. This catches patterns, prior solutions, and related work:
+Always check Linear for prior tickets related to the topic. This catches patterns, prior solutions, and related work:
 
 ```bash
 cd /home/wweeks/git/projects && export $(grep -v '^#' .env | xargs)
 
-# Search Jira for related tickets by keyword
-python3 scripts/jira_search.py --jql 'project = INFRA AND text ~ "{keyword}" ORDER BY updated DESC'
+# Search Linear for related tickets by keyword
+python3 scripts/linear_search.py --jql 'project = INFRA AND text ~ "{keyword}" ORDER BY updated DESC'
 
 # Check specific ticket history
-python3 scripts/jira_fetch_ticket.py --key {<PROJECT>-XXX}
+python3 scripts/linear_fetch_ticket.py --key {<PROJECT>-XXX}
 ```
 
 Surface any `flow:done` tickets that solved a similar problem — those are prior art. Also surface `flow:waiting` tickets on the same topic to avoid duplicate work.
@@ -156,7 +156,7 @@ When local repos don't have enough — query the live environment or Atlassian k
 
 | MCP | Use for |
 |-----|--------|
-| **Atlassian Rovo** | Search Confluence spaces not in the local confluence/ dir; Jira history beyond the issues/ files |
+| **Atlassian Rovo** | Search Notion spaces not in the local notion/ dir; Linear history beyond the issues/ files |
 | **Azure MCP** | Live resource inventory — what's actually deployed, current RBAC, Key Vault contents, resource group structure |
 | **Fabric MCP** | Live workspace state — what lakehouses/notebooks/pipelines exist, current definitions |
 | **GitHub MCP** | Cross-repo code search, PR history, Actions workflow patterns |
@@ -234,8 +234,8 @@ When nothing relevant is found after exhausting all sources, return this exact s
 ⚠  NO VETTED DOCUMENTATION FOUND
 
 Sources checked:
-  ✗ confluence/         — no match
-  ✗ issues/ + cases/    — no match
+  ✗ notion/         — no match
+  ✗ issues/ + issues/    — no match
   ✗ skplogs/            — no match
   ✗ fabric-edm/         — no match
   ✗ iac-infra/          — no match
@@ -290,7 +290,7 @@ When rounds presents a ticket, the clerk is called first (silently, before the c
 
 Prior art (clerk): five9_agent_call_scripts repo has auth pattern (UMI + Sites.Selected).
                    <PROJECT>-360 closed May 22 — same UMI, permissions already granted.
-                   Confluence: <PAGE_ID> — Five9 Call Script Agent architecture doc.
+                   Notion: <PAGE_ID> — Five9 Call Script Agent architecture doc.
 
 Last action: ...
 ```
@@ -308,17 +308,17 @@ The clerk can also be invoked explicitly mid-round:
 | Topic | Start here |
 |-------|-----------|
 | UMI / managed identity patterns | `iac-infra/stacks-bicep/` + INFRA issues |
-| Fabric lakehouse naming / structure | `fabric-edm/` + confluence `<PAGE_ID>` |
-| Five9 / call script auth | `five9_agent_call_scripts/` + confluence `<PAGE_ID>` |
+| Fabric lakehouse naming / structure | `fabric-edm/` + notion `<PAGE_ID>` |
+| Five9 / call script auth | `five9_agent_call_scripts/` + notion `<PAGE_ID>` |
 | Network topology / spoke config | `networking/` |
 | Log / Sentinel / KQL | `skplogs/` |
 | Bicep module patterns | `iac-infra/modules/` |
-| Cert automation (Acmebot) | confluence `<PAGE_ID>` |
+| Cert automation (Acmebot) | notion `<PAGE_ID>` |
 | GitHub Actions / CD patterns | `iac-infra/` + `projects/.github/workflows/` |
-| Past SDP cases | `cases/` directory |
+| Past  cases | `issues/` directory |
 | Past INFRA tickets | `issues/` directory |
-| **System of record — "Jira or SDP?"** | **confluence `<PAGE_ID>` ADR-001** |
-| Solved patterns (clerk memory) | `confluence/patterns/` + issue file reflections |
+| **System of record — "Linear or ?"** | **notion `<PAGE_ID>` ADR-001** |
+| Solved patterns (clerk memory) | `notion/patterns/` + issue file reflections |
 
 ---
 
@@ -366,7 +366,7 @@ During the standard lookup hierarchy (Phase 2, Step 2: Issues & Cases), the cler
 **Known pattern match:** {pattern title}
   Solved in: {source ticket KEY} ({date})
   Solution: {one-line summary}
-  Source: confluence/patterns/{domain}.md
+  Source: notion/patterns/{domain}.md
 
   → This looks like the same problem. Follow the prior solution?
 ```
@@ -375,7 +375,7 @@ During the standard lookup hierarchy (Phase 2, Step 2: Issues & Cases), the cler
 
 1. **Single occurrence:** Captured in issue file reflection only (searchable by grep)
 2. **Two occurrences:** Clerk notes "this has come up before" and cites the prior ticket
-3. **Three+ occurrences:** Clerk recommends formalizing as a pattern entry in `planner/patterns/` and optionally a full Confluence article
+3. **Three+ occurrences:** Clerk recommends formalizing as a pattern entry in `planner/patterns/` and optionally a full Notion article
 
 ### Integration with Rounds Close-Out
 
@@ -391,17 +391,17 @@ If the operator says "pattern", the clerk writes the pattern entry and commits i
 
 ---
 
-## SDP Awareness (Lanes 4–6)
+##  Awareness (Lanes 4–6)
 
-ServiceDesk Plus work runs as a parallel set of three swimlanes (Lane 4 🔴 SDP-Urgent, Lane 5 🟠 SDP-Approval, Lane 6 🟢 SDP-Background). SDP case files live under `cases/{display_id}/`. The header `OWNER: jira | sdp` decides which side holds the WIP slot:
+ServiceDesk Plus work runs as a parallel set of three swimlanes (Lane 4 🔴 -Urgent, Lane 5 🟠 -Approval, Lane 6 🟢 -Background).  case files live under `issues/{display_id}/`. The header `OWNER: linear | sdp` decides which side holds the WIP slot:
 
-- `OWNER: sdp` (default) — the SDP case is the WIP owner; counts against the SDP lane cap
-- `OWNER: jira` — the SDP case is a **shadow** of a linked <PROJECT>-XXX issue; does NOT count against any SDP lane cap
+- `OWNER: sdp` (default) — the  case is the WIP owner; counts against the  lane cap
+- `OWNER: linear` — the  case is a **shadow** of a linked <PROJECT>-XXX issue; does NOT count against any  lane cap
 
-When this skill needs to enumerate or render the operator's work, it MUST union both sources (`issues/` + `cases/`) and dedupe by cross-link (`JIRA:` header in cases, `SDP:` header in issues). Shadows are surfaced as "(shadow of <PROJECT>-XXX)" annotations, not as independent slots.
+When this skill needs to enumerate or render the operator's work, it MUST union both sources (`issues/` + `issues/`) and dedupe by cross-link (`JIRA:` header in cases, `:` header in issues). Shadows are surfaced as "(shadow of <PROJECT>-XXX)" annotations, not as independent slots.
 
-For lane-routing and rounds claims, see `rounds` and `sdp-dispatcher`. The shared `/tmp/rounds-claims.json` uses keys `lane1`–`lane5` shared across Jira and SDP tickets (single ticket per lane, regardless of system).
+For lane-routing and rounds claims, see `rounds` and `sdp-dispatcher`. The shared `/tmp/rounds-claims.json` uses keys `lane1`–`lane5` shared across Linear and  tickets (single ticket per lane, regardless of system).
 
-Voice wall: SDP `COMMENT:` lines are **end-user voice** (plain language). Jira COMMENT lines are internal investigative voice. This skill must preserve that distinction wherever it emits or summarizes comments.
+Voice wall:  `COMMENT:` lines are **end-user voice** (plain language). Linear COMMENT lines are internal investigative voice. This skill must preserve that distinction wherever it emits or summarizes comments.
 
-For SDP-specific dispatch, render, or close-out, hand off to: `rounds`, `sdp-dispatcher`, `sdp-investigator`, `sdp-worklog`, `sdp-router`.
+For -specific dispatch, render, or close-out, hand off to: `rounds`, `sdp-dispatcher`, `sdp-investigator`, `sdp-worklog`, `sdp-router`.

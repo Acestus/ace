@@ -4,7 +4,7 @@ gh_pr_daily.py — Daily pull request summary for standup.
 
 Fetches yesterday's merged and opened PRs across all repos in the
 <GITHUB_ORG> GitHub org and produces a standup-friendly summary.
-Optionally publishes the summary to a rolling Confluence page (prepended at top).
+Optionally publishes the summary to a rolling Notion page (prepended at top).
 
 Usage:
     python3 scripts/gh_pr_daily.py --report
@@ -14,8 +14,8 @@ Usage:
 
 Flags:
     --report             Print the summary to stdout (default if no action specified).
-    --publish            Publish the summary to Confluence (prepend to rolling page).
-    --page-id ID         Confluence page ID for --publish.
+    --publish            Publish the summary to Notion (prepend to rolling page).
+    --page-id ID         Notion page ID for --publish.
     --date YYYY-MM-DD    Override the target date (default: yesterday).
     --org ORG            GitHub org (default: <GITHUB_ORG>).
 
@@ -151,14 +151,14 @@ def print_report(merged_prs, opened_prs, target_date):
     return 0
 
 
-# --- Confluence integration ---
+# --- Notion integration ---
 
 
-def confluence_base_url():
+def notion_base_url():
     return os.environ.get("CONFLUENCE_BASE_URL", "https://<YOUR_ATLASSIAN>.atlassian.net/wiki").rstrip("/")
 
 
-def confluence_auth_header():
+def notion_auth_header():
     email = os.environ.get("CONFLUENCE_EMAIL", "").strip()
     token = os.environ.get("WWEEKS_CONFLUENCE_API_TOKEN", "").strip()
     if not email or not token:
@@ -167,8 +167,8 @@ def confluence_auth_header():
     return "Basic " + base64.b64encode(raw).decode("utf-8")
 
 
-def confluence_request(method, url, payload=None):
-    headers = {"Authorization": confluence_auth_header(), "Accept": "application/json"}
+def notion_request(method, url, payload=None):
+    headers = {"Authorization": notion_auth_header(), "Accept": "application/json"}
     data = None
     if payload is not None:
         headers["Content-Type"] = "application/json"
@@ -185,9 +185,9 @@ def confluence_request(method, url, payload=None):
         raise RuntimeError(f"Request failed: {exc.reason}")
 
 
-def fetch_confluence_page(page_id):
-    url = f"{confluence_base_url()}/api/v2/pages/{page_id}?body-format=storage"
-    page = confluence_request("GET", url)
+def fetch_notion_page(page_id):
+    url = f"{notion_base_url()}/api/v2/pages/{page_id}?body-format=storage"
+    page = notion_request("GET", url)
     version = page.get("version") or {}
     body = page.get("body") or {}
     storage = body.get("storage") or {}
@@ -200,7 +200,7 @@ def fetch_confluence_page(page_id):
 
 
 def markdown_to_paragraphs(text):
-    """Convert markdown lines to simple Confluence storage paragraphs."""
+    """Convert markdown lines to simple Notion storage paragraphs."""
     lines = [line.rstrip() for line in text.splitlines()]
     paragraphs = []
     for line in lines:
@@ -221,8 +221,8 @@ def escape_xml(text):
     )
 
 
-def prepend_to_confluence_page(page_id, markdown_content):
-    page = fetch_confluence_page(page_id)
+def prepend_to_notion_page(page_id, markdown_content):
+    page = fetch_notion_page(page_id)
     new_html = markdown_to_paragraphs(markdown_content)
     updated_body = new_html + "\n<hr />\n" + page["body"]
 
@@ -233,16 +233,16 @@ def prepend_to_confluence_page(page_id, markdown_content):
         "version": {"number": page["version"] + 1},
         "body": {"storage": {"value": updated_body, "representation": "storage"}},
     }
-    url = f"{confluence_base_url()}/api/v2/pages/{page_id}"
-    confluence_request("PUT", url, payload)
-    print(f"✓ Published to Confluence page {page_id}")
+    url = f"{notion_base_url()}/api/v2/pages/{page_id}"
+    notion_request("PUT", url, payload)
+    print(f"✓ Published to Notion page {page_id}")
     print(f"  https://<YOUR_ATLASSIAN>.atlassian.net/wiki/spaces/<SPACE>/pages/{page_id}")
     return 0
 
 
 def publish_report(merged_prs, opened_prs, target_date, page_id):
     summary = build_summary(merged_prs, opened_prs, target_date)
-    return prepend_to_confluence_page(page_id, summary)
+    return prepend_to_notion_page(page_id, summary)
 
 
 # --- CLI ---
@@ -251,8 +251,8 @@ def publish_report(merged_prs, opened_prs, target_date, page_id):
 def build_parser():
     parser = argparse.ArgumentParser(description="Daily PR summary for standup")
     parser.add_argument("--report", action="store_true", help="Print summary to stdout")
-    parser.add_argument("--publish", action="store_true", help="Publish summary to Confluence")
-    parser.add_argument("--page-id", help="Confluence page ID for --publish")
+    parser.add_argument("--publish", action="store_true", help="Publish summary to Notion")
+    parser.add_argument("--page-id", help="Notion page ID for --publish")
     parser.add_argument("--date", help="Target date YYYY-MM-DD (default: yesterday)")
     parser.add_argument("--org", default=DEFAULT_ORG, help="GitHub org (default: <GITHUB_ORG>)")
     return parser
@@ -298,7 +298,7 @@ def main():
         fail(str(exc),
              causes=["gh command not found or returned non-zero",
                      "GitHub token not set or expired",
-                     "Confluence credentials missing or request failed"],
+                     "Notion credentials missing or request failed"],
              try_=["gh auth status", "gh auth login",
                    "export $(grep -v '^#' .env | xargs)"])
 

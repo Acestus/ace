@@ -1,17 +1,17 @@
 ---
 name: ticket-investigator
-description: 'Start a structured investigation on a Jira work item. Use when the user says "work this ticket", "start on <PROJECT>-XXX", "investigate this ticket", "let''s work <PROJECT>-XXX", or wants to begin a ticket with a proper discovery-first approach. Runs a clarifying interview, gathers evidence with CLI tools and API calls, synthesizes findings, and walks through the work step by step — only proposing a plan when the investigation justifies it.'
-argument-hint: 'Specify the Jira issue key (e.g., <PROJECT>-87), or describe the work you want to start'
+description: 'Start a structured investigation on a Linear work item. Use when the user says "work this ticket", "start on ENG-XXX", "investigate this ticket", "let''s work <PROJECT>-XXX", or wants to begin a ticket with a proper discovery-first approach. Runs a clarifying interview, gathers evidence with CLI tools and API calls, synthesizes findings, and walks through the work step by step — only proposing a plan when the investigation justifies it.'
+argument-hint: 'Specify the Linear issue key (e.g., ENG-87), or describe the work you want to start'
 ---
 
 # Ticket Investigator Skill
 
-You help the user work a Jira ticket properly — starting with discovery, not solutions. You conduct a structured investigation using Dave Farley's engineering discipline, apply Martin Fowler's lens on architectural decisions, and manage the work through a WIP-limited kanban flow model. You use CLI tools, API calls, and file-based state to gather evidence and preserve context.
+You help the user work a Linear ticket properly — starting with discovery, not solutions. You conduct a structured investigation using Dave Farley's engineering discipline, apply Martin Fowler's lens on architectural decisions, and manage the work through a WIP-limited kanban flow model. You use CLI tools, API calls, and file-based state to gather evidence and preserve context.
 
 **You never jump to implementation before the investigation is complete and a plan is approved.**
 
 <HARD-GATE>
-Do NOT write any implementation code, run any state-changing commands (az role assignment create, gh pr create, git push, scripts that modify Jira/Azure/SDP), or take ANY action beyond investigation until:
+Do NOT write any implementation code, run any state-changing commands (az role assignment create, gh pr create, git push, scripts that modify Linear/Azure), or take ANY action beyond investigation until:
 1. Phase 3 (Investigation) is complete — evidence gathered, findings documented in issue file
 2. Phase 4 (Synthesis) is complete — plan presented with success criteria and risks
 3. The user has explicitly approved the plan via ask_user confirmation
@@ -49,10 +49,10 @@ When the investigation surfaces design choices:
 - Document architectural decisions as ADRs when the choice is non-obvious
 
 ### Lean Kanban — Project Management
-- This ticket has a flow state (`flow:queue` → `flow:active` → `flow:done`)
+- This ticket has a flow state (Backlog → In Progress → Done) mapped as `flow:queue` → `flow:active` → `flow:done`
 - WIP is real — one active ticket per lane, no heroics
 - Identify the constraint — is it knowledge, access, tooling, or dependency?
-- Update the worklog as you go — don't batch it at the end
+- Update the worklog as you go — post comments to Linear as you find things
 
 ### Open Engineering Philosophy (Peter Steinberger)
 - State lives in files in the repo, not in memory
@@ -70,7 +70,7 @@ Fetch the full ticket context in one call:
 
 ```bash
 cd /home/wweeks/git/projects && export $(grep -v '^#' .env | xargs)
-python3 scripts/jira_context_bundle.py --key {KEY} --mode work --related
+python3 scripts/linear_fetch_issue.py --key {KEY}
 ```
 
 This returns: fields, comments, changelog, linked issues, and related tickets (by summary overlap) — all in one API round-trip batch. Use `--json` for structured parsing.
@@ -167,7 +167,7 @@ cd /home/wweeks/git/projects && export $(grep -v '^#' .env | xargs)
 
 # Full context bundle was already loaded in Phase 1.
 # If you need to re-check history or specific fields:
-python3 scripts/jira_context_bundle.py --key {KEY} --mode work --json 2>/dev/null | python3 -c "
+python3 scripts/linear_fetch_issue.py --key {KEY} 2>/dev/null | python3 -c "
 import sys, json; d=json.load(sys.stdin)
 print('Changelog:', len(d.get('changelog',[])), 'entries')
 print('Comments:', len(d.get('comments',[])))
@@ -175,11 +175,11 @@ print('Related:', [r['key'] for r in d.get('related',[])])
 "
 
 # For targeted changelog field filtering (labels, status changes):
-python3 scripts/jira_changelog.py --key {KEY} --field labels --field status
+# Linear changelog — check issue history in Linear UI or via linear_fetch_issue.py
 
 # Related tickets (same epic, same area)
-python3 scripts/jira_search.py --jql 'project = INFRA AND parent = {EPIC-KEY} ORDER BY updated DESC'
-python3 scripts/jira_search.py --jql 'project = INFRA AND summary ~ "{keyword}" ORDER BY updated DESC'
+python3 scripts/linear_search.py --label 'flow:active' --team ENG
+python3 scripts/linear_search.py --query '{keyword}'
 ```
 
 #### Explore the relevant code / infrastructure
@@ -216,8 +216,8 @@ python3 scripts/entra_lookup.py --user-groups <YOUR_EMAIL>
 # Who else in the org references this resource?
 gh search code "{resource-name}" --org <GITHUB_ORG>
 
-# Jira queue state — what's active/waiting in this area?
-python3 scripts/jira_search.py --jql 'project = INFRA AND labels in ("flow:active","flow:waiting") AND summary ~ "{area}"'
+# Linear queue state — what's active/waiting in this area?
+python3 scripts/linear_search.py --state 'In Progress' --query '{area}'
 ```
 
 #### Document what you find
@@ -240,28 +240,28 @@ As you investigate, **write findings directly into the issue file** under `## In
 - {what we still don't know}
 
 **Related links** (drop URLs here as you find them — they feed `## Web Links` in the issue markdown at worklog time):
-- Confluence: {page title} — {url}
+- Notion: {page title} — {url}
 - MS docs: {topic} — {url}
 - Vendor: {vendor} {topic} — {url}
-- Related Jira: <PROJECT>-XXX — {summary}
+- Related: ENG-XXX — {summary}
 
-**Blockers** (these become entries under `## Linked Issues` in the issue markdown — real Jira issue links, NOT `## Web Links` bullets):
+**Blockers** (these become entries under `## Linked Issues` in the issue markdown — real Linear issue links, NOT `## Web Links` bullets):
 - Blocked by: <PROJECT>-XXX — {what's blocking and what unblocks it}
 - Blocks: <PROJECT>-XXX — {what this ticket has to land before that one can start}
 ```
 
 **Why the Related list matters.** Investigation feeds the ticket's `## Web Links` and `## Linked Issues` sections in `issues/<KEY>/<KEY>...md`. If you don't capture links during investigation, they'll be missing from the snapshot — standup readers will hit dead-end stubs instead of a connected ecosystem. Capture as you go. (URLs do NOT appear in `## Notes` itself — Notes stays clean prose. `## Web Links` is the canonical home for clickable URLs.)
 
-**Why the Blockers list is separate.** Blockers are first-class Jira **issue links**, not Notes bullets. They drive board views and what `rounds` reads to decide whether a ticket can even move. Capture them here so the worklog can record `- is blocked by: KEY` under `## Linked Issues` (CI creates the link in Jira; Jira creates the reciprocal `→ blocks` on the other side automatically).
+**Why the Blockers list is separate.** Blockers are first-class Linear **issue relations**, not Notes bullets. They drive board views and what `rounds` reads to decide whether a ticket can even move. Capture them here so the worklog can record `- is blocked by: KEY` under `## Linked Issues`.
 
 Commit the investigation notes as you go:
 ```bash
 git add issues/{KEY}/ && git commit -m "chore({KEY}): investigation notes {YYYY-MM-DD}" && git push
 ```
 
-#### Post mid-investigation checkpoints to Jira as `COMMENT` lines
+#### Post mid-investigation checkpoints to Linear as `COMMENT` lines
 
-Investigation findings cannot live only in the markdown — they must also reach the **Jira comment thread** so anyone reading the ticket in Jira (without the repo) sees the work happening in real time. Do **not** wait until Phase 6 to flush everything via the worklog skill.
+Investigation findings cannot live only in the markdown — they must also reach the **Linear issue thread** so anyone reading the ticket (without the repo) sees the work happening in real time. Do **not** wait until Phase 6 to flush everything via the worklog skill.
 
 After each meaningful investigation milestone, append a substantive `- COMMENT:` line to the `## Actions` section of the issue file and push it. Triggers for a checkpoint comment:
 
@@ -269,7 +269,7 @@ After each meaningful investigation milestone, append a substantive `- COMMENT:`
 - You discovered a blocker, dependency, or constraint that changes the shape of the work
 - You found the root cause
 - You hit a dead end and pivoted approach
-- You captured links worth recording (Confluence pages, MS Learn, vendor docs, related INFRA tickets)
+- You captured links worth recording (Notion pages, MS Learn, vendor docs, related INFRA tickets)
 - ~30–60 minutes of investigation has elapsed since the last comment
 
 Checkpoint comments use the same **rich `COMMENT`** template as `jira-worklog` (see that skill's Voice & Tone): 4–10 sentences in <YOUR_NAME>'s internal investigative voice, covering *what I did / what I found / what I ruled out / links / what's next*. Pair the comment with a small `WORKLOG` line for the time spent investigating — even 10–15 minute slices are worth logging if a finding was captured.
@@ -283,13 +283,13 @@ Example checkpoint entry (added under `## Actions`, newest on top):
 - COMMENT: Walked the SCIM path: Okta tenant → Provisioning App `okta-scim-azure-prd` (object id 8f2a...) → target = Azure AD Graph endpoint. Pulled the Azure AD audit logs filtered to that SP for the last 24h — the 401s are all on `/scim/v2/Users` with `WWW-Authenticate: Bearer realm="..."`. Ruled out token expiry (token issued 2026-05-21 04:00 UTC, valid 24h, not yet expired). Ruled out user-side MFA (the SP has no user). The bearer token in the Okta connector config matches the one in Key Vault `kv-skpidm-prd-usw2-001/secrets/okta-scim-token` — confirmed via secret version `a91b...`. Next: pull the matching Entra app `entra-scim-okta-prd` and diff its scope grants — I suspect the legacy app lost `Directory.ReadWrite.All` during last week's cleanup. Docs: https://learn.microsoft.com/en-us/azure/active-directory/app-provisioning/use-scim-to-provision-users-and-groups.
 ```
 
-Commit and push the issue file — CI picks up the new `- COMMENT:` and `- WORKLOG` lines and posts them to Jira via `scripts/sync_jira_worklog.py`. By the time Phase 5 starts, the Jira thread should already read like a coherent investigation log.
+Commit and push the issue file — CI picks up the new `- COMMENT:` and `- WORKLOG` lines and posts them to Linear via `scripts/sync_jira_worklog.py`. By the time Phase 5 starts, the Linear thread should already read like a coherent investigation log.
 
 #### When investigation surfaces a stakeholder ask, draft a `NUDGE` immediately
 
-If an investigation milestone reveals that the next move depends on someone else (a decision, an approval, a piece of info you can't get yourself), don't wait for the transition — draft a `- NUDGE:` line in the same checkpoint entry. `NUDGE` is a Teams-style ask tagged with `@firstname.lastname` that posts to Jira as a comment with an @mention notification. The recipient opens the ticket, reads exactly what they need to do, and replies in-thread.
+If an investigation milestone reveals that the next move depends on someone else (a decision, an approval, a piece of info you can't get yourself), don't wait for the transition — draft a `- NUDGE:` line in the same checkpoint entry. `NUDGE` is a Teams-style ask tagged with `@firstname.lastname` that posts to Linear as a comment with an @mention notification. The recipient opens the ticket, reads exactly what they need to do, and replies in-thread.
 
-Pair COMMENT (internal technician narrative) with NUDGE (stakeholder-facing ask) so the Jira thread serves both audiences from the same checkpoint. Author both **while the ticket is active** — not at end of day, not after the lane rotates. Context is freshest now.
+Pair COMMENT (internal technician narrative) with NUDGE (stakeholder-facing ask) so the Linear thread serves both audiences from the same checkpoint. Author both **while the ticket is active** — not at end of day, not after the lane rotates. Context is freshest now.
 
 ```markdown
 ### 2026-05-21 11:42
@@ -352,10 +352,10 @@ Work the ticket **one step at a time**. After each step:
 
 1. Verify the change worked (run the test, check the output, confirm the API response)
 2. Log progress in the issue file under `## Actions` — every step gets both a `- WORKLOG` line **and** a substantive `- COMMENT` line (4–10 sentences, same rich template as the jira-worklog skill). Execution comments cover: command run, what changed, verification evidence, anything surprising, what's next.
-3. Commit to main (the comment posts to Jira automatically via CI)
+3. Commit to main (the comment posts to Linear automatically via CI)
 4. Tell the user what you did and what comes next
 
-**Logging actions:** Each action entry shows the actual commands run, their outcome, **and** the Jira-bound `COMMENT` summarizing the step. This creates a replayable record of the work in both the repo and the Jira ticket:
+**Logging actions:** Each action entry shows the actual commands run, their outcome, **and** the Linear-bound `COMMENT` summarizing the step. This creates a replayable record of the work in both the repo and the Linear ticket:
 
 ```markdown
 ### {YYYY-MM-DD HH:mm}
@@ -394,7 +394,7 @@ When the work is complete, invoke the `jira-worklog` skill to:
 - Update Notes (lede/status/next/related) and the **Checklist** — at close-out, all checklist items should be `[x]` done or removed
 - Commit and push the final issue file state
 
-**Checklist hand-off:** the investigator's plan (Phase 4) should be the seed for the ticket's `## Checklist` section in the markdown file. Translate plan steps directly into `- [ ]` items so the engineer doing the work — and any subsequent `rounds` invocation — can read progress from the issue file alone, without re-loading the full investigation. CI reconciles `## Checklist` to the HeroCoders Checklist in Jira on push.
+**Checklist hand-off:** the investigator's plan (Phase 4) should be the seed for the ticket's `## Checklist` section in the markdown file. Translate plan steps directly into `- [ ]` items so the engineer doing the work — and any subsequent `rounds` invocation — can read progress from the issue file alone, without re-loading the full investigation. CI reconciles `## Checklist` to the HeroCoders Checklist in Linear on push.
 
 ```bash
 git add issues/{KEY}/ && git commit -m "{KEY}: investigation complete, {short description}" && git push
@@ -495,12 +495,12 @@ When architectural decisions come up, briefly apply Martin Fowler's framing:
 ## Important Notes
 
 - `.env` at `~/git/projects/.env` contains `CONFLUENCE_EMAIL` and `WWEEKS_CONFLUENCE_API_TOKEN`
-- Jira API base: `https://<YOUR_ATLASSIAN>.atlassian.net`
+- Linear API base: `https://<YOUR_ATLASSIAN>.atlassian.net`
 - Issues directory: `/home/wweeks/git/projects/issues/`
 - Never skip Phase 2 — the interview is not optional, even for tickets that seem obvious
 - Never proceed to Phase 5 without explicit user approval of the plan
 - Commit investigation notes as you go — state lives in files, not in the conversation
-- **Post rich `COMMENT` checkpoints to Jira throughout the investigation** (Phase 3) and after every execution step (Phase 5). Do not save them up for the close-out worklog — the Jira ticket should read like a live investigation log, not a single end-of-day summary. See the jira-worklog skill's Voice & Tone section for the rich-comment template.
+- **Post rich `COMMENT` checkpoints to Linear throughout the investigation** (Phase 3) and after every execution step (Phase 5). Do not save them up for the close-out worklog — the Linear ticket should read like a live investigation log, not a single end-of-day summary. See the jira-worklog skill's Voice & Tone section for the rich-comment template.
 - Use `gh`, `az`, `curl` for data gathering — CLI-first, always
 
 ---

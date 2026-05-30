@@ -1,6 +1,6 @@
 ---
 name: weekly-summary
-description: 'Generate a weekly status report or brag document. Pulls flow:done tickets from Jira, calculates hours by swimlane from planner org files, and drafts a markdown summary. Use when the user says "weekly summary", "brag doc", "what did I do this week", "weekly status", or "sprint summary".'
+description: 'Generate a weekly status report or brag document. Pulls flow:done tickets from Linear, calculates hours by swimlane from planner org files, and drafts a markdown summary. Use when the user says "weekly summary", "brag doc", "what did I do this week", "weekly status", or "sprint summary".'
 argument-hint: 'Optionally specify a week start date (YYYY-MM-DD) or output format (report/markdown)'
 ---
 
@@ -26,10 +26,10 @@ python3 scripts/weekly_summary.py --report
 ```
 
 That pulls:
-- `flow:done` tickets completed this week from Jira
-- `flow:waiting` tickets moved to waiting this week
+- `flow:done` tickets completed this week from Linear
+- `flow:waiting` tickets (In Review state) moved to waiting this week
 - planner worklog hours from `planner/MM-DD.org`
-- swimlane totals using the scoring labels
+- swimlane totals using the Eisenhower urgency+importance labels
 
 If the user names a week, pass it directly:
 
@@ -238,18 +238,3 @@ weekly-summary
 
 
 ---
-
-## SDP Awareness (Lanes 4–6)
-
-ServiceDesk Plus work runs as a parallel set of three swimlanes (Lane 4 🔴 SDP-Urgent, Lane 5 🟠 SDP-Approval, Lane 6 🟢 SDP-Background). SDP case files live under `cases/{display_id}/`. The header `OWNER: jira | sdp` decides which side holds the WIP slot:
-
-- `OWNER: sdp` (default) — the SDP case is the WIP owner; counts against the SDP lane cap
-- `OWNER: jira` — the SDP case is a **shadow** of a linked <PROJECT>-XXX issue; does NOT count against any SDP lane cap
-
-When this skill needs to enumerate or render the operator's work, it MUST union both sources (`issues/` + `cases/`) and dedupe by cross-link (`JIRA:` header in cases, `SDP:` header in issues). Shadows are surfaced as "(shadow of <PROJECT>-XXX)" annotations, not as independent slots.
-
-For lane-routing and rounds claims, see `rounds` and `sdp-dispatcher`. The shared `/tmp/rounds-claims.json` uses keys `lane1`–`lane5` shared across Jira and SDP tickets (single ticket per lane, regardless of system).
-
-Voice wall: SDP `COMMENT:` lines are **end-user voice** (plain language). Jira COMMENT lines are internal investigative voice. This skill must preserve that distinction wherever it emits or summarizes comments.
-
-For SDP-specific dispatch, render, or close-out, hand off to: `rounds`, `sdp-dispatcher`, `sdp-investigator`, `sdp-worklog`, `sdp-router`.

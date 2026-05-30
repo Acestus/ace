@@ -4,11 +4,11 @@ applyTo: '**/*.puml'
 
 # PlantUML Style Guide
 
-Standard style for PlantUML diagrams in this repository. All `.puml` files should follow these conventions to produce consistent, professional diagrams that render well as PNG attachments on Confluence Live Docs.
+Standard style for PlantUML diagrams in this repository. All `.puml` files should follow these conventions to produce consistent, professional diagrams that render well as PNG attachments on Notion Live Docs.
 
 ## File Location
 
-Store `.puml` files under `assets/<page_id>/` where `<page_id>` is the Confluence page ID the diagram belongs to. Use descriptive filenames without the page ID prefix.
+Store `.puml` files under `assets/<page_id>/` where `<page_id>` is the Notion page ID the diagram belongs to. Use descriptive filenames without the page ID prefix.
 
 ```
 assets/
@@ -43,7 +43,7 @@ rectangle "<color:#1A73C7><$AzureSqlServer></color>\n<b>Azure SQL</b>\nProd-azsq
 
 ## Vertical (Top-to-Bottom) Layout
 
-Use explicit `-down->` arrows for vertical flow. Do **not** use a `together` block or `left to right direction` — vertical orientation is preferred for pipeline/flow diagrams on Confluence because it fills the page width naturally.
+Use explicit `-down->` arrows for vertical flow. Do **not** use a `together` block or `left to right direction` — vertical orientation is preferred for pipeline/flow diagrams on Notion because it fills the page width naturally.
 
 ```plantuml
 rectangle "..." as A #E8F0FE
@@ -105,11 +105,11 @@ skinparam rectangleBorderThickness 2
 skinparam arrowThickness 2
 ```
 
-- **Transparent background** — blends with any Confluence page theme.
+- **Transparent background** — blends with any Notion page theme.
 - **Segoe UI** — matches the Atlassian/Microsoft UI font family.
 - **Thicker borders and arrows** — readable at smaller zoom levels.
 
-## Scaling for Confluence
+## Scaling for Notion
 
 Do **not** add a `scale` directive by default — native scale (1x) produces the best balance of size and clarity. The publish script renders to PNG and uploads as a page attachment displayed at 50% page width (`mediaSingle` width 50%), centered.
 
@@ -284,7 +284,7 @@ S2 -[#2563EB,thickness=3]right-> END : "<color:#16A34A><b>-$XXX</b></color>"
 - Cut nodes: green background `#DCFCE7`; savings in `<color:#16A34A>` inline
 - End node: blue background `#DBEAFE` (optimized = net positive)
 - Arrow labels carry the cumulative delta: start red, cut arrows green
-- Keep to 5–7 cut steps — beyond that the diagram gets too wide for Confluence
+- Keep to 5–7 cut steps — beyond that the diagram gets too wide for Notion
 
 ### Three-Chart Page Pattern
 

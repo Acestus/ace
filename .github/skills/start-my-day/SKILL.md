@@ -1,12 +1,12 @@
 ---
 name: start-my-day
-description: 'Create today''s daily planning note, load active tickets from Jira, and present the day''s board. Use when the user says "start my day", "morning setup", "create today''s note", or "what am I working on today?"'
+description: 'Create today''s daily planning note, load active tickets from Linear, and present the day''s board. Use when the user says "start my day", "morning setup", "create today''s note", or "what am I working on today?"'
 argument-hint: 'Say "start my day" to create the daily note and load the board'
 ---
 
 # Start My Day Skill
 
-Create today's daily planning note, load active tickets from Jira, and present the day's board.
+Create today's daily planning note, load active tickets from Linear, and present the day's board.
 
 ## When to Use
 
@@ -26,7 +26,7 @@ python3 scripts/daily_note.py --start
 
 This creates `planner/MM-DD.org` with:
 - Empty Time Log table (ready for `tl start KEY`)
-- Kanban Board (lane status with `:NEXT:` steps, from Jira `flow:active`)
+- Kanban Board (lane status with `:NEXT:` steps, from Linear `flow:active` state)
 - Standup section (skeleton for end-of-day fill)
 - Notes section
 
@@ -52,7 +52,7 @@ Example:
 If fewer than 3 active tickets loaded, offer to dispatch:
 > "The Urgent lane is empty. Want me to pull the next ticket from the queue?"
 
-If the user says yes, invoke the `jira-dispatcher` skill.
+If the user says yes, invoke the `linear-dispatcher` skill.
 
 ### Step 4 — Morning Forecast
 
@@ -85,7 +85,7 @@ After loading the board, provide a brief forecast for today based on ticket stat
 ## Notes
 
 - Daily note path: `planner/MM-DD.org` (e.g., `planner/05-23.org`)
-- Active tickets: queried from Jira `flow:active AND assignee = currentUser()`
+- Active tickets: queried from Linear `flow:active AND assignee = currentUser()`
 - `:NEXT:` steps: pulled from `issues/{KEY}/` markdown files (first `- [ ]` item)
 - If no issue file exists for a ticket, `:NEXT:` shows "No next step defined"
 - The note is created locally only — no git push needed at start of day
@@ -123,7 +123,7 @@ This surfaces at start-of-day before the user commits to the plan — giving the
 
 ```
 start-my-day
-├── jira-dispatcher       (Step 3 — fill empty lane slots)
+├── linear-dispatcher     (Step 3 — fill empty lane slots)
 └── rounds                (implicitly — user typically starts rounds after)
 ```
 
@@ -131,18 +131,3 @@ start-my-day
 
 
 ---
-
-## SDP Awareness (Lanes 4–6)
-
-ServiceDesk Plus work runs as a parallel set of three swimlanes (Lane 4 🔴 SDP-Urgent, Lane 5 🟠 SDP-Approval, Lane 6 🟢 SDP-Background). SDP case files live under `cases/{display_id}/`. The header `OWNER: jira | sdp` decides which side holds the WIP slot:
-
-- `OWNER: sdp` (default) — the SDP case is the WIP owner; counts against the SDP lane cap
-- `OWNER: jira` — the SDP case is a **shadow** of a linked <PROJECT>-XXX issue; does NOT count against any SDP lane cap
-
-When this skill needs to enumerate or render the operator's work, it MUST union both sources (`issues/` + `cases/`) and dedupe by cross-link (`JIRA:` header in cases, `SDP:` header in issues). Shadows are surfaced as "(shadow of <PROJECT>-XXX)" annotations, not as independent slots.
-
-For lane-routing and rounds claims, see `rounds` and `sdp-dispatcher`. The shared `/tmp/rounds-claims.json` uses keys `lane1`–`lane5` shared across Jira and SDP tickets (single ticket per lane, regardless of system).
-
-Voice wall: SDP `COMMENT:` lines are **end-user voice** (plain language). Jira COMMENT lines are internal investigative voice. This skill must preserve that distinction wherever it emits or summarizes comments.
-
-For SDP-specific dispatch, render, or close-out, hand off to: `rounds`, `sdp-dispatcher`, `sdp-investigator`, `sdp-worklog`, `sdp-router`.

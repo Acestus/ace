@@ -6,7 +6,7 @@ applyTo: '**/*.html'
 
 ## Purpose
 
-When creating HTML documents (deep-dives, architecture docs, implementation plans, proposals), follow this style. These are polished, standalone pages designed to look good in a browser, in Confluence Live Docs (paste the rendered HTML), and when printed.
+When creating HTML documents (deep-dives, architecture docs, implementation plans, proposals), follow this style. These are polished, standalone pages designed to look good in a browser, in Notion Live Docs (paste the rendered HTML), and when printed.
 
 ## Visual Identity
 
@@ -186,4 +186,4 @@ Include a media query for mobile (`max-width: 768px`) that collapses grid/flex l
 Every HTML file must be completely self-contained:
 - All CSS in a single `<style>` block in `<head>`
 - No external stylesheets, no JavaScript, no images
-- Should render identically when opened as a local file or pasted into Confluence
+- Should render identically when opened as a local file or pasted into Notion

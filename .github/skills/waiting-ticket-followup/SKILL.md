@@ -1,6 +1,6 @@
 ---
 name: waiting-ticket-followup
-description: 'Scan flow:waiting Jira tickets, group by stakeholder, show stale time, and draft follow-up messages. Use when the user says "follow up on waiting tickets", "who am I waiting on", "check stale tickets", or "draft follow-ups".'
+description: 'Scan flow:waiting Linear tickets, group by stakeholder, show stale time, and draft follow-up messages. Use when the user says "follow up on waiting tickets", "who am I waiting on", "check stale tickets", or "draft follow-ups".'
 argument-hint: 'Optionally specify a stakeholder name or stale-days threshold'
 ---
 
@@ -37,19 +37,19 @@ python3 scripts/waiting_followup.py --draft --stakeholder "<USER_C> Bonney"
 
 ## What the Script Does
 
-- Queries Jira with:
+- Queries Linear with:
   ```jql
-  project = INFRA AND labels = "flow:waiting" ORDER BY updated ASC
+# Linear: query issues in 'In Review' state, ordered by updatedAt
   ```
-- Pulls the Jira key, summary, labels, `updated`, and due date
-- Reads the matching `issues/{KEY}*/` markdown file
+- Pulls the Linear identifier, title, labels, `updatedAt`, and due date
+- Reads the matching `issues/{KEY} - */` markdown file
 - Looks in `## Follow-up` and `## Notes` for lines like:
   - `waiting on <USER_C> Bonney`
   - `pending <USER_D> confirmation`
   - `blocked by Global Admin`
   - `- [ ] <USER_C> Bonney: Re-activate PIM assignment`
 - Groups tickets by stakeholder
-- Shows stale days from Jira `updated`
+- Shows stale days from Linear `updated`
 - Drafts one follow-up message per stakeholder
 
 ## Example Report Output
@@ -161,7 +161,7 @@ During `Phase 5 — Close Rounds`, if any `flow:waiting` tickets have crossed an
 
 ```
 waiting-ticket-followup
-└── (standalone — reads Jira + issue files, drafts messages)
+└── (standalone — reads Linear + issue files, drafts messages)
 ```
 
 **Called by:** `rounds` (Phase 5), `end-my-day` (Step 5), or directly by user
@@ -171,17 +171,17 @@ waiting-ticket-followup
 
 ---
 
-## SDP Awareness (Lanes 4–6)
+##  Awareness (Lanes 4–6)
 
-ServiceDesk Plus work runs as a parallel set of three swimlanes (Lane 4 🔴 SDP-Urgent, Lane 5 🟠 SDP-Approval, Lane 6 🟢 SDP-Background). SDP case files live under `cases/{display_id}/`. The header `OWNER: jira | sdp` decides which side holds the WIP slot:
+ServiceDesk Plus work runs as a parallel set of three swimlanes (Lane 4 🔴 -Urgent, Lane 5 🟠 -Approval, Lane 6 🟢 -Background).  case files live under `cases/{display_id}/`. The header `OWNER: jira | sdp` decides which side holds the WIP slot:
 
-- `OWNER: sdp` (default) — the SDP case is the WIP owner; counts against the SDP lane cap
-- `OWNER: jira` — the SDP case is a **shadow** of a linked <PROJECT>-XXX issue; does NOT count against any SDP lane cap
+- `OWNER: sdp` (default) — the  case is the WIP owner; counts against the  lane cap
+- `OWNER: jira` — the  case is a **shadow** of a linked <PROJECT>-XXX issue; does NOT count against any  lane cap
 
-When this skill needs to enumerate or render the operator's work, it MUST union both sources (`issues/` + `cases/`) and dedupe by cross-link (`JIRA:` header in cases, `SDP:` header in issues). Shadows are surfaced as "(shadow of <PROJECT>-XXX)" annotations, not as independent slots.
+When this skill needs to enumerate or render the operator's work, it MUST union both sources (`issues/` + `cases/`) and dedupe by cross-link (`JIRA:` header in cases, `:` header in issues). Shadows are surfaced as "(shadow of <PROJECT>-XXX)" annotations, not as independent slots.
 
-For lane-routing and rounds claims, see `rounds` and `sdp-dispatcher`. The shared `/tmp/rounds-claims.json` uses keys `lane1`–`lane5` shared across Jira and SDP tickets (single ticket per lane, regardless of system).
+For lane-routing and rounds claims, see `rounds` and `sdp-dispatcher`. The shared `/tmp/rounds-claims.json` uses keys `lane1`–`lane5` shared across Linear and  tickets (single ticket per lane, regardless of system).
 
-Voice wall: SDP `COMMENT:` lines are **end-user voice** (plain language). Jira COMMENT lines are internal investigative voice. This skill must preserve that distinction wherever it emits or summarizes comments.
+Voice wall:  `COMMENT:` lines are **end-user voice** (plain language). Linear COMMENT lines are internal investigative voice. This skill must preserve that distinction wherever it emits or summarizes comments.
 
-For SDP-specific dispatch, render, or close-out, hand off to: `rounds`, `sdp-dispatcher`, `sdp-investigator`, `sdp-worklog`, `sdp-router`.
+For -specific dispatch, render, or close-out, hand off to: `rounds`, `sdp-dispatcher`, `sdp-investigator`, `sdp-worklog`, `sdp-router`.
