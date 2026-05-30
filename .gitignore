@@ -21,3 +21,4 @@ Thumbs.db
 
 # Sessions
 .copilot/
+scripts/.graph-token-cache.json
