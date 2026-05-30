@@ -1,6 +1,6 @@
 ---
 LINEAR: ACE-12
-title: Brainstorming productized services and business ideas
+title: Make $50 — Productized Services — Generate an evaluation-ready catalog of ideas
 team: Acestus
 state: In Progress
 flow: active

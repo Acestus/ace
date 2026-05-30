@@ -1,0 +1,54 @@
+#+TITLE: Daily Note — 2026-05-30 (Fri)
+#+DATE: <2026-05-30 Fri>
+#+AUTHOR: wweeks
+
+* Time Log
+| Ticket | Start | Stop | Duration | Notes |
+|--------|-------|------|----------|-------|
+|        |       |      |          |       |
+
+* Kanban Board — WIP: 4/5
+# Dispatcher always rewrites this section. Status board, not a calendar.
+
+** Lane 1
+*** TODO [[file:../issues/ACE-6/ACE-6 - Microsoft Build — Notion CRM — Track contacts meetings follow-ups and tasks.md][ACE-6]] — Microsoft Build — Notion CRM {🟣 AGENTIC-5}
+    SCHEDULED: <2026-05-30 Fri 07:00-08:00>
+    :NEXT: Add first real contacts from Build attendee page
+
+** Lane 2
+*** (empty)
+
+** Lane 3
+*** TODO [[file:../issues/ACE-8/ACE-8 - Make $50 — Scope Discovery — Define smallest viable path and assumptions.md][ACE-8]] — Make $50 — Scope Discovery {🟡 AGENTIC-3}
+    SCHEDULED: <2026-05-30 Fri 10:00-11:00>
+    :NEXT: Reach out to Build attendees
+
+** Lane 4
+*** TODO [[file:../issues/ACE-11/ACE-11 - Microsoft Build — Demo Rehearsal — Assemble demo inputs and rehearsal setup.md][ACE-11]] — Microsoft Build — Demo Rehearsal {🟠 AGENTIC-2}
+    SCHEDULED: <2026-05-30 Fri 13:00-14:00>
+    :NEXT: Review and scope work
+
+** Lane 5
+*** TODO [[file:../issues/ACE-12/ACE-12 - Make $50 — Productized Services — Generate an evaluation-ready catalog of ideas.md][ACE-12]] — Make $50 — Productized Services {🔴 AGENTIC-1}
+    SCHEDULED: <2026-05-30 Fri 15:00-16:00>
+    :NEXT: Publish the ideas list to Notion as a long-form page
+
+* Standup
+** Yesterday
+   - N/A (session start)
+** Today
+   - ACE-8 (1h 42m) — Scope discovery: defined $50 path, Notion CRM template as offer
+   - ACE-6 (1h 38m) — Notion CRM build for Build attendees; star-schema databases, import research
+   - ACE-12 (1h 19m) — Build launch readiness scoped; $50 offer strategy written + published to Notion
+** Blockers
+   - None
+
+* Notes
+
+
+* Time Log (EOD)
+| Ticket | Duration | Notes |
+|--------|----------|-------|
+| ACE-8  | 1h 42m   | Scope discovery — define smallest viable path |
+| ACE-6  | 1h 38m   | Notion CRM build for Build attendees |
+| ACE-12 | 1h 19m   | Build launch readiness — offer strategy, Notion page published |
