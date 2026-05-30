@@ -47,19 +47,7 @@ Azure - RBAC - Grant Reader Role on AI Resource
 
 ## Scoring Dimensions
 
-Each work item carries three inline scores. Urgency and Importance use **1 = highest/most, 5 = lowest/least**. Agentic uses **1 = most autonomous, 5 = most manual**.
-
-### Agentic Scale — AI Delegation Readiness
-
-How much can AI agents handle this task autonomously:
-
-| Score | Label | Description |
-|-------|-------|-------------|
-| 1 | Delegate & Check | Hand off to agent entirely — just review the result later |
-| 2 | Mostly Background | Kick off, monitor, intervene only if something breaks |
-| 3 | Mixed | Roughly equal human work and waiting/automated phases |
-| 4 | Mostly Manual | Heavy human effort with short automated steps |
-| 5 | Manual | Hands-on the entire time — design, coding, troubleshooting |
+Each work item carries two Eisenhower scores. Both use **1 = highest/most, 5 = lowest/least**.
 
 ### Urgency Scale — Eisenhower: When
 
@@ -86,7 +74,7 @@ How much can AI agents handle this task autonomously:
 In Confluence and issue markdown, scores appear on the priority line:
 
 ```
-Priority: P10 · Agentic: 4 · Urgency: 2 · Importance: 1 · !status[In Progress](blue)
+Priority: P10 · Urgency: 2 · Importance: 1 · !status[In Progress](blue)
 ```
 
 ---

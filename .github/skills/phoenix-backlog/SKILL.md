@@ -48,16 +48,6 @@ Requested By: {Name} on {Date}
 
 ---
 
-### Agentic Scale (1 = autonomous, 5 = manual)
-
-| Score | Label | Meaning |
-|-------|-------|---------|
-| 1 | Delegate & Check | Agent handles it — just review results |
-| 2 | Mostly Background | Kick off, check back occasionally |
-| 3 | Mixed | Half human, half automated |
-| 4 | Mostly Manual | Heavy human work with short automated steps |
-| 5 | Manual | Hands-on the entire time |
-
 ### Urgency Scale (1 = most urgent, 5 = least)
 
 | Score | Label | Meaning |
@@ -101,24 +91,23 @@ If the user provides enough context in their message, skip asking and propose th
 
 ### Step 2 — Determine Scores
 
-Based on the user's description, propose scores for all three dimensions:
+Based on the user's description, propose scores for both Eisenhower dimensions:
 
-- **Agentic**: Can an AI agent do most of this? (1) Or is it deeply manual? (5)
 - **Urgency**: Is someone blocked today? (1) Or is this strategic/backlog? (4-5)
 - **Importance**: Does this affect production/security/revenue? (1) Or is it housekeeping? (5)
 
 **Auto-score heuristics** — use these keyword patterns to propose scores immediately without asking. Only ask for confirmation if the score is ambiguous or the user's context is sparse.
 
-| Signal Keywords | Urgency | Importance | Lane |
+| Signal Keywords | Urgency | Importance | Quadrant |
 |---|---|---|---|
-| outage, down, broken, production, blocked, urgent, emergency, security breach | 1 | 1 | 🔴 Urgent |
-| access request, grant, onboarding, permissions, unlock, unblock, SDP ticket | 2 | 2 | 🔵 Manual |
-| cleanup, housekeeping, nice-to-have, tech debt, refactor, rename, documentation | 4-5 | 4-5 | 🟢 Background |
-| investigate, spike, evaluate, POC, research, explore | 3 | 3 | 🟢 Background |
-| automate, pipeline, deploy, CI/CD, monitor, alert | 2-3 | 2 | 🟢 Background |
-| vendor, waiting, external, Microsoft support | 3 | 2-3 | 🔵 Manual |
+| outage, down, broken, production, blocked, urgent, emergency, security breach | 1 | 1 | Q1 — Do First |
+| access request, grant, onboarding, permissions, unlock, unblock, SDP ticket | 2 | 2 | Q1 — Do First |
+| cleanup, housekeeping, nice-to-have, tech debt, refactor, rename, documentation | 4-5 | 4-5 | Q4 — Someday |
+| investigate, spike, evaluate, POC, research, explore | 3 | 3 | Q2/Q3 |
+| automate, pipeline, deploy, CI/CD, monitor, alert | 2-3 | 2 | Q1/Q2 |
+| vendor, waiting, external, Microsoft support | 3 | 2-3 | Q2 — Schedule |
 
-**Fast-path rule:** If the description clearly matches a single row above, propose the scores and lane without asking. Say: "Auto-scored as {lane} — urgency:{N} importance:{N} agentic:{N}. Confirm or adjust?"
+**Fast-path rule:** If the description clearly matches a single row above, propose the scores without asking. Say: "Auto-scored — urgency:{N} importance:{N} (Q{X}). Confirm or adjust?"
 
 Present the proposed scores to the user and ask for confirmation or adjustment.
 
@@ -160,7 +149,6 @@ KEY=$(python3 scripts/jira_create_issue.py \
   --label flow:queue \
   --label "way:{way}" \
   --label "constraint:{constraint}" \
-  --label "agentic:{N}" \
   --label "urgency:{N}" \
   --label "importance:{N}")
 echo "Created: $KEY"
@@ -221,7 +209,7 @@ Use this template — the `## Description` block contains the Jira description v
 
 {JIRA_DESC — the full description pulled from the ticket, pasted verbatim here}
 
-Scores: Agentic: {N} · Urgency: {N} · Importance: {N}
+Scores: Urgency: {N} · Importance: {N}
 Labels: flow:queue, way:{way}, constraint:{constraint}
 
 ## Actions
@@ -250,7 +238,7 @@ Priority group = (Urgency + Importance) × 5. Insert the item in the correct P-s
 Format:
 ```markdown
 **{KEY} — {Summary}**
-Priority: P{N} · Agentic: {N} · Urgency: {N} · Importance: {N} · !status[Open](neutral)
+Priority: P{N} · Urgency: {N} · Importance: {N} · !status[Open](neutral)
 Epic: {Epic Name} ({EPIC-KEY})
 {One-line description}
 ```
@@ -266,7 +254,7 @@ Epic: {Epic Name} ({EPIC-KEY})
    ```bash
    git add -A && git commit -m "feat: add {KEY} - {summary}
 
-   Agentic: {N}, Urgency: {N}, Importance: {N}
+   Urgency: {N}, Importance: {N}
    Epic: {EPIC-KEY}
    Labels: flow:queue, way:{way}, constraint:{constraint}
 
@@ -286,14 +274,12 @@ Then assess whether the ticket warrants breaking into subtasks and offer it:
 
 **Offer subtasks when any of these are true:**
 - 3 or more distinct action items visible in the description or acceptance criteria
-- Agentic score ≤ 3 (mixed or automated work — likely multiple phases)
-- The description contains clearly separable phases (e.g., "first X, then Y, then validate Z")
-- Total score (U+I) ≤ 10 and the summary implies multi-step delivery
+- Work has clearly separable phases (e.g., "first X, then Y, then validate Z")
+- Total score (U+I) ≤ 4 and the summary implies multi-step delivery
 
 **Don't offer subtasks when:**
 - The ticket is a spike or investigation (`way:spike`, `way:investigate`)
 - It's a single atomic action (rotate a key, grant a role, update a config)
-- Agentic 4–5 with a single clear outcome
 
 **Offer format (only when warranted):**
 ```
@@ -348,8 +334,8 @@ Priority group = `(Urgency + Importance) × 5`
 
 Before creating a new item as `flow:active`:
 - Check current WIP: query `labels = "flow:active" AND status != Done`
-- If WIP ≥ 3 (one per lane), the new item MUST be `flow:queue`
-- Only set `flow:active` if the item's lane (Urgent/Manual/Background) has an open slot
+- If WIP ≥ 5 (one per lane), the new item MUST be `flow:queue`
+- Only set `flow:active` if an open lane slot exists
 
 ## Finding Epics
 

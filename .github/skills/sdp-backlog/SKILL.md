@@ -51,10 +51,11 @@ If a match exists:
 
 ### Phase 3 — Score the Request
 
-Default scoring for SDP backlog:
-- **Urgency 1-2** (high) → Lane 4 (SDP-Urgent)
-- **Agentic 4-5 + approvers** → Lane 5 (SDP-Approval)
-- **Agentic 1-2 + low touch** → Lane 6 (SDP-Background)
+Score using the Eisenhower matrix — urgency and importance only:
+- **Urgency 1-2 + Importance 1-2** → Q1 (dispatch first)
+- **Urgency 3-5 + Importance 1-2** → Q2 (schedule)
+- **Urgency 1-2 + Importance 3-5** → Q3 (delegate)
+- **Urgency 3-5 + Importance 3-5** → Q4 (someday)
 
 Propose scoring to the operator. Adjust per their feedback.
 
@@ -88,7 +89,7 @@ Capture the returned display_id and long_id.
 ```bash
 python3 scripts/sdp_create_stub.py \
   --id {display_id} \
-  --urgency {urgency} --importance {importance} --agentic {agentic} \
+  --urgency {urgency} --importance {importance} \
   --approvers "{approver-emails}" \
   --owner sdp
 ```

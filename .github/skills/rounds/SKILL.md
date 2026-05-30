@@ -1,7 +1,7 @@
 ---
 name: rounds
-description: 'Orchestrate the work session as a kanban station rotation. Each rounds instance owns one lane (1–5, matching the agentic scale) and works one ticket at a time. Run up to 5 tabs → full parallel coverage. Use when the user says "start rounds", "do rounds", "start rounds 1/2/3/4/5", "next ticket", or "done/waiting/blocked" on a ticket.'
-argument-hint: 'start rounds [1|2|3|4|5] — each tab claims one lane by agentic score. Say "done", "waiting", "blocked", or "park" to transition.'
+description: 'Orchestrate the work session as a kanban station rotation. Each rounds instance owns one lane (1–5) and works one ticket at a time — any lane can work any Jira or SDP ticket. Run up to 5 tabs → full parallel coverage. Use when the user says "start rounds", "do rounds", "start rounds 1/2/3/4/5", "next ticket", or "done/waiting/blocked" on a ticket.'
+argument-hint: 'start rounds [1|2|3|4|5] — each tab claims one lane. Lanes are interchangeable. Say "done", "waiting", "blocked", or "park" to transition.'
 ---
 
 # Rounds Skill
@@ -25,46 +25,40 @@ Your job: keep the operator moving efficiently from station to station. Load the
 
 **Single-lane ownership. One tab, one lane, one ticket at a time.**
 
-Each Copilot tab runs its own rounds instance and claims exactly one lane. Five lanes cover the full board with zero overlap. Lanes correspond directly to the agentic scale — Lane 1 is the most autonomous (full background), Lane 5 is the most manual (operator-at-keyboard).
+Each Copilot tab runs its own rounds instance and claims exactly one lane. Five lanes cover the full board with zero overlap. All lanes are **interchangeable** — any lane can work any Jira or SDP ticket. Lane assignment is first-come-first-claimed by the operator.
 
-| Tab | Tool | Lane | Agentic | Invocation |
-|-----|------|------|---------|------------|
-| 1 | Emacs | — | — | All files — issue files, daily note, Confluence drafts |
-| 2 | Copilot | **Lane 1** 🟢 | agentic:1 | `start rounds 1` — fully autonomous |
-| 3 | Copilot | **Lane 2** 🔵 | agentic:2 | `start rounds 2` — near-full autonomy |
-| 4 | Copilot | **Lane 3** 🟡 | agentic:3 | `start rounds 3` — semi-autonomous |
-| 5 | Copilot | **Lane 4** 🟠 | agentic:4 | `start rounds 4` — context only |
-| 6 | Copilot | **Lane 5** 🔴 | agentic:5 | `start rounds 5` — full manual |
-| 7 | Terminal | — | — | CLI — scripts, git, az CLI |
+| Tab | Tool | Lane | Invocation |
+|-----|------|------|------------|
+| 1 | Emacs | — | All files — issue files, daily note, Confluence drafts |
+| 2 | Copilot | **Lane 1** 🟣 | `start rounds 1` |
+| 3 | Copilot | **Lane 2** 🔵 | `start rounds 2` |
+| 4 | Copilot | **Lane 3** 🟡 | `start rounds 3` |
+| 5 | Copilot | **Lane 4** 🟠 | `start rounds 4` |
+| 6 | Copilot | **Lane 5** 🔴 | `start rounds 5` |
+| 7 | Terminal | — | CLI — scripts, git, az CLI |
 
 ### Lane Variants
 
-Lanes are numbered **1–5** — use the number. Both Jira (<PROJECT>-XXX) and SDP cases can occupy any lane; assignment is determined by the ticket's `agentic:` score.
+Lanes are numbered **1–5** — use the number. Both Jira (<PROJECT>-XXX) and SDP cases can occupy any lane. The dispatcher pulls the highest Eisenhower-priority `flow:queue` ticket from the shared pool.
 
-| Invocation | Lane | Emoji | Default for | Ticket pulled from |
-|---|---|---|---|---|
-| `start rounds 1` | 🔴 Lane 1 | 🔴 | agentic:5 | Most manual/urgent tickets (Jira or SDP) |
-| `start rounds 2` | 🟠 Lane 2 | 🟠 | agentic:4 | High-touch operator work |
-| `start rounds 3` | 🟡 Lane 3 | 🟡 | agentic:3 | Semi-autonomous work |
-| `start rounds 4` | 🔵 Lane 4 | 🔵 | agentic:2 | Near-autonomous work |
-| `start rounds 5` | 🟢 Lane 5 | 🟢 | agentic:1 | Fully autonomous / background |
+| Invocation | Lane | Emoji |
+|---|---|---|
+| `start rounds 1` | Lane 1 | 🟣 |
+| `start rounds 2` | Lane 2 | 🔵 |
+| `start rounds 3` | Lane 3 | 🟡 |
+| `start rounds 4` | Lane 4 | 🟠 |
+| `start rounds 5` | Lane 5 | 🔴 |
 
-**Lane assignment is a soft guideline** — a ticket's agentic score suggests a lane, but the operator can put any ticket in any lane. The dispatcher defaults to: agentic:5→Lane 1, agentic:4→Lane 2, agentic:3→Lane 3, agentic:2→Lane 4, agentic:1→Lane 5.
+**Dispatch order** — tickets are pulled by Eisenhower quadrant (highest priority first):
 
-**Queue exhaustion fallback** — the agentic score is a preference, not a hard filter. If no `flow:queue` tickets exist with the lane's preferred agentic score, **do not switch lanes**. Instead, pull the highest-priority `flow:queue` ticket regardless of agentic score. Never rotate the operator to a different lane. The dispatch JQL is:
+| Priority | Quadrant | urgency | importance |
+|----------|----------|---------|------------|
+| 1st | Q1 — Do First | ≤ 2 | ≤ 2 |
+| 2nd | Q2 — Schedule | ≥ 3 | ≤ 2 |
+| 3rd | Q3 — Delegate | ≤ 2 | ≥ 3 |
+| 4th | Q4 — Someday | ≥ 3 | ≥ 3 |
 
-```
-# Primary: preferred agentic score for this lane
-project = INFRA AND labels = "flow:queue" AND labels = "agentic:{N}" ORDER BY priority DESC
-
-# Fallback (if primary returns 0 results after filtering out flow:waiting issue files):
-project = INFRA AND labels = "flow:queue" ORDER BY priority DESC
-```
-
-When the fallback fires, note it on the card:
-```
-📋 Lane 3 queue empty (no agentic:3 tickets). Pulling next highest priority — agentic score differs from lane preference.
-```
+Within each quadrant, sort by `urgency + importance` sum (lower = higher priority). Tiebreak: oldest ticket first.
 
 **WIP limit: 5** — one ticket per lane. `flow:waiting` does not count against WIP.
 
@@ -105,35 +99,13 @@ Prevents two tabs from accidentally working the same lane.
 
 ## Concurrency Model — Single Agent Per Lane
 
-Each rounds instance runs **one background agent for its claimed ticket**. The agent's autonomy ceiling is set by the ticket's `agentic:` score (with `constraint:technician` capping at context-only regardless of score).
-
-### Autonomy Ceiling by Agentic Score
-
-| Score | Autonomy Ceiling | Agent Behavior |
-|-------|-----------------|----------------|
-| 1-2 | **Full autonomy** | Run to completion. Surface results when done. |
-| 3 | **Work then ask** | Investigate and propose; pause before executing changes. |
-| 4-5 | **Context only** | Load context, present warm card, wait for operator direction. |
-
-`constraint:technician` always caps to **context-only**, regardless of score.
+Each rounds instance runs **one background agent for its claimed ticket**.
 
 ### Agent Prompt Construction
 
-**For agentic:1-2 (full autonomy):**
+**For tickets requiring investigation (standard):**
 ```
-You are working {KEY} autonomously in the {lane} lane.
-Context: [clerk findings, issue file, Jira fields, SDP case]
-
-- Work through open TODOs in order
-- Update the issue file with findings and actions
-- Draft Confluence pages if needed (don't publish — stage for review)
-- If you hit a true blocker (need credentials, external system access), stop and report
-- Otherwise work to completion and report results
-```
-
-**For agentic:3 (work then ask):**
-```
-You are working {KEY} semi-autonomously in the {lane} lane.
+You are working {KEY} in Lane {N}.
 Context: [clerk findings, issue file, Jira fields, SDP case]
 
 - Investigate and gather information freely
@@ -142,9 +114,9 @@ Context: [clerk findings, issue file, Jira fields, SDP case]
 - Present recommendation with reasoning; don't act without approval
 ```
 
-**For agentic:4-5 / constraint:technician (context only):**
+**For constraint:technician tickets (context-only):**
 ```
-You are preparing {KEY} for the operator in the {lane} lane.
+You are preparing {KEY} for the operator in Lane {N}.
 Context: [clerk findings, issue file, Jira fields, SDP case]
 
 - Load all context (Jira, issue file, clerk, SDP)
@@ -156,7 +128,7 @@ Context: [clerk findings, issue file, Jira fields, SDP case]
 ### Rules
 
 1. **One agent per tab** — this instance owns exactly one lane and one ticket at a time
-2. **Constraint guard** — `constraint:technician` → context-only regardless of agentic score
+2. **Constraint guard** — `constraint:technician` → context-only regardless of ticket type
 3. **One acceptance gate** — nothing commits without operator saying "yes" or "done"
 4. **Timer on active work** — start timer when operator begins working; stop on transition
 5. **Claim on startup, release on exit** — maintain `/tmp/rounds-claims.json`
@@ -197,7 +169,7 @@ Key labels rounds checks at dispatch and close:
 | `way:platform` | Meta/tooling work — improvements to rounds, scripts, skills, CI/CD | Tracked as INFRA tickets; counts toward velocity like any other work |
 | `way:azure` / `way:fabric` / etc. | Domain tag | Informational; used by clerk for prior-art routing |
 
-**`way:platform` note:** tooling improvements (rounds skill rewrites, script additions, SDP integration overhauls, PlantUML style instructions) are real engineering work. They MUST be filed as INFRA tickets with `way:platform` so the effort is visible in velocity tracking. Ad-hoc meta-work that isn't ticketed is invisible and distorts agentic score predictions.
+**`way:platform` note:** tooling improvements (rounds skill rewrites, script additions, SDP integration overhauls, PlantUML style instructions) are real engineering work. They MUST be filed as INFRA tickets with `way:platform` so the effort is visible in velocity tracking. Ad-hoc meta-work that isn't ticketed is invisible and distorts planning.
 
 ---
 
@@ -207,7 +179,7 @@ Key labels rounds checks at dispatch and close:
 
 Invocation: `start rounds [1|2|3|4|5]`
 
-If no lane argument is given, ask: "Which lane? (1–5, where 1=most autonomous, 5=most manual)"
+If no lane argument is given, ask: "Which lane? (1–5)"
 
 **Step 1 — Claim check:**
 ```python
@@ -236,7 +208,7 @@ Write claim on success: `{lane: {key, pid, claimed_at}}`.
      Also declare the required output artifact: Confluence page? Follow-on INFRA ticket? Decision doc?
   ```
   Log both (timebox + output artifact) in the issue file Description section before proceeding.
-- **investigated: check:** if ticket is agentic:3–5 and lacks `investigated:yes` or `investigated:self-assessed` label, note it on the card:
+- **investigated: check:** if ticket lacks `investigated:yes` or `investigated:self-assessed` label, note it on the card:
   ```
   ⚠  investigated: label missing — scope not yet validated. Interview recommended.
   ```
@@ -248,7 +220,7 @@ Invoke `knowledge-clerk` for the claimed ticket before presenting the card. Do n
 **Step 4 — Present the lane board:**
 
 ```
-📋 🔴 Urgent Lane — May 25, 2026
+📋 Lane 1 — May 25, 2026
 ━━━━━━━━━━━━━━━━━━━━━━━━
 📊 This week: 7 done | 9 waiting | ⏱ No active timer
 ⚙️  Constraints: technician (only wweeks)
@@ -671,11 +643,6 @@ When the operator signals a transition, do your judgment work first — then cal
 
 **done — additional judgment:**
 - Ask "What did you do?" if not already in the conversation
-- Agentic score recalibration: compare actual logged time against the `agentic:` label prediction. Surface a warning only if mismatch is >2×:
-  ```
-  ⚠  agentic:5 predicted ~15m hands-on — actual was 2.5h.
-     Suggest bumping similar tickets to agentic:3.
-  ```
 - If `constraint:technician`: **mandatory doc-it gate** — present this prompt and require a response before pulling next:
   ```
   📝 This ticket was constraint:technician — only you can do this work.
@@ -821,7 +788,6 @@ In-memory only (per tab instance):
 - **lane** — which lane this instance owns (`lane1 | lane2 | lane3 | lane4 | lane5`)
 - **key** — the current active ticket key
 - **agent_id** — background agent for this ticket (if launched)
-- **autonomy_ceiling** — derived from agentic score + constraint labels
 - **status** — `loading | interviewing | working | needs_input | complete | failed`
 - **confidence** — integer 0–100 (gate: 95 to proceed to Phase 3)
 - **confidence_breakdown** — `{scope, approach, success, blockers, dependencies, unknowns}` each 0–100
@@ -844,7 +810,7 @@ In-memory only (per tab instance):
 - **Always give the file path** when switching tickets — one line, ready to use.
 - **CLI commands** are prefixed with "Run:" so they're unambiguous.
 - **Never** "Great job!" or "Excellent!" — just confirm and move on.
-- **Lane emojis always** — 🔴 🔵 🟢 are the visual anchor.
+- **Lane emojis always** — 🟣 🔵 🟡 🟠 🔴 are the visual anchor.
 
 ---
 
@@ -852,13 +818,13 @@ In-memory only (per tab instance):
 
 ```
 [Tab 2]
-> start rounds 5
+> start rounds 1
 
-✓ 🔴 Lane 5 claimed (<PROJECT>-368) — agentic:5, full manual
+✓ Lane 1 claimed (<PROJECT>-368)
 Running clerk...
 
 ━━━━━━━━━━━━━━━━━━━━━━━━
-🔴 <PROJECT>-368 — Entra External ID / Keycloak Migration
+🟣 <PROJECT>-368 — Entra External ID / Keycloak Migration
 ━━━━━━━━━━━━━━━━━━━━━━━━
 📚 Clerk: cases/28710/ — OBO flow decided, 2 tenants live, OIDC vs SAML open
 ⏱ Timer started — 08:01
@@ -874,23 +840,23 @@ What do you want to do?
 > skip
 
 <PROJECT>-368 still active — parked. Lane stays open.
-Resume with: start rounds 5
+Resume with: start rounds 1
 ```
 
 ```
 [Tab 3]  
-> start rounds 4
+> start rounds 2
 
-✓ 🟠 Lane 4 claimed (<PROJECT>-363) — agentic:4, context only
+✓ Lane 2 claimed (<PROJECT>-363)
 Running clerk...
 ...
 ```
 
 ```
 [Tab 4]
-> start rounds 1
+> start rounds 3
 
-✓ 🟢 Lane 1 claimed (<PROJECT>-390) — agentic:1, full autonomy
+✓ Lane 3 claimed (<PROJECT>-390)
 Running clerk...
 ...
 ```
@@ -901,15 +867,15 @@ All tabs independent. No pop-up queue. No forced sequencing.
 ✓ Logged 0.75h to <PROJECT>-363
 ✓ <PROJECT>-363 → flow:done
 ✓ Committed: "close: <PROJECT>-363 scoped and documented"
-✓ Dispatched <PROJECT>-377 → 🔴
+✓ Dispatched <PROJECT>-377 → Lane 2
 File: issues/<PROJECT>-377 - AWS Security Hub.../<PROJECT>-377...md
 
-Next: 🔵 <PROJECT>-58 — Jira SDP Integration
+Next: Lane 3 — <PROJECT>-58 — Jira SDP Integration
 <APPROVER_NAME> hasn't responded (1 day). Follow up or skip?
 
 > skip
 
-🟢 <PROJECT>-390 — Web Platform SSR Spike
+Lane 4 — <PROJECT>-390 — Web Platform SSR Spike
 Last: no work yet
 File: issues/<PROJECT>-390 - Web Platform SSR Spike.../<PROJECT>-390...md
 
@@ -918,9 +884,9 @@ What do you want to do?
 > skip for now
 
 All 3 lanes visited.
-🔴 <PROJECT>-377 — AWS Security Hub (new)
-🔵 <PROJECT>-58  — Jira SDP Integration (waiting)
-🟢 <PROJECT>-390 — Web Platform SSR Spike (active, no work)
+Lane 1 — <PROJECT>-377 — AWS Security Hub (new)
+Lane 3 — <PROJECT>-58  — Jira SDP Integration (waiting)
+Lane 4 — <PROJECT>-390 — Web Platform SSR Spike (active, no work)
 
 3 stale waiting tickets. Want to review follow-ups?
 
@@ -958,7 +924,7 @@ rounds
 
 ## SDP Tickets in Rounds (Unified Model)
 
-ServiceDesk Plus cases run in the same 5 lanes as Jira tickets — there is no separate "sdp-rounds" skill. Lane assignment is determined by the ticket's `agentic:` score, regardless of system. SDP case files live under `cases/{display_id}/`; Jira issue files live under `issues/<PROJECT>-XXX/`.
+ServiceDesk Plus cases run in the same 5 lanes as Jira tickets — there is no separate "sdp-rounds" skill. Any lane can claim any SDP case. Lane assignment is first-come-first-claimed, not tied to ticket type or scoring. SDP case files live under `cases/{display_id}/`; Jira issue files live under `issues/<PROJECT>-XXX/`.
 
 ### Cross-link awareness (no double-billing)
 
@@ -973,15 +939,15 @@ The shared `/tmp/rounds-claims.json` uses keys `lane1`–`lane5`; Jira and SDP t
 
 ### Station deltas when the claimed ticket is an SDP case
 
-The 7-station flow is identical. The deltas:
+The flow is identical. The deltas:
 
-- **Station 1 — Claim:** pull the highest-scored queue case for the lane via `sdp_search.py --tag flow:queue` (filter client-side by `agentic:N`). Skip any case with `OWNER: jira`.
-- **Station 2 — Clerk:** `knowledge-clerk` already queries both `issues/` and `cases/`. For access grants, always check Confluence runbooks AND prior cases — most SDP work is "did this last week, do it again".
-- **Station 3 — Warm Card:** include **Who** (requester full name + email), **What** (one-sentence request), **Why** (business reason), **Approval status** (pending L1/L2, approved, or none required), **Linked Jira** (<PROJECT>-XXX if `JIRA:` header), **Prior art** (clerk), **Confidence bar**.
-- **Station 4 — Investigate:** use `sdp-investigator` (owns the HARD-GATE discipline) instead of `ticket-investigator`.
-- **Station 5 — Execute:** for access grants, use `az role assignment create`, then `entra_lookup.py` to confirm, then `sdp_set_tasks.py --id {ID}` to check the box in markdown. For approvals, do **not** click approve in SDP — ensure the approval level exists via `sdp_approval.py --create-level 1 --approvers ...` and mark `flow:waiting`. The user approves out-of-band.
-- **Station 6 — Worklog:** invoke `sdp-worklog`. Voice wall is mandatory (see below).
-- **Station 7 — Decision:** use SDP transition scripts (`sdp_set_flow.py`).
+- **Claim:** pull the highest Eisenhower-priority queue case via `sdp_search.py --tag flow:queue`. Skip any case with `OWNER: jira`.
+- **Clerk:** `knowledge-clerk` already queries both `issues/` and `cases/`. For access grants, always check Confluence runbooks AND prior cases — most SDP work is "did this last week, do it again".
+- **Warm Card:** include **Who** (requester full name + email), **What** (one-sentence request), **Why** (business reason), **Approval status** (pending L1/L2, approved, or none required), **Linked Jira** (<PROJECT>-XXX if `JIRA:` header), **Prior art** (clerk), **Confidence bar**.
+- **Investigate:** use `sdp-investigator` (owns the HARD-GATE discipline) instead of `ticket-investigator`.
+- **Execute:** for access grants, use `az role assignment create`, then `entra_lookup.py` to confirm, then `sdp_set_tasks.py --id {ID}` to check the box in markdown. For approvals, do **not** click approve in SDP — ensure the approval level exists via `sdp_approval.py --create-level 1 --approvers ...` and mark `flow:waiting`. The user approves out-of-band.
+- **Worklog:** invoke `sdp-worklog`. Voice wall is mandatory (see below).
+- **Decision:** use SDP transition scripts (`sdp_set_flow.py`).
 
 ### Decision-command mapping (SDP cases)
 
