@@ -47,7 +47,7 @@ def main():
 
     if text:
         blocks = markdown_to_blocks(text)
-        result = post(f"blocks/{args.page}/children", {"children": blocks})
+        result = patch(f"blocks/{args.page}/children", {"children": blocks})
         if args.json:
             print(json.dumps(result, indent=2))
         else:
