@@ -45,8 +45,8 @@ def main():
     parser = argparse.ArgumentParser(description="Create local stub for a Linear issue")
     parser.add_argument("--key", required=True, help="Issue identifier, e.g. ENG-123")
     parser.add_argument("--projects-dir",
-                        default="/home/wweeks/git/projects",
-                        help="Path to projects repo")
+                        default=str(Path(__file__).resolve().parents[1]),
+                        help="Path to repo root (issues/ lives here)")
     args = parser.parse_args()
 
     data = graphql(ISSUE_QUERY, {"id": args.key.upper()})
