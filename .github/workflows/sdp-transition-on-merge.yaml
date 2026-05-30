@@ -1,0 +1,99 @@
+name: SDP transition on merge
+
+on:
+  pull_request:
+    types: [closed]
+  workflow_dispatch:
+    inputs:
+      sdp_ids:
+        description: "Optional SDP display IDs (comma/space/newline separated)"
+        required: false
+        type: string
+      pr_title:
+        description: "Optional PR title source text"
+        required: false
+        type: string
+      pr_branch:
+        description: "Optional branch source text"
+        required: false
+        type: string
+      target_flow:
+        description: "Target SDP flow (queue/active/waiting/done)"
+        required: false
+        type: string
+        default: "done"
+
+permissions:
+  contents: read
+
+jobs:
+  transition-sdp:
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main')
+    runs-on: ubuntu-latest
+    env:
+      TARGET_FLOW: ${{ github.event.inputs.target_flow || 'done' }}
+      PR_TITLE: ${{ github.event.pull_request.title || github.event.inputs.pr_title || '' }}
+      PR_BRANCH: ${{ github.event.pull_request.head.ref || github.event.inputs.pr_branch || '' }}
+      RAW_IDS: ${{ github.event.inputs.sdp_ids || '' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Collect SDP IDs
+        id: ids
+        shell: bash
+        run: |
+          # Match SDP-12345 (5–8 digit display IDs) — case-insensitive
+          ids=$(
+            printf "%s\n%s\n%s\n" "$PR_TITLE" "$PR_BRANCH" "$RAW_IDS" \
+              | tr ',;' '\n' \
+              | grep -Eoi 'SDP-?[0-9]{4,8}' \
+              | grep -Eo '[0-9]{4,8}' \
+              | sort -u \
+              | tr '\n' ' '
+          )
+          echo "ids=$ids" >> "$GITHUB_OUTPUT"
+          echo "Target flow: $TARGET_FLOW"
+          echo "Found SDP IDs: $ids"
+
+      - name: Set up Python
+        if: steps.ids.outputs.ids != ''
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Transition SDP requests
+        if: steps.ids.outputs.ids != ''
+        env:
+          WWEEKS_SDP_B64: ${{ secrets.WWEEKS_SDP }}
+        run: |
+          export WWEEKS_SDP=$(echo "$WWEEKS_SDP_B64" | base64 -d)
+          for id in ${{ steps.ids.outputs.ids }}; do
+            echo "→ SDP-$id flow=$TARGET_FLOW"
+            python3 scripts/sdp_set_flow.py --id "$id" --flow "$TARGET_FLOW" --transition || \
+              echo "::warning::Transition failed for SDP-$id (non-fatal)"
+          done
+
+      - name: No SDP IDs found
+        if: steps.ids.outputs.ids == ''
+        run: echo "No SDP IDs found in PR title or branch name; nothing to transition."
+
+      - name: 📋 Troubleshooting hints (on failure)
+        if: failure()
+        run: |
+          echo "❌ SDP workflow step failed."
+          echo ""
+          echo "   Likely causes:"
+          echo "     • WWEEKS_SDP secret missing or not valid base64 JSON"
+          echo "     • Zoho OAuth refresh token expired (refresh tokens last ~1 year)"
+          echo "     • SDP request ID does not exist (deleted, or short vs long ID confusion)"
+          echo "     • SDP API rate limit or Zoho outage"
+          echo ""
+          echo "   Try:"
+          echo "     • Validate secret: echo \"\$WWEEKS_SDP_B64\" | base64 -d | python3 -m json.tool"
+          echo "     • Re-issue Zoho refresh token: https://api-console.zoho.com/"
+          echo "     • Replay locally: cd /home/wweeks/git/projects && python3 scripts/sdp_fetch_ticket.py --id <ID>"
+          echo "     • Verify in browser: https://<YOUR_SDP>.sdpondemand.manageengine.com/app/itdesk/ui/requests/<ID>"
+          echo "     • Zoho status: https://status.zoho.com/"

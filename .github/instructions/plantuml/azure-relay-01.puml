@@ -1,0 +1,60 @@
+@startuml  `
+title Production Azure Relay
+
+!define RECTANGLE class
+
+left to right direction
+
+skinparam rectangle {
+    BackgroundColor LightBlue
+    BorderColor DarkBlue
+    FontColor Black
+    FontSize 12
+}
+
+skinparam package {
+    BackgroundColor LightGray
+    BorderColor DarkGray
+    FontColor Black
+}
+
+skinparam arrow {
+    Color DarkBlue
+    Thickness 2
+}
+
+
+rectangle "Five9\n(Phone System)" as Five9
+
+
+package "Azure Environment" {
+    rectangle "Load Balancer\n(with NAT)" as LB
+    
+    package "vnet-transit-<region>-001" {
+        rectangle "Palo Alto\nFirewalls" as PaloAlto
+    }
+    
+    package "rg-five9-prd-usw2" {
+        rectangle "Azure Relay\nrelay-five9-prd-usw2-001\n.<ORG_PARENT_DOMAIN>" as AzureRelay
+        package "vnet-five9-prd-usw2-001" {
+            package "snet-five9-prd-usw2-001" {
+                rectangle "Private Endpoint\npe-five9-prd-usw2-001" as PE
+            }
+        }
+    }
+}
+
+package "Data Center (On-Prem)" {
+    rectangle "VND API\nvnd.<ORG_PARENT_DOMAIN>" as VND
+    rectangle "SQL02\n(SQL Server)" as SQL
+}
+
+Five9 -up-> LB : API Call\n(Basic Auth)
+LB --> PaloAlto : NAT Applied
+PaloAlto --> PE : VNET Peering
+PE --> AzureRelay : Associated to Relay
+AzureRelay -up-> VND : Forwards to On-Prem
+VND --> SQL : Writes JSON Data
+
+@enduml
+

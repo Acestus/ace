@@ -1,0 +1,123 @@
+@startuml
+
+title Production Environment - Azure Serverless Architecture
+
+!define AzurePuml https://raw.githubusercontent.com/plantuml-stdlib/Azure-PlantUML/master/dist
+!includeurl AzurePuml/AzureSimplified.puml
+!includeurl AzurePuml/AzureCommon.puml
+!include AzurePuml/Networking/AzureApplicationGateway.puml
+!include AzurePuml/Web/AzureWebApp.puml
+!include AzurePuml/Storage/AzureBlobStorage.puml
+!include AzurePuml/Compute/AzureAppServicePlanLinux.puml
+!include AzurePuml/Compute/AzureFunction.puml
+
+actor "Internet User" as user
+
+package "Production Environment" {
+    
+    ' Connectivity Subscription
+    rectangle "Subscription: Connectivity" as subConn #LightCyan {
+        rectangle "RG: rg-connectivity" as rgConn {
+            AzureApplicationGateway(waf, "Application Gateway\n+ WAF v2\nRoutes to all ASPs\nSSL Termination, OWASP Protection", "~$260/month base\n+ $0.008/GB processed")
+        }
+    }
+    
+    ' Corp-750-HumanResources
+    rectangle "Subscription: Corp-750-HumanResources" as sub750 #LightBlue {
+        rectangle "RG: rg-hr-prod" as rg750 {
+            AzureAppServicePlanLinux(asp750, "asp-skphr-prd-usw2-lnx\nB1: 1 Core, 1.75 GB RAM\nWest US 2", "~$13/month")
+            AzureFunction(func750_1, "func-jml-adpevent-prd-usw2-001\nADP Event Processor", "Running on B1")
+            AzureFunction(func750_2, "func-jml-itsm-prd-usw2-001\nITSM Integration", "Running on B1")
+            AzureFunction(func750_3, "func-jml-provision-prd-usw2-001\nUser Provisioning", "Running on B1")
+        }
+    }
+    
+    ' Corp-710-Analytics
+    rectangle "Subscription: Corp-710-Analytics" as sub710 #LightGreen {
+        rectangle "RG: rg-analytics-prod" as rg710 {
+            AzureAppServicePlanLinux(asp710, "asp-<org_short>fg-anly-usw2-001\nY1 (Consumption)\nWest US 2", "Pay per execution\n~$0.20/1M executions")
+            AzureFunction(func710, "func-callscript-anly-usw2-001\nCall Script Processor", "Running on Y1")
+        }
+    }
+    
+    ' Corp-530-EnterpriseDataManagement
+    rectangle "Subscription: Corp-530-EnterpriseDataManagement" as sub530 #LightYellow {
+        rectangle "RG: rg-edm-prod" as rg530 {
+            AzureAppServicePlanLinux(asp530, "asp-skpedm-prd-usw2-lnx\nB1: 1 Core, 1.75 GB RAM\nWest US 2", "~$13/month")
+            AzureFunction(func530, "func-sched-prd-usw2-001\nScheduler & Orchestration", "Running on B1")
+            AzureBlobStorage(storage, "Storage Account\nZone Redundant Storage (ZRS)\nHot Tier, Shared across apps", "~$0.025/GB/month\n100 GB = ~$2.50/month")
+        }
+    }
+    
+    ' Corp-520-ApplicationDevelopment
+    rectangle "Subscription: Corp-520-ApplicationDevelopment" as sub520 #LightPink {
+        rectangle "RG: rg-appdev-prod" as rg520 {
+            AzureAppServicePlanLinux(asp520, "ASP-AppDev\nB1: 1 Core, 1.75 GB RAM", "~$13/month")
+            AzureWebApp(app520, "Dev Portal\nPython 3.11", "Hosted on ASP-AppDev")
+        }
+    }
+    
+    ' Corp-100-Marketing
+    rectangle "Subscription: Corp-100-Marketing" as sub100 #LightSalmon {
+        rectangle "RG: rg-marketing-prod" as rg100 {
+            AzureAppServicePlanLinux(asp100, "ASP-Marketing\nB1: 1 Core, 1.75 GB RAM", "~$13/month")
+            AzureWebApp(app100, "Marketing Site\nPython 3.11", "Hosted on ASP-Marketing")
+        }
+    }
+    
+    ' Management Subscription
+    rectangle "Subscription: Management" as subMgmt #LightGray {
+        rectangle "RG: rg-management-prod" as rgMgmt {
+            AzureAppServicePlanLinux(aspMgmt1, "asp-skpmgt-prd-usw2-001\nB1: 1 Core, 1.75 GB RAM\nWest US 2", "~$13/month")
+            AzureFunction(funcAlerts, "func-alerts-prd-usw2-001\nAzure Alerts Processor", "Running on B1")
+            AzureFunction(funcIpam, "func-ipam-prd-usw2-001\nIP Address Management", "Running on B1")
+            AzureFunction(funcTagging, "func-tagging-prd-usw2-001\nResource Tagging", "Running on B1")
+        }
+    }
+}
+
+' Traffic Flow
+user -down-> waf : HTTPS
+waf -down-> asp750
+waf -down-> asp710
+waf -down-> asp530
+waf -down-> asp520
+waf -down-> asp100
+waf -down-> aspMgmt1
+
+asp750 -down-> func750_1
+asp750 -down-> func750_2
+asp750 -down-> func750_3
+asp710 -down-> func710
+asp530 -down-> func530
+asp520 -down-> app520
+asp100 -down-> app100
+
+aspMgmt1 -down-> funcAlerts
+aspMgmt1 -down-> funcIpam
+aspMgmt1 -down-> funcTagging
+
+func530 -right-> storage : Store Data
+
+legend right
+  |= **Azure Verified Modules (AVM) Patterns** |
+  | **Pattern** | **Version** | **Purpose** |
+  | app-service-lza/hosting-environment | 0.1.1 | App Service standardization |
+  | network/hub-networking | 0.5.0 | Hub network topology |
+  | lz/sub-vending | 0.5.3 | Subscription management |
+  | authorization/resource-role-assignment | 0.1.2 | RBAC management |
+  | azd/monitoring | 0.2.1 | Centralized monitoring |
+  
+  **Pattern Descriptions:**
+  • **app-service-lza/hosting-environment**: Standardizes App Service Plans
+    across all subscriptions with security baselines and monitoring
+  • **network/hub-networking**: Provides hub network topology for
+    Application Gateway in Connectivity subscription
+  • **lz/sub-vending**: Manages multi-subscription organization,
+    resource group structure, and policies
+  • **authorization/resource-role-assignment**: Controls RBAC between
+    ASP RGs, Apps RGs, and Storage accounts
+  • **azd/monitoring**: Enables centralized monitoring across all apps
+endlegend
+
+@enduml 

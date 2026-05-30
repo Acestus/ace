@@ -1,0 +1,39 @@
+@startuml DB <APP_NAME> UAT
+title AWS Aurora DB Connection
+!$AWS_DARK = true
+
+!define AWSPuml https://raw.githubusercontent.com/awslabs/aws-icons-for-plantuml/v19.0/dist
+!include AWSPuml/AWSCommon.puml
+!include AWSPuml/AWSSimplified.puml
+!include AWSPuml/Database/AuroraMySQLInstance.puml
+!include AWSPuml/NetworkingContentDelivery/ClientVPN.puml
+!include AWSPuml/NetworkingContentDelivery/VPCVirtualprivatecloudVPC.puml
+!include AWSPuml/General/Users.puml
+!include AWSPuml/General/Servers.puml
+
+left to right direction
+
+agent "<APP_NAME> Link" as <app_name>data
+
+rectangle "<APP_NAME> AWS Account" as <app_name>account {
+    VPCVirtualprivatecloudVPC(<app_name>vpc, "<APP_NAME> VPC", "10.0.192.0/19") {
+        AuroraMySQLInstance(<app_name>db, "<APP_NAME> Aurora DB", "Aurora MySQL 8.0")
+    }
+}
+rectangle "<ORG_NAME> AWS Account" as <org_short>account {
+    VPCVirtualprivatecloudVPC(<org_short>vpc, "<APP_NAME> VPC", "10.0.0.0/24") {
+        AuroraMySQLInstance(<org_short>db, "<APP_NAME> Aurora DB", "<DB_HOST>.rds.amazonaws.com")
+    }
+}
+
+ClientVPN(vpn, "On-Prem VPN", "GlobalProtect")
+Users(Users, "Users", "EDM Team")
+Servers(JavaServices, "Java Services", "AppDev Team")
+
+<app_name>data --> <app_name>db
+<app_name>db --> <org_short>db : VPC Peering
+<org_short>db --> vpn
+vpn --> Users
+vpn --> JavaServices
+
+@enduml

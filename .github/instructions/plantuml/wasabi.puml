@@ -1,0 +1,29 @@
+@startuml
+!define RECTANGLE class
+
+left to right direction
+
+skinparam rectangle {
+    BackgroundColor LightBlue
+    BorderColor DarkBlue
+    FontColor Black
+    FontSize 12
+}
+
+skinparam arrow {
+    Color DarkBlue
+    Thickness 2
+}
+
+rectangle "Five 9's\n (Phone Calls)" as FiveNines
+rectangle "S3 Bucket\n(AWS)" as S3
+rectangle "Wasabi\n(Cloud Storage)" as Wasabi
+rectangle "Microsoft Fabric\n(Analytics Platform)" as Fabric
+
+FiveNines --> S3 : connects to
+S3 --> Wasabi : migrates to
+S3 --> Fabric : sends data to
+
+
+@enduml
+

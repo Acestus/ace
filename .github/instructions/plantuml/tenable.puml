@@ -1,0 +1,50 @@
+@startuml TenableIntegrationFlow
+title Tenable Security Platform Integration Flow
+
+!define RECTANGLE class
+
+skinparam rectangle {
+    BackgroundColor LightBlue
+    BorderColor DarkBlue
+    FontColor Black
+    FontSize 12
+}
+
+skinparam package {
+    BackgroundColor LightGray
+    BorderColor DarkGray
+    FontColor Black
+}
+
+' Input Sources
+rectangle "AWS\nCloud Infrastructure\nVulnerability Scanning" as AWS
+rectangle "Azure\nCloud Infrastructure\nSecurity Center Integration" as Azure  
+rectangle "GitHub\nCode Repositories\nSAST/DAST Analysis" as GitHub
+
+' Central Platform
+package "Tenable Security Platform" {
+    rectangle "Tenable\nVulnerability Management" as Tenable #Orange
+}
+
+' Output Destinations
+rectangle "Email\nAutomated Reporting\nMonthly PDF Reports" as Email
+rectangle "SDP\nIncident Management\nService Desk" as SDP
+rectangle "Microsoft Sentinel\nSIEM/SOAR\nSecurity Automation" as Sentinel
+rectangle "GitHub Repositories\nAutomated Remediation\nPull Requests" as GitHubPR
+rectangle "CIEM\nIdentity & Access Management\nCustom User Profiles" as CIEM
+rectangle "Red Canary\nThreat Detection\nSecurity Operations" as RedCanary
+
+' Input Flows (Data Sources)
+AWS -[#Green]-> Tenable : Infrastructure Vulnerability Data
+Azure -[#Green]-> Tenable : Cloud Asset Security Data
+GitHub -[#Green]-> Tenable : Code Security Scanning Data
+
+' Output Flows (Data Destinations)
+Tenable -[#Red]-> Email : Monthly PDF Reports
+Tenable -[#Red]-> SDP : "Findings" Tickets (Webhooks)
+Tenable -[#Red]-> Sentinel : Automated Response Webhooks
+Tenable -[#Red]-> GitHubPR : Security Fix Pull Requests
+Tenable -[#Red]-> CIEM : Custom User Profile Data
+Tenable -[#Red]-> RedCanary : GitHub Security Findings
+
+@enduml

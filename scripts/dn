@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+exec emacsclient -t -a "" "$HOME/git/projects/planner/$(date +%m-%d).org"

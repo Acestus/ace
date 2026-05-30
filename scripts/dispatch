@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# dispatch — shim; all logic lives in dispatch_board.py
+set -euo pipefail
+PROJECTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+exec python3 "$PROJECTS_DIR/scripts/dispatch_board.py" "$@"

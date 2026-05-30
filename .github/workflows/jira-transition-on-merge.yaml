@@ -1,0 +1,131 @@
+name: Jira transition updater
+
+on:
+  repository_dispatch:
+    types: [jira-transition]
+  workflow_dispatch:
+    inputs:
+      issue_keys:
+        description: "Optional Jira keys (comma/space/newline separated)"
+        required: false
+        type: string
+      pr_title:
+        description: "Optional PR title source text"
+        required: false
+        type: string
+      pr_branch:
+        description: "Optional branch source text"
+        required: false
+        type: string
+      target_status:
+        description: "Target Jira status"
+        required: false
+        type: string
+        default: "In QA"
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: read
+
+jobs:
+  transition-jira-issues:
+    if: |
+      github.event_name == 'repository_dispatch' ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main')
+    runs-on: ubuntu-latest
+    env:
+      JIRA_BASE_URL: "https://<YOUR_ATLASSIAN>.atlassian.net/"
+      JIRA_EMAIL: "wweeks@<ORG_PARENT_DOMAIN>"
+      JIRA_API_TOKEN: ${{ secrets.WWEEKS_CONFLUENCE_API_TOKEN }}
+      JIRA_TARGET_STATUS: ${{ github.event.client_payload.target_status || github.event.inputs.target_status || 'In QA' }}
+      PR_TITLE: ${{ github.event.pull_request.title || github.event.client_payload.pr_title || github.event.inputs.pr_title || '' }}
+      PR_BRANCH: ${{ github.event.pull_request.head.ref || github.event.client_payload.pr_branch || github.event.inputs.pr_branch || '' }}
+      RAW_ISSUE_KEYS: ${{ github.event.client_payload.issue_keys || github.event.inputs.issue_keys || '' }}
+
+    steps:
+      - name: Validate Jira configuration
+        run: |
+          for name in JIRA_API_TOKEN; do
+            if [ -z "${!name}" ]; then
+              echo "Missing required secret: WWEEKS_CONFLUENCE_API_TOKEN" >&2
+              exit 1
+            fi
+          done
+
+      - name: Collect Jira issue keys
+        id: keys
+        shell: bash
+        run: |
+          keys=$(
+            {
+              printf "%s\n%s\n" "$PR_TITLE" "$PR_BRANCH"
+              printf "%s\n" "$RAW_ISSUE_KEYS" | tr ',;' '\n'
+            } \
+              | grep -Eo '[A-Z][A-Z0-9]+-[0-9]+' \
+              | sort -u \
+              | jq -R . \
+              | jq -sc . || echo '[]'
+          )
+          echo "keys=$keys" >> "$GITHUB_OUTPUT"
+          echo "Target Jira status: $JIRA_TARGET_STATUS"
+          echo "Found Jira keys: $keys"
+
+      - name: Transition Jira issues
+        if: steps.keys.outputs.keys != '[]'
+        shell: bash
+        run: |
+          jira_url="${JIRA_BASE_URL%/}"
+          target_status_lc=$(echo "$JIRA_TARGET_STATUS" | tr '[:upper:]' '[:lower:]')
+          auth=$(printf "%s:%s" "$JIRA_EMAIL" "$JIRA_API_TOKEN" | base64 -w 0)
+          keys='${{ steps.keys.outputs.keys }}'
+
+          for issue in $(echo "$keys" | jq -r '.[]'); do
+            transitions_json=$(curl -fsS \
+              -H "Authorization: Basic $auth" \
+              -H "Accept: application/json" \
+              "$jira_url/rest/api/3/issue/$issue/transitions")
+
+            transition_id=$(
+              echo "$transitions_json" \
+                | jq -r --arg status "$target_status_lc" '.transitions[] | select((.to.name | ascii_downcase) == $status) | .id' \
+                | head -n1
+            )
+
+            if [ -z "$transition_id" ] || [ "$transition_id" = "null" ]; then
+              echo "No available transition to '$JIRA_TARGET_STATUS' for issue $issue" >&2
+              exit 1
+            fi
+
+            curl -fsS -X POST \
+              -H "Authorization: Basic $auth" \
+              -H "Accept: application/json" \
+              -H "Content-Type: application/json" \
+              --data "{\"transition\":{\"id\":\"$transition_id\"}}" \
+              "$jira_url/rest/api/3/issue/$issue/transitions" \
+              >/dev/null
+
+            echo "Transitioned $issue to $JIRA_TARGET_STATUS"
+          done
+
+      - name: No Jira keys found
+        if: steps.keys.outputs.keys == '[]'
+        run: echo "No Jira keys found in PR title or branch name; nothing to transition."
+
+      - name: 📋 Troubleshooting hints (on failure)
+        if: failure()
+        run: |
+          echo "❌ Jira workflow step failed."
+          echo ""
+          echo "   Likely causes:"
+          echo "     • WWEEKS_CONFLUENCE_API_TOKEN secret missing or expired"
+          echo "     • CONFLUENCE_EMAIL env does not match the token owner"
+          echo "     • Jira issue key in payload is wrong or you lack Browse permission"
+          echo "     • Jira API outage or rate limit (10 req/s per user)"
+          echo ""
+          echo "   Try:"
+          echo "     • gh secret list --repo ${{ github.repository }} | grep -i confluence"
+          echo "     • Rotate token: https://id.atlassian.com/manage-profile/security/api-tokens"
+          echo "     • Replay locally: cd /home/wweeks/git/projects && python3 scripts/<the_failed_script>.py ..."
+          echo "     • Jira status: https://status.atlassian.com/"

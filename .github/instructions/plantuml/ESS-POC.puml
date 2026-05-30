@@ -1,0 +1,146 @@
+@startuml Azure Data Pipeline Architecture
+
+!define AZURE_SYMBOL_COLOR #0078D4
+!define FABRIC_COLOR #6264A7
+!define GOLD_COLOR #FFD700
+!define SILVER_COLOR #C0C0C0
+!define BRONZE_COLOR #CD7F32
+
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Segoe UI
+skinparam nodesep 60
+skinparam rectangle {
+    roundCorner 10
+}
+skinparam rectangle<<source>> {
+    FontSize 18
+    FontStyle bold
+    BorderThickness 2
+}
+
+left to right direction
+
+title Azure Functions + Fabric Medallion Architecture
+
+' Source system
+rectangle "Five9 ESS" as five9 <<source>> #E8F4FF
+
+' Security & Identity
+rectangle "kv-skpanakv-dev-usw2-001\n(Azure Key Vault)\nSecrets & Credentials" as keyvault #E1F5FE
+rectangle "ai-skpana-dev-usw2-001\n(Application Insights)\nMonitoring & Telemetry" as appinsights #FFF3E0
+
+' Azure Functions (CAF Naming)
+rectangle "func-f9ess-dev-usw2-001\n(Data Ingestion from Five9 ESS)\n[Deployed via Bicep | GitHub]" as funcA #E6F2FF
+rectangle "func-f9ess-dev-usw2-002\n(Data Consumer)\n[Deployed via Bicep | GitHub]" as funcB #E6F2FF
+funcA -[hidden]-> funcB
+five9 -[hidden]-> funcA
+
+' Downstream destination
+rectangle "Power BI / API\n(Analytics & Distribution)" as destination #E8F5E9
+
+' Storage Account (CAF Naming)
+rectangle "stf9essdevusw2001\n(Azure Blob Storage)\nLanding Zone - Raw Files" as landing #FFE4B5
+
+' Microsoft Fabric (Git Integrated)
+rectangle "Microsoft Fabric\nws_f9ess_dev\n[Git Integrated]" as fabric #F3F2F1 {
+    rectangle "pl_ing_five9_f9ess_brz\n(Pipeline / Dataflow)" as pipeline #6264A7
+    
+    rectangle "Lakehouse - Medallion Architecture" as lakehouse #FAFAFA {
+        left to right direction
+        rectangle "lh_f9ess_brz\nBronze\n(Raw Data)" as bronze #CD7F32
+        rectangle "lh_f9ess_slv\nSilver\n(Cleansed)" as silver #C0C0C0
+        rectangle "lh_f9ess_gld\nGold\n(Curated)" as gold #FFD700
+    }
+}
+
+' Data Flow
+five9 -[#0078D4,thickness=2]-> funcA : "0. Source data"
+funcA -[#0078D4,thickness=2]-> landing : "1. Write raw\ntemporary files"
+landing -[#6264A7,thickness=2]-> pipeline : "2. Pick up\nraw files"
+pipeline -[#CD7F32,thickness=2]-> bronze : "3. Load raw\n(as-is JSON)"
+bronze -[#C0C0C0,thickness=2]-> silver : "4. Transform & cleanse\n(validation, dedup, standardization)"
+silver -[#FFD700,thickness=2]-> gold : "5. Aggregate & curate\n(KPIs, facts, dimensions)"
+gold -[#0078D4,thickness=2]-> funcB : "6. Read clean\ncurated data"
+funcB -[#0078D4,thickness=2]-> destination : "7. Distribute data"
+
+' Security & Monitoring Connections
+funcA .[#FF6B6B].> appinsights : "telemetry"
+funcB .[#FF6B6B].> appinsights : "telemetry"
+funcA .[#00ACC1].> keyvault : "credentials"
+funcA .[#4CAF50].> landing : "umi-skpana-dev-usw2-001"
+funcB .[#4CAF50].> gold : "umi-skpana-dev-usw2-001"
+
+note right of lakehouse
+    Input volume: 100 GB JSON
+    Processing: Event-driven over time
+    Not continuous streaming
+    Estimated end-to-end time: ~75 s per batch
+end note
+
+note left of fabric
+    **Git Integration:**
+    Version control enabled
+    CI/CD deployment ready
+end note
+
+note top of funcA
+    **Azure Functions Deployment:**
+    • Language: Modular Vanilla TypeScript
+    • Infrastructure: Bicep templates
+    • Source control: GitHub
+    • CI/CD: GitHub Actions
+    • Deployment: Azure DevOps/GitHub Actions
+end note
+
+note bottom of bronze
+    **Bronze Layer Transformations:**
+    • Ingest raw Five9 ESS JSON
+    • No schema enforcement
+    • Preserve original structure
+    • Add metadata (ingestion timestamp, source file)
+    • Partition by date/time
+end note
+
+note bottom of silver
+    **Silver Layer Transformations:**
+    • Parse and flatten JSON structures
+    • Validate data types and constraints
+    • Deduplicate records (call_id)
+    • Standardize field names (snake_case)
+    • Handle null/missing values
+    • Convert timestamps to UTC
+    • Remove PII as needed
+    • Apply business rules
+    • Create surrogate keys
+end note
+
+note bottom of gold
+    **Gold Layer Transformations:**
+    • Aggregate call metrics by time period
+    • Calculate KPIs (avg handle time, abandonment rate)
+    • Join with dimension tables (agents, queues)
+    • Create fact tables (call details, interactions)
+    • Build dimension tables (time, agent, campaign)
+    • Apply slowly changing dimensions (SCD Type 2)
+    • Create pre-aggregated summary tables
+    • Optimize for Power BI consumption
+end note
+
+legend right
+  |= Component |= CAF Name |= Purpose |
+  | Five9 ESS | - | Source system |
+  | Key Vault | kv-skpanakv-dev-usw2-001 | Secure credential storage |
+  | App Insights | ai-skpana-dev-usw2-001 | Monitoring & telemetry |
+  | Managed Identity | umi-skpana-dev-usw2-001 | Passwordless authentication |
+  | Function A | func-f9ess-dev-usw2-001 | Data ingestion |
+  | Function B | func-f9ess-dev-usw2-002 | Data consumer |
+  | Storage Account | stf9essdevusw2001 | Landing zone |
+  | Workspace | ws_f9ess_dev | Fabric workspace (Git integrated) |
+  | Pipeline | pl_ing_five9_f9ess_brz | Ingestion pipeline |
+  | Bronze Lake | lh_f9ess_brz | Raw data layer |
+  | Silver Lake | lh_f9ess_slv | Cleansed data layer |
+  | Gold Lake | lh_f9ess_gld | Business-ready layer |
+  | Power BI/API | - | Analytics & distribution |
+endlegend
+
+@enduml

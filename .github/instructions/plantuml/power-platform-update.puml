@@ -1,0 +1,32 @@
+@startuml Power Platform Update
+title Power Platform Update
+
+!define AzurePuml https://raw.githubusercontent.com/plantuml-stdlib/Azure-PlantUML/master/dist
+!includeurl AzurePuml/AzureSimplified.puml
+!includeurl AzurePuml/AzureCommon.puml
+!includeurl AzurePuml/Identity/AzureActiveDirectory.puml
+!includeurl AzurePuml/Databases/AzureSqlDatabase.puml
+!includeurl AzurePuml/Compute/AzureServiceFabric.puml
+!includeurl AzurePuml/Integration/AzureLogicApps.puml
+!includeurl AzurePuml/Management/AzureManagementPortal.puml
+!includeurl AzurePuml/Compute/AzureCloudServices.puml
+!includeurl AzurePuml/Containers/AzureServiceEnvironment.puml
+
+left to right direction
+
+' Components
+AzureActiveDirectory(ServicePrincipal, "Service Principal", "App Registration in Entra ID")
+AzureSqlDatabase(SQLDatabase, "SQL Database", "Fabric")
+AzureServiceFabric(Data, "Dataverse", "Excel Alternative")
+AzureLogicApps(Connector, "Connector", "Power Automate Flow")
+AzureManagementPortal(AnalyticsApps, "Analytics Apps", "Analytics App")
+AzureCloudServices(PowerPlatformAdmin, "Power Platform Admin", "App Management")
+AzureServiceEnvironment(Environments, "Environments", "Sbox, Prod, Test")
+
+' Connections
+Connector --> AnalyticsApps
+Data --> AnalyticsApps
+ServicePrincipal --> Connector
+SQLDatabase --> Data
+PowerPlatformAdmin --> Environments
+Environments --> AnalyticsApps

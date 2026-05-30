@@ -1,0 +1,115 @@
+name: Azure RG Inventory — Daily Drift Check
+
+on:
+  schedule:
+    # 9:00 AM CST (14:00 UTC) every weekday
+    - cron: "0 14 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Publish even if no changes detected"
+        type: boolean
+        default: false
+
+permissions:
+  id-token: write     # required for OIDC Azure login
+  contents: write     # required to commit updated snapshot + markdown
+
+jobs:
+  inventory:
+    name: Fetch RG estate and publish drift
+    runs-on: ubuntu-latest
+
+    env:
+      CONFLUENCE_EMAIL: ${{ secrets.CONFLUENCE_EMAIL }}
+      WWEEKS_CONFLUENCE_API_TOKEN: ${{ secrets.WWEEKS_CONFLUENCE_API_TOKEN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Python dependencies
+        run: pip install requests pyyaml
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_RG_INVENTORY_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_MANAGEMENT_SUBSCRIPTION_ID }}
+
+      # ── One-time Azure setup required ──────────────────────────────────────
+      # Before this workflow can run, you need to create an Azure App Registration
+      # with federated credentials pointing to this repo, then add three secrets:
+      #
+      #   AZURE_RG_INVENTORY_CLIENT_ID   — App Registration client ID
+      #   AZURE_TENANT_ID                — <AZURE_TENANT_ID>
+      #   AZURE_MANAGEMENT_SUBSCRIPTION_ID — Management subscription (login anchor)
+      #
+      # The service principal needs Reader role on all 22 <ORG_NAME> subscriptions.
+      # Run the setup script to create this:
+      #
+      #   az ad app create --display-name "sp-rg-inventory-ghactions"
+      #   az ad sp create --id <app-id>
+      #   az role assignment create --role Reader --assignee <sp-object-id> \
+      #     --scope /subscriptions/<sub-id>   # repeat for all 22 subs
+      #   az ad app federated-credential create --id <app-id> --parameters '{
+      #     "name": "github-projects-main",
+      #     "issuer": "https://token.actions.githubusercontent.com",
+      #     "subject": "repo:<GITHUB_ORG>/projects:ref:refs/heads/main",
+      #     "audiences": ["api://AzureADTokenExchange"]
+      #   }'
+      # ───────────────────────────────────────────────────────────────────────
+
+      - name: Run RG inventory diff
+        id: inventory
+        run: |
+          FORCE_FLAG=""
+          if [ "${{ github.event.inputs.force }}" = "true" ]; then
+            FORCE_FLAG="--force"
+          fi
+          python3 scripts/azure_rg_inventory.py $FORCE_FLAG
+          echo "changed=$(git diff --name-only | wc -l)" >> $GITHUB_OUTPUT
+
+      - name: Commit updated snapshot and markdown
+        if: steps.inventory.outputs.changed != '0'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add assets/<PAGE_ID>/rg-snapshot.json \
+                  confluence/<PAGE_ID>-Azure-Subscription-and-Resource-Group-Registry.md
+          git commit -m "chore: azure RG inventory drift update $(date +%Y-%m-%d)
+
+          Automated update by azure-rg-inventory workflow.
+          Changes detected in the Azure resource group estate."
+          git push
+
+      - name: No changes summary
+        if: steps.inventory.outputs.changed == '0'
+        run: echo "✅ No changes detected — Azure estate matches last snapshot"
+
+      - name: 📋 Troubleshooting hints (on failure)
+        if: failure()
+        run: |
+          echo "❌ Azure workflow step failed."
+          echo ""
+          echo "   Likely causes:"
+          echo "     • OIDC federated credential mismatch — subject claim does not match this workflow"
+          echo "     • AZURE_CLIENT_ID / AZURE_TENANT_ID / AZURE_SUBSCRIPTION_ID secret missing"
+          echo "     • Workload identity lacks RBAC role on the target scope"
+          echo "     • PIM-eligible role not yet activated for the principal"
+          echo "     • Azure CLI version drift between local and runner"
+          echo ""
+          echo "   Try:"
+          echo "     • gh secret list --repo ${{ github.repository }} | grep -i azure"
+          echo "     • Check federated cred: az ad app federated-credential list --id \$AZURE_CLIENT_ID"
+          echo "     • Verify role assignment: az role assignment list --assignee \$AZURE_CLIENT_ID --all"
+          echo "     • Azure status: https://status.azure.com/"

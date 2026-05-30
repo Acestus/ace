@@ -1,0 +1,131 @@
+@startuml Resource Groups Architecture
+!theme plain
+title <ORG_NAME> Infrastructure - 18 Resource Groups Architecture
+
+!define AzurePuml https://raw.githubusercontent.com/plantuml-stdlib/Azure-PlantUML/master/dist
+!includeurl AzurePuml/AzureCommon.puml
+!includeurl AzurePuml/AzureSimplified.puml
+!includeurl AzurePuml/Compute/AzureAppService.puml
+!includeurl AzurePuml/Security/AzureKeyVault.puml
+!includeurl AzurePuml/Containers/AzureContainerRegistry.puml
+!includeurl AzurePuml/Management/AzureMonitor.puml
+!includeurl AzurePuml/Networking/AzureVirtualNetwork.puml
+
+!define DIRECTION top to bottom direction
+
+' Define containers for departments arranged in square layout
+package "Management (skpmgt)" as mgmt {
+    AzureAppService(skpmgt_dev, "rg-skpmgt-dev-usw2-001", "App Service Plan")
+    AzureAppService(skpmgt_prd, "rg-skpmgt-prd-usw2-001", "Function App")
+    
+    AzureKeyVault(skpmgtkv_dev, "rg-skpmgtkv-dev-usw2-001", "Key Vault")
+    AzureKeyVault(skpmgtkv_prd, "rg-skpmgtkv-prd-usw2-001", "Key Vault")
+    
+    AzureMonitor(skpmgtmon_dev, "rg-skpmgtmon-dev-usw2-001", "Monitoring")
+    AzureMonitor(skpmgtmon_prd, "rg-skpmgtmon-prd-usw2-001", "Monitoring")
+    
+    AzureContainerRegistry(skpmgtcr_dev, "rg-skpmgtcr-dev-usw2-001", "Container Registry")
+    AzureContainerRegistry(skpmgtcr_prd, "rg-skpmgtcr-prd-usw2-001", "Container Registry")
+}
+
+package "Analytics Department (skpana)" as analytics {
+    AzureAppService(skpana_dev, "rg-skpana-dev-usw2-001", "App Service Plan")
+    AzureAppService(skpana_prd, "rg-skpana-prd-usw2-001", "App Service Plan")
+    
+    AzureKeyVault(skpanakv_dev, "rg-skpanakv-dev-usw2-001", "Key Vault")
+    AzureKeyVault(skpanakv_prd, "rg-skpanakv-prd-usw2-001", "Key Vault")
+    
+    AzureMonitor(skpanamon_dev, "rg-skpanamon-dev-usw2-001", "Monitoring")
+    AzureMonitor(skpanamon_prd, "rg-skpanamon-prd-usw2-001", "Monitoring")
+}
+
+package "EDM Department (skpedm)" as edm {
+    AzureAppService(skpedm_dev, "rg-skpedm-dev-usw2-001", "App Service Plan")
+    AzureAppService(skpedm_prd, "rg-skpedm-prd-usw2-001", "App Service Plan")
+    
+    AzureKeyVault(skpedmkv_dev, "rg-skpedmkv-dev-usw2-001", "Key Vault")
+    AzureKeyVault(skpedmkv_prd, "rg-skpedmkv-prd-usw2-001", "Key Vault")
+    
+    AzureMonitor(skpedmmon_dev, "rg-skpedmmon-dev-usw2-001", "Monitoring")
+    AzureMonitor(skpedmmon_prd, "rg-skpedmmon-prd-usw2-001", "Monitoring")
+}
+
+package "App Development Department (skpapd)" as appdev {
+    AzureAppService(skpapd_dev, "rg-skpapd-dev-usw2-001", "App Service Plan")
+    AzureAppService(skpapd_prd, "rg-skpapd-prd-usw2-001", "App Service Plan")
+    
+    AzureKeyVault(skpapdkv_dev, "rg-skpapdkv-dev-usw2-001", "Key Vault")
+    AzureKeyVault(skpapdkv_prd, "rg-skpapdkv-prd-usw2-001", "Key Vault")
+    
+    AzureMonitor(skpapdmon_dev, "rg-skpapdmon-dev-usw2-001", "Monitoring")
+    AzureMonitor(skpapdmon_prd, "rg-skpapdmon-prd-usw2-001", "Monitoring")
+}
+
+' Layout positioning for square arrangement
+mgmt -right-> analytics
+edm -right-> appdev  
+mgmt -down-> edm
+analytics -down-> appdev
+
+' Networking Infrastructure
+package "Shared Networking" as network {
+    AzureVirtualNetwork(transit_vnet, "vnet-transit-<region>-001", "10.0.0.0/18") {
+        rectangle "snet-app-integration-<region>\n10.0.64.0/27" as app_subnet
+        rectangle "snet-private-endpoints-<region>\n10.0.65.0/27" as pe_subnet
+        rectangle "pfw-fw-usw2-003\nPalo Alto Firewall" as palo_alto
+    }
+}
+
+' Dependencies - App Services depend on Key Vaults and use networking
+skpmgt_dev ..> skpmgtkv_dev : uses
+skpmgt_prd ..> skpmgtkv_prd : uses
+skpana_dev ..> skpanakv_dev : uses
+skpana_prd ..> skpanakv_prd : uses
+skpedm_dev ..> skpedmkv_dev : uses
+skpedm_prd ..> skpedmkv_prd : uses
+skpapd_dev ..> skpapdkv_dev : uses
+skpapd_prd ..> skpapdkv_prd : uses
+
+' All App Services connect to VNet integration
+skpmgt_dev --> app_subnet : VNet Integration
+skpmgt_prd --> app_subnet : VNet Integration
+skpana_dev --> app_subnet : VNet Integration
+skpana_prd --> app_subnet : VNet Integration
+skpedm_dev --> app_subnet : VNet Integration
+skpedm_prd --> app_subnet : VNet Integration
+skpapd_dev --> app_subnet : VNet Integration
+skpapd_prd --> app_subnet : VNet Integration
+
+' All services use private endpoints
+skpmgtkv_dev --> pe_subnet : Private Endpoint
+skpmgtkv_prd --> pe_subnet : Private Endpoint
+skpanakv_dev --> pe_subnet : Private Endpoint
+skpanakv_prd --> pe_subnet : Private Endpoint
+skpedmkv_dev --> pe_subnet : Private Endpoint
+skpedmkv_prd --> pe_subnet : Private Endpoint
+skpapdkv_dev --> pe_subnet : Private Endpoint
+skpapdkv_prd --> pe_subnet : Private Endpoint
+skpmgt_dev --> pe_subnet : Private Endpoint
+skpmgt_prd --> pe_subnet : Private Endpoint
+skpana_dev --> pe_subnet : Private Endpoint
+skpana_prd --> pe_subnet : Private Endpoint
+skpedm_dev --> pe_subnet : Private Endpoint
+skpedm_prd --> pe_subnet : Private Endpoint
+skpapd_dev --> pe_subnet : Private Endpoint
+skpapd_prd --> pe_subnet : Private Endpoint
+
+note bottom
+**Total: 20 Resource Groups**
+• Management: 8 RGs (2 App Service + 2 Key Vault + 2 Monitoring + 2 Container Registry)
+• Analytics: 6 RGs (2 App Service + 2 Key Vault + 2 Monitoring)  
+• EDM: 6 RGs (2 App Service + 2 Key Vault + 2 Monitoring)
+• App Development: 6 RGs (2 App Service + 2 Key Vault + 2 Monitoring)
+
+**Architecture Features:**
+• All services use private endpoints (no public access)
+• VNet integration through existing Palo Alto firewall
+• Private DNS zones for internal resolution
+• Zero Trust network architecture
+end note
+
+@enduml

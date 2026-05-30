@@ -1,0 +1,31 @@
+@startuml Revised Architecture
+title Revised Architecture
+
+!define AzurePuml https://raw.githubusercontent.com/plantuml-stdlib/Azure-PlantUML/master/dist
+!includeurl AzurePuml/AzureSimplified.puml
+!includeurl AzurePuml/AzureCommon.puml
+!includeurl AzurePuml/Compute/AzureVirtualMachine.puml
+!includeurl AzurePuml/Databases/AzureSqlDatabase.puml
+!includeurl AzurePuml/Compute/AzureServiceFabric.puml
+!includeurl AzurePuml/Analytics/PowerBI.puml
+!includeurl AzurePuml/Containers/AzureKubernetesService.puml
+!includeurl AzurePuml/Analytics/AzureDatabricks.puml
+!includeurl AzurePuml/Databases/AzureDataFactory.puml
+
+AzureVirtualMachine(Prod01, "Prod01", "On-prem SQL Server")
+cloud "Azure" {
+    AzureSqlDatabase(Prod02, "Prod02", "Azure SQL Hyperscale")
+    AzureKubernetesService(Apps, "Application", "Spring Boot Web Services")
+    AzureServiceFabric(SQL03, "SQL03", "Analytics DB")
+    AzureDataFactory(ADFPipleline, "Azure DataFactory", "Pipeline")
+}
+
+DataSources -> Prod01: SSIS ETL and Replication
+Prod01 --> Prod02: ETL and Replication of Specific Tables
+Prod02 --> Apps
+Apps --> Prod01
+Prod01 ---> SQL03
+ADFPipleline ---> SQL03
+
+
+@enduml

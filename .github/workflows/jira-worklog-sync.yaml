@@ -1,0 +1,51 @@
+name: Jira worklog sync
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "issues/**"
+
+permissions:
+  contents: read
+
+jobs:
+  sync-jira-worklog:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    env:
+      CONFLUENCE_EMAIL: "wweeks@<ORG_PARENT_DOMAIN>"
+      WWEEKS_CONFLUENCE_API_TOKEN: ${{ secrets.WWEEKS_CONFLUENCE_API_TOKEN || secrets.JIRA_API_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Sync worklogs/comments to Jira
+        run: |
+          python3 scripts/sync_jira_worklog.py \
+            --from "${{ github.event.before }}" \
+            --to "${{ github.sha }}"
+
+      - name: Sync structured fields (Notes / Checklist / Web Links / Linked Issues) to Jira
+        run: |
+          python3 scripts/sync_jira_fields.py \
+            --changed-since "${{ github.event.before }}"
+
+      - name: 📋 Troubleshooting hints (on failure)
+        if: failure()
+        run: |
+          echo "❌ Jira worklog sync failed."
+          echo ""
+          echo "   Likely causes:"
+          echo "     • WWEEKS_CONFLUENCE_API_TOKEN secret is missing or expired"
+          echo "     • CONFLUENCE_EMAIL env does not match the token owner"
+          echo "     • Issue file has malformed Actions section (bad date heading, broken bullet)"
+          echo "     • Jira API outage or rate limit"
+          echo ""
+          echo "   Try:"
+          echo "     • Check secret: gh secret list --repo \${{ github.repository }} | grep -i confluence"
+          echo "     • Rotate token: https://id.atlassian.com/manage-profile/security/api-tokens"
+          echo "     • Replay locally: cd /home/wweeks/git/projects && python3 scripts/sync_jira_worklog.py --from <sha> --to <sha>"
+          echo "     • Check Jira status: https://status.atlassian.com/"
