@@ -135,17 +135,45 @@ def scrape(url: str) -> list[dict]:
     return all_cards
 
 
+def format_txt(cards: list) -> str:
+    """
+    Three sections separated by blank lines, one value per line.
+    Paste each section into a spreadsheet column.
+
+    Section 1 — Card Names
+    Section 2 — Rarities
+    Section 3 — Ink Colors
+    """
+    names    = [c["name"]   for c in cards]
+    rarities = [RARITY_MAP.get(c["rarity"], c["rarity"]) for c in cards]
+    inks     = [c["ink"]    for c in cards]
+
+    lines = []
+    lines.append("=== NAMES ===")
+    lines.extend(names)
+    lines.append("")
+    lines.append("=== RARITY ===")
+    lines.extend(rarities)
+    lines.append("")
+    lines.append("=== INK COLOR ===")
+    lines.extend(inks)
+    return "\n".join(lines)
+
+
 def main():
     parser = argparse.ArgumentParser(description="Scrape Lorcana card list")
     parser.add_argument("--set", default="wilds-unknown", choices=list(SET_URLS.keys()))
     parser.add_argument("--url", help="Override URL directly")
-    parser.add_argument("--out", help="Write JSON to file (default: stdout)")
+    parser.add_argument("--out", help="Write output to file (default: stdout)")
+    parser.add_argument("--txt", action="store_true",
+                        help="Output plain text sections for copy-paste instead of JSON")
     args = parser.parse_args()
 
     url = args.url or SET_URLS[args.set]
     cards = scrape(url)
 
-    output = json.dumps(cards, indent=2, ensure_ascii=False)
+    output = format_txt(cards) if args.txt else json.dumps(cards, indent=2, ensure_ascii=False)
+
     if args.out:
         with open(args.out, "w") as f:
             f.write(output)
