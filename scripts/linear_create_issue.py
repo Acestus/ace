@@ -6,9 +6,13 @@ Usage:
     python3 scripts/linear_create_issue.py --team ENG --title "Fix auth timeout" \
         --priority 2 --label "flow:queue" --label "urgency:2" --label "importance:2"
     python3 scripts/linear_create_issue.py --team ENG --title "..." --description "..."
+    python3 scripts/linear_create_issue.py --team ENG --title "..." --project "Make $50"
 
 Environment (reads from .env):
     LINEAR_API_KEY
+    Optional project attachment:
+        --project-id <Linear project id>
+        --project <Linear project name>
 """
 
 import argparse
@@ -28,6 +32,18 @@ query GetTeam($key: String!) {
       name
       states { nodes { id name } }
       labels { nodes { id name } }
+    }
+  }
+}
+"""
+
+PROJECTS_QUERY = """
+query GetProjects($name: String!) {
+  projects(filter: { name: { eq: $name } }) {
+    nodes {
+      id
+      name
+      teams { nodes { key } }
     }
   }
 }
@@ -58,6 +74,8 @@ def main():
     parser.add_argument("--priority", type=int, choices=[0, 1, 2, 3, 4], default=0,
                         help="0=No Priority 1=Urgent 2=High 3=Medium 4=Low")
     parser.add_argument("--label", action="append", default=[], help="Label name (repeatable)")
+    parser.add_argument("--project-id", default="", help="Project ID to attach the issue to")
+    parser.add_argument("--project", default="", help="Project name to attach the issue to")
     parser.add_argument("--state", default="Backlog", help="Initial state name")
     parser.add_argument("--json", action="store_true", help="Raw JSON output")
     args = parser.parse_args()
@@ -96,6 +114,22 @@ def main():
     }
     if args.description:
         inp["description"] = args.description
+    if args.project_id:
+        inp["projectId"] = args.project_id
+    elif args.project:
+        project_data = graphql(PROJECTS_QUERY, {"name": args.project})
+        projects = project_data.get("projects", {}).get("nodes", [])
+        matching = next(
+            (
+                p for p in projects
+                if any((t.get("key") or "").upper() == args.team.upper()
+                       for t in (p.get("teams") or {}).get("nodes", []))
+            ),
+            None,
+        )
+        if not matching:
+            sys.exit(f"Project '{args.project}' not found for team '{args.team}'.")
+        inp["projectId"] = matching["id"]
     if label_ids:
         inp["labelIds"] = label_ids
 
