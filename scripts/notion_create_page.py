@@ -18,7 +18,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from notion_lib import load_env_file, post, markdown_to_blocks
+from notion_lib import load_env_file, post, markdown_to_blocks, get_root_page_id
 
 
 def main():
@@ -32,11 +32,7 @@ def main():
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
 
-    parent_id = args.parent or os.environ.get("NOTION_ROOT_PAGE_ID", "")
-    if not parent_id:
-        sys.exit(
-            "Parent page ID required. Pass --parent PAGE_ID or set NOTION_ROOT_PAGE_ID in .env"
-        )
+    parent_id = args.parent or get_root_page_id()
 
     text = ""
     if args.file:

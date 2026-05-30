@@ -42,10 +42,30 @@ def get_api_key() -> str:
         sys.exit(
             "NOTION_API_KEY not set.\n"
             "Add to your .env file:\n"
-            "  NOTION_API_KEY=secret_xxxxxxxxxxxx\n"
-            "Create an integration at: https://www.notion.so/my-integrations"
+            "  NOTION_API_KEY=ntn_xxxxxxxxxxxx\n"
+            "Create an integration at: https://app.notion.com/developers/connections"
         )
     return key
+
+
+def get_root_page_id() -> str:
+    """Return NOTION_ROOT_PAGE_ID or exit with clear setup instructions."""
+    load_env_file()
+    page_id = os.environ.get("NOTION_ROOT_PAGE_ID", "").strip()
+    if not page_id:
+        sys.exit(
+            "NOTION_ROOT_PAGE_ID not set.\n\n"
+            "Steps to connect a Notion page:\n"
+            "  1. Open any page in your Notion workspace\n"
+            "  2. Click ••• (top right) → Connections → workflow-toolkit\n"
+            "  3. Copy the page URL, e.g.:\n"
+            "       https://www.notion.so/acestus/My-Page-abc123def456\n"
+            "     The page ID is the last segment after the final dash:\n"
+            "       abc123def456\n"
+            "  4. Add to .env:\n"
+            "       NOTION_ROOT_PAGE_ID=abc123def456\n"
+        )
+    return page_id
 
 
 def notion_request(method: str, path: str, body: dict | None = None) -> dict:
