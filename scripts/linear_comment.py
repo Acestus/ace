@@ -18,10 +18,8 @@ sys.path.insert(0, str(Path(__file__).parent))
 from linear_lib import graphql, load_env_file
 
 ISSUE_ID_QUERY = """
-query GetIssueId($identifier: String!) {
-  issues(filter: { identifier: { eq: $identifier } }) {
-    nodes { id identifier }
-  }
+query GetIssueId($id: String!) {
+  issue(id: $id) { id identifier }
 }
 """
 
@@ -48,12 +46,12 @@ def main():
     if args.file:
         body = Path(args.file).read_text()
 
-    data = graphql(ISSUE_ID_QUERY, {"identifier": args.key.upper()})
-    nodes = data.get("issues", {}).get("nodes", [])
-    if not nodes:
+    data = graphql(ISSUE_ID_QUERY, {"id": args.key.upper()})
+    issue = data.get("issue")
+    if not issue:
         sys.exit(f"Issue {args.key} not found.")
 
-    issue_id = nodes[0]["id"]
+    issue_id = issue["id"]
     result = graphql(COMMENT_MUTATION, {"issueId": issue_id, "body": body})
     cr = result.get("commentCreate", {})
     if cr.get("success"):

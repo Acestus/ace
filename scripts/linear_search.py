@@ -23,7 +23,7 @@ from linear_lib import graphql, load_env_file, PRIORITY_LABELS
 
 SEARCH_QUERY = """
 query SearchIssues($filter: IssueFilter!, $first: Int!) {
-  issues(filter: $filter, first: $first, orderBy: priority) {
+  issues(filter: $filter, first: $first, orderBy: updatedAt) {
     nodes {
       identifier
       title

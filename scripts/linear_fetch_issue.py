@@ -19,31 +19,29 @@ sys.path.insert(0, str(Path(__file__).parent))
 from linear_lib import graphql, load_env_file, format_issue_header, PRIORITY_LABELS
 
 ISSUE_QUERY = """
-query FetchIssue($identifier: String!) {
-  issues(filter: { identifier: { eq: $identifier } }) {
-    nodes {
-      id
-      identifier
-      title
-      description
-      priority
-      state { name type }
-      assignee { name email }
-      labels { nodes { name } }
-      dueDate
-      createdAt
-      updatedAt
-      team { name key }
-      comments(orderBy: createdAt) {
-        nodes {
-          createdAt
-          user { name }
-          body
-        }
+query FetchIssue($id: String!) {
+  issue(id: $id) {
+    id
+    identifier
+    title
+    description
+    priority
+    state { name type }
+    assignee { name email }
+    labels { nodes { name } }
+    dueDate
+    createdAt
+    updatedAt
+    team { name key }
+    comments(orderBy: createdAt) {
+      nodes {
+        createdAt
+        user { name }
+        body
       }
-      parent { identifier title }
-      children { nodes { identifier title state { name } } }
     }
+    parent { identifier title }
+    children { nodes { identifier title state { name } } }
   }
 }
 """
@@ -56,11 +54,10 @@ def main():
     parser.add_argument("--json", action="store_true", help="Raw JSON output")
     args = parser.parse_args()
 
-    data = graphql(ISSUE_QUERY, {"identifier": args.key.upper()})
-    nodes = data.get("issues", {}).get("nodes", [])
-    if not nodes:
+    data = graphql(ISSUE_QUERY, {"id": args.key.upper()})
+    issue = data.get("issue")
+    if not issue:
         sys.exit(f"Issue {args.key} not found.")
-    issue = nodes[0]
 
     if args.json:
         print(json.dumps(issue, indent=2))

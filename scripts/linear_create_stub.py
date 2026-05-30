@@ -22,16 +22,14 @@ sys.path.insert(0, str(Path(__file__).parent))
 from linear_lib import graphql, load_env_file, PRIORITY_LABELS, priority_to_urgency
 
 ISSUE_QUERY = """
-query FetchIssue($identifier: String!) {
-  issues(filter: { identifier: { eq: $identifier } }) {
-    nodes {
-      id identifier title description priority
-      state { name }
-      assignee { name }
-      labels { nodes { name } }
-      dueDate
-      team { name key }
-    }
+query FetchIssue($id: String!) {
+  issue(id: $id) {
+    id identifier title description priority
+    state { name }
+    assignee { name }
+    labels { nodes { name } }
+    dueDate
+    team { name key }
   }
 }
 """
@@ -51,11 +49,10 @@ def main():
                         help="Path to projects repo")
     args = parser.parse_args()
 
-    data = graphql(ISSUE_QUERY, {"identifier": args.key.upper()})
-    nodes = data.get("issues", {}).get("nodes", [])
-    if not nodes:
+    data = graphql(ISSUE_QUERY, {"id": args.key.upper()})
+    issue = data.get("issue")
+    if not issue:
         sys.exit(f"Issue {args.key} not found.")
-    issue = nodes[0]
 
     title = issue["title"]
     identifier = issue["identifier"]

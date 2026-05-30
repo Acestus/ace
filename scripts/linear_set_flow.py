@@ -26,13 +26,11 @@ sys.path.insert(0, str(Path(__file__).parent))
 from linear_lib import graphql, load_env_file, flow_to_state_name
 
 TEAM_STATES_QUERY = """
-query TeamStates($issueId: String!) {
-  issues(filter: { identifier: { eq: $issueId } }) {
-    nodes {
-      id
-      team {
-        states { nodes { id name type } }
-      }
+query TeamStates($id: String!) {
+  issue(id: $id) {
+    id
+    team {
+      states { nodes { id name type } }
     }
   }
 }
@@ -76,12 +74,11 @@ def main():
 
     target_state_name = args.state if args.state else flow_to_state_name(args.flow)
 
-    data = graphql(TEAM_STATES_QUERY, {"issueId": args.key.upper()})
-    nodes = data.get("issues", {}).get("nodes", [])
-    if not nodes:
+    data = graphql(TEAM_STATES_QUERY, {"id": args.key.upper()})
+    issue = data.get("issue")
+    if not issue:
         sys.exit(f"Issue {args.key} not found.")
 
-    issue = nodes[0]
     issue_id = issue["id"]
     states = issue["team"]["states"]["nodes"]
 
