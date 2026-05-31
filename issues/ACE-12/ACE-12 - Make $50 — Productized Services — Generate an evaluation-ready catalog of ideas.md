@@ -9,6 +9,17 @@ due: None
 created: 2026-05-29
 ---
 
+## Notes
+
+### Lede
+Turned 25+ repos of proven production work into a 53-idea productized services catalog, published to Notion, scored, and narrowed to three concrete bets: IaC Modernization Package, Azure Governance-in-a-Box, and Workflow Toolkit (Open Source + Premium). The catalog exists so there's a place to point people and a forcing function to stop giving it away for free.
+
+### Status
+Complete — catalog published, top 10 scored, top 3 selected.
+
+### Next
+File Linear tickets for each of the top 3 to kick off packaging/prototyping.
+
 ## Description
 
 Generate a comprehensive catalog of productized services and product ideas derived from proven production work. Output: a long Notion page of business ideas, organized by domain, ready to evaluate and prioritize.
@@ -183,17 +194,64 @@ Generate a comprehensive catalog of productized services and product ideas deriv
 
 ---
 
+## Web Links
+
+- [ACE-12 Linear](https://linear.app/issue/ACE-12)
+- [Productized Services & Business Ideas — Notion](https://app.notion.com/p/Productized-Services-Business-Ideas-370202bafe718181b8e4c2e68fa4e614?pvs=28)
+
+---
+
 ## Actions
+
+### 2026-05-30 23:16
+
+- WORKLOG 1h: Published 53-idea catalog to Notion, scored items 15–17 (Fabric Fundamentals Course, Azure Architecture Workshop, Copilot Skills Marketplace — all Revenue:4/Ease:3/Score:7), revised top 10 swapping in Workflow Toolkit, AI Ops Consulting, Copilot Skills Marketplace for items 6/8/9, then selected top 3 for prototyping.
+- COMMENT: Closed out the catalog work in this session. The Notion page was published by the operator directly, then shared with the workflow-toolkit integration so the scored items and top 3 picks could be appended via API. The scoring approach was simple Revenue/Ease/Score per item. The top 10 was revised to weight AI ops and workflow tooling higher — items 6, 8, 9 replaced with Workflow Toolkit, AI Ops Consulting, and Copilot Skills Marketplace. Final top 3: IaC Modernization Package, Azure Governance-in-a-Box, and Workflow Toolkit (Open Source + Premium). Next step is filing Linear tickets to start packaging each of those three.
 
 ### 2026-05-30 00:50
 
 - WORKLOG 45m: Explored ~/git (25+ repos) and ~/github (portfolio, website, workflow-toolkit) to inventory skills and production work. Generated 53 productized service and business ideas across 10 categories.
 - COMMENT: Did a full sweep of the work portfolio — 25+ Bicep stacks in iac-infra, Fabric ETL in loanetl/fabric-edm, the Five9 call script connector, fabric-scheduler, workflow-toolkit, the portfolio site (21 SPAs in ClojureScript + Rust/WASM), the Clojure blog/resume site, networking IaC, and various POCs. Mapped these to 53 concrete business ideas organized in 10 categories: Platform Engineering as a Service, Data Platform Products, AI Ops & Developer Productivity, Contact Center Integration, Web & Portfolio Products, Identity & Security, Content & Education, Niche SaaS, Fractional/Retainer Services, and Compound Products. Ready to publish to Notion for prioritization.
 
+## Scoring
+
+Top 10 (revised): items 1–10 from catalog, with 6→Workflow Toolkit (#15 orig), 8→AI Ops Consulting (#16 orig), 9→Copilot Skills Marketplace (#17 orig).
+
+Additional scored items:
+
+### 15. Fabric Fundamentals Course
+
+**Revenue: 4 | Ease: 3 | Score: 7**
+
+Self-paced video course: medallion architecture, PySpark notebooks, pipeline orchestration, capacity management.
+
+---
+
+### 16. Azure Architecture Workshop
+
+**Revenue: 4 | Ease: 3 | Score: 7**
+
+Half-day or full-day workshops on landing zones, networking, identity, observability. In-person or virtual.
+
+---
+
+### 17. Copilot Skills Marketplace
+
+**Revenue: 4 | Ease: 3 | Score: 7**
+
+Curated library of tested .github/skills/ for common engineering workflows. Subscription model.
+
+---
+
 ## Follow-up
 
 Status: In Progress
 TODO:
-- [ ] Publish the ideas list to Notion as a long-form page
-- [ ] Score/prioritize top 10 ideas by effort vs. revenue potential
-- [ ] Pick 2-3 to prototype or package first
+- [x] Publish the ideas list to Notion as a long-form page
+- [x] Score/prioritize top 10 ideas by effort vs. revenue potential
+- [x] Pick 2-3 to prototype or package first
+
+**Top 3 selected:**
+1. IaC Modernization Package
+2. Azure Governance-in-a-Box
+3. Workflow Toolkit (Open Source + Premium)
