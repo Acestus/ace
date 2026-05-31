@@ -22,7 +22,7 @@ Close the work day: finalize the daily note with a standup section, post the sum
 Check if any `tl` timers are still running:
 
 ```bash
-cd /home/wweeks/git/projects && cat planner/.timers.json 2>/dev/null || echo "no timers"
+cd /home/wweeks/github/ace && cat planner/.timers.json 2>/dev/null || echo "no timers"
 ```
 
 If timers are active, stop them:
@@ -43,7 +43,7 @@ If none, proceed. If yes, collect the text — you'll pass it as `--blocker` arg
 ### Step 3 — Generate standup and close the note
 
 ```bash
-cd /home/wweeks/git/projects
+cd /home/wweeks/github/ace
 python3 scripts/daily_note.py --end \
   [--blocker "<PROJECT>-KEY: description"] \
   [--blocker "second blocker"]
@@ -69,7 +69,7 @@ Before presenting today's standup, compare it to yesterday's:
 ```bash
 # Find yesterday's org file
 YESTERDAY=$(date -d 'yesterday' +%m-%d 2>/dev/null || date -v-1d +%m-%d)
-cat planner/${YESTERDAY}.org 2>/dev/null | grep -A 50 "* Standup"
+cat /home/wweeks/github/ace/planner/${YESTERDAY}.org 2>/dev/null | grep -A 50 "* Standup"
 ```
 
 Check for broken promises — things that were in yesterday's "Active / Up Next" that are STILL in today's active list with no progress:
@@ -102,13 +102,10 @@ Tell the user:
 Before final commit, verify the outbox is current and waiting tickets are synced to Linear:
 
 ```bash
-cd /home/wweeks/git/projects && export $(grep -v '^#' .env | xargs)
+cd /home/wweeks/github/ace && export $(grep -v '^#' .env | grep -v '{' | grep -v '}' | grep '=' | xargs -d '\n')
 
 # Refresh outbox from issue files
 python3 scripts/outbox_refresh.py
-
-# Publish outbox to Notion (WWeeks → WWeeks Outbox)
-python3 scripts/outbox_publish.py
 
 # Sync notes/next-steps from issue files to Linear custom fields
 python3 scripts/linear_search.py --state 'In Review'

@@ -68,9 +68,9 @@ def load_env_file():
 
 def auth_header():
     email = require_env("CONFLUENCE_EMAIL",
-                        hint="cd /home/wweeks/git/projects && export $(grep -v '^#' .env | xargs)")
+                        hint="cd /home/wweeks/github/ace\n  export $(grep -v '^#' .env | grep -v '{' | grep '=' | xargs -d '\\n')")
     token = require_env("WWEEKS_CONFLUENCE_API_TOKEN",
-                        hint="cd /home/wweeks/git/projects && export $(grep -v '^#' .env | xargs)")
+                        hint="cd /home/wweeks/github/ace\n  export $(grep -v '^#' .env | grep -v '{' | grep '=' | xargs -d '\\n')")
     return "Basic " + base64.b64encode(f"{email}:{token}".encode()).decode()
 
 
