@@ -69,6 +69,13 @@ WORKLOG: Stub created from Linear ACE-6
 - WORKLOG 20m: Created all three Notion databases and updated hub page with workflow doc.
 - COMMENT: The CRM is now live with three databases — People, Outreach, and Follow-ups — structured in a star schema. The hub page has been updated with the full workflow, field guide, and reminder cadence decision. Weekly cadence is the default. Follow-ups become Linear issues only when real delivery work is required. The system is ready to use: open People, add someone from the Build attendee list, set Next Action Date, then log each touchpoint in Outreach. The daily working view is the People board filtered by Next Action Date = Today.
 
+## Actions
+
+### 2026-05-30 22:36
+
+- WORKLOG 2h: Wrote and ran bulk import script — all 2,213 Build attendees loaded into Notion People DB.
+- COMMENT: The People database now has the full Microsoft Build attendee list — 2,213 unique contacts parsed from the scraped attendee page, deduplicated, and imported via the Notion API. Each record has Name, Role, Company, and How We Met ("Microsoft Build 2026"). The LinkedIn and Email fields are blank — those need to be filled manually as you meet people at the event. One contact (Tian Liang) failed due to a transient network error; can be re-added manually. The import script lives at `scripts/build_crm_import.py` and is idempotent-safe for future re-runs with a fresh DB. The "Today" filtered view in People was deferred — not blocking anything.
+
 ## Follow-up
 
 Status: In Progress
@@ -76,5 +83,6 @@ TODO:
 - [x] Define database schema
 - [x] Create Notion databases
 - [x] Document workflow and reminder cadence
-- [ ] Add first real contacts from Build attendee page
-- [ ] Create a filtered "Today" view in People database
+- [x] Add first real contacts from Build attendee page (2,212 imported via script)
+- [ ] Fill LinkedIn + Email for priority contacts as you meet them at Build
+- [ ] Create a filtered "Today" view in People database (deferred, low priority)
