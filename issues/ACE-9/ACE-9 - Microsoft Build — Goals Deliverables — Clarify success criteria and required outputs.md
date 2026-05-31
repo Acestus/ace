@@ -65,3 +65,7 @@ TODO:
 WORKLOG: Closed ACE-9 — goals clarified, pitch line locked, deliverables defined. Voice capture dropped. Mugshot card broken out as ACE-21 and queued. Notion CRM (ACE-6) confirmed live with 2,212 Build attendees imported.
 
 COMMENT: Goals and deliverables are fully locked. Pitch line is set. Mugshot card is its own ticket (ACE-21) for Sunday. CRM is live. Voice capture workflow dropped — not needed. Nothing left in this ticket.
+
+### 2026-05-31 (LinkedIn enrichment via ACE-6)
+
+WORKLOG: Pre-loaded Notion People DB with LinkedIn URLs using Brave Search API. Deduplicated 7,070 rows → 2,718 unique people. Processed 100 unique attendees (A–B tier), 81 found (81% hit rate), 4,352 duplicate rows updated simultaneously. ~340 searches remain in monthly budget for continued enrichment.
