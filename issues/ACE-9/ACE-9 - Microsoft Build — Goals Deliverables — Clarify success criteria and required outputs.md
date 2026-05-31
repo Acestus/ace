@@ -57,6 +57,6 @@ TODO:
 - [x] Define deliverables before Tuesday
 - [x] Define follow-up system
 - [x] Pick pitch line (C4 — "Cloud architect focused on Azure and Fabric...")
-- [ ] Create mugshot card (photo tomorrow → run through Aragon AI → build card with name + email + pitch line)
-- [ ] Confirm ACE-6 Notion CRM structure
-- [ ] Set up voice→Notion capture workflow
+- [ ] Create mugshot card (Sunday — photo + Aragon AI + name/email/pitch line)
+- [ ] Confirm ACE-6 Notion CRM structure ← **blocker for Tuesday**
+- ~~Set up voice→Notion capture workflow~~ ← dropped

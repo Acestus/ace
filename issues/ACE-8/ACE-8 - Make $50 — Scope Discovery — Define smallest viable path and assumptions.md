@@ -89,10 +89,14 @@ Start with a narrow offer such as a cloud architecture / cost / capacity review,
 
 - [ACE-8 Linear](https://linear.app/issue/ACE-8)
 - [Make $50 project](https://linear.app/acestus/project/make-dollar50-c704b5cc8676)
+- [ACE-19 — Build Outreach](https://linear.app/acestus/issue/ACE-19)
+- [ACE-20 — Hugo SWA Landing Page](https://linear.app/acestus/issue/ACE-20)
 
 ## Actions
 
-### 2026-05-30
+### 2026-05-30 23:36
+
+- COMMENT: Completed scope discovery for the Make $50 project. The offer landed as a Fabric CI/CD readiness review at $50 — a fixed-scope engagement covering an intake call, workspace and repo review, a gap checklist, and the top 3 fixes for repeatable deployment. The buyer channel is Microsoft Build attendees (in-person June 3), with contact exchange on the floor and follow-up afterward pointing to a marketing landing page. Investigation confirmed the event is upcoming (not over), the operator is attending in person, and done for this ticket means scope documented — not first sale. The LinkedIn outreach draft in the Notes section is the post-event follow-up template. Two action tickets filed: ACE-19 (attend Build + collect contacts + send follow-ups) and ACE-20 (Hugo SWA landing page at fabric.acestus.com). ACE-20 is time-sensitive — needs to be live before or by Tuesday.
 
 WORKLOG: Packaged the first offer as a Fabric CI/CD readiness review, set the target price to $50, and drafted the first LinkedIn outreach message.
 
@@ -102,7 +106,7 @@ WORKLOG: Stub created from Linear ACE-8
 
 ## Follow-up
 
-Status: In Progress
+Status: Done
 TODO:
 - [x] Review and scope work
 - [x] Define the first paid offer
@@ -110,7 +114,7 @@ TODO:
 - [x] List the first sale action
 - [x] Turn Fabric expertise into a productized CI/CD service
 - [x] Define the deliverable for the first customer
-- [ ] Reach out to Build attendees
+- [x] Reach out to Build attendees → moved to ACE-19
 - [x] Confirm what blocker is most likely
 - [x] Identify the first outreach action
 - [x] Draft the LinkedIn outreach message

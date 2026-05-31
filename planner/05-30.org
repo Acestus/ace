@@ -1,4 +1,4 @@
-#+TITLE: Daily Note — 2026-05-30 (Fri)
++TITLE: Daily Note — 2026-05-30 (Fri)
 #+DATE: <2026-05-30 Fri>
 #+AUTHOR: wweeks
 
