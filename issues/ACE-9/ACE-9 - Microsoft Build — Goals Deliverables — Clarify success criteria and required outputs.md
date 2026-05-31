@@ -51,12 +51,17 @@ WORKLOG: Stub created from Linear ACE-9
 
 ## Follow-up
 
-Status: In Progress
+Status: Done
 TODO:
 - [x] Define goals and strategy
 - [x] Define deliverables before Tuesday
 - [x] Define follow-up system
 - [x] Pick pitch line (C4 — "Cloud architect focused on Azure and Fabric...")
-- [ ] Create mugshot card (Sunday — photo + Aragon AI + name/email/pitch line)
-- [ ] Confirm ACE-6 Notion CRM structure ← **blocker for Tuesday**
-- ~~Set up voice→Notion capture workflow~~ ← dropped
+- [x] Create mugshot card → broken out as ACE-21
+- [x] Confirm ACE-6 Notion CRM structure (2,212 contacts imported 2026-05-30)
+
+### 2026-05-31
+
+WORKLOG: Closed ACE-9 — goals clarified, pitch line locked, deliverables defined. Voice capture dropped. Mugshot card broken out as ACE-21 and queued. Notion CRM (ACE-6) confirmed live with 2,212 Build attendees imported.
+
+COMMENT: Goals and deliverables are fully locked. Pitch line is set. Mugshot card is its own ticket (ACE-21) for Sunday. CRM is live. Voice capture workflow dropped — not needed. Nothing left in this ticket.
