@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>William Weeks-Balconi — Microsoft Build 2026</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0a0a0f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  .card {
+    width: 480px;
+    height: 720px;
+    background: #0d1b2e;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid #1a2d45;
+  }
+
+  /* ── Geometric background shapes ── */
+  .geo-top-right {
+    position: absolute;
+    top: -60px;
+    right: -60px;
+    width: 260px;
+    height: 260px;
+    background: #FFB900;
+    transform: rotate(15deg);
+    opacity: 0.12;
+  }
+
+  .geo-bottom-left {
+    position: absolute;
+    bottom: -80px;
+    left: -60px;
+    width: 280px;
+    height: 280px;
+    background: #00A4EF;
+    transform: rotate(-20deg);
+    opacity: 0.10;
+  }
+
+  .geo-mid-right {
+    position: absolute;
+    right: -30px;
+    top: 50%;
+    width: 120px;
+    height: 120px;
+    background: #7FBA00;
+    transform: rotate(30deg) translateY(-50%);
+    opacity: 0.09;
+  }
+
+  /* ── Accent bar — top ── */
+  .accent-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 6px;
+    background: linear-gradient(90deg, #FFB900 0%, #F25022 33%, #7FBA00 66%, #00A4EF 100%);
+  }
+
+  /* ── BUILD badge ── */
+  .build-badge {
+    position: absolute;
+    top: 20px;
+    right: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+  }
+
+  .build-wordmark {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #ffffff50;
+  }
+
+  .build-year {
+    font-size: 28px;
+    font-weight: 700;
+    color: #FFB90030;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+
+  /* ── Photo area ── */
+  .photo-wrap {
+    position: absolute;
+    top: 52px;
+    left: 36px;
+  }
+
+  .photo-hex {
+    width: 158px;
+    height: 158px;
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    background: #1a3050;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .photo-hex img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .photo-placeholder-text {
+    font-size: 11px;
+    color: #ffffff30;
+    text-align: center;
+    line-height: 1.5;
+  }
+
+  /* ── Accent line beside photo ── */
+  .side-line {
+    position: absolute;
+    top: 52px;
+    left: 206px;
+    width: 3px;
+    height: 158px;
+    background: linear-gradient(180deg, #FFB900, #F2502200);
+  }
+
+  /* ── Name block ── */
+  .name-block {
+    position: absolute;
+    top: 240px;
+    left: 36px;
+    right: 36px;
+  }
+
+  .name {
+    font-size: 30px;
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+  }
+
+  .name span.accent {
+    color: #FFB900;
+  }
+
+  .title-line {
+    margin-top: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #00A4EF;
+  }
+
+  /* ── Divider ── */
+  .divider {
+    position: absolute;
+    top: 346px;
+    left: 36px;
+    right: 36px;
+    height: 1px;
+    background: linear-gradient(90deg, #FFB900, #ffffff10, transparent);
+  }
+
+  /* ── Pitch block ── */
+  .pitch-block {
+    position: absolute;
+    top: 362px;
+    left: 36px;
+    right: 36px;
+  }
+
+  .pitch-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #7FBA00;
+    margin-bottom: 10px;
+  }
+
+  .pitch-text {
+    font-size: 15px;
+    font-weight: 400;
+    color: #c8d8ea;
+    line-height: 1.65;
+  }
+
+  .pitch-text em {
+    font-style: normal;
+    color: #ffffff;
+    font-weight: 600;
+  }
+
+  /* ── Contact bar ── */
+  .contact-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 20px 36px 24px;
+    background: linear-gradient(180deg, transparent, #050f1a 40%);
+  }
+
+  .contact-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .contact-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .contact-icon.email-icon { background: #F25022; }
+  .contact-icon.li-icon    { background: #0077B5; }
+
+  .contact-icon svg {
+    width: 14px;
+    height: 14px;
+    fill: #fff;
+  }
+
+  .contact-text {
+    font-size: 14px;
+    font-weight: 600;
+    color: #e0ecf8;
+    letter-spacing: 0.01em;
+  }
+
+  .contact-text.dim {
+    color: #556070;
+    font-weight: 400;
+    font-size: 13px;
+  }
+
+  /* ── Bottom accent bar ── */
+  .bottom-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #00A4EF 0%, #7FBA00 50%, #FFB900 100%);
+  }
+
+  /* ── Corner mark ── */
+  .corner-mark {
+    position: absolute;
+    top: 20px;
+    left: 24px;
+    width: 32px;
+    height: 32px;
+  }
+
+  .corner-mark .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    position: absolute;
+  }
+
+  .dot-1 { background: #F25022; top: 0; left: 0; }
+  .dot-2 { background: #FFB900; top: 0; left: 12px; }
+  .dot-3 { background: #7FBA00; top: 12px; left: 0; }
+  .dot-4 { background: #00A4EF; top: 12px; left: 12px; }
+
+  /* ── Print / screenshot helper ── */
+  .hint {
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 12px;
+    color: #ffffff40;
+    font-family: monospace;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+
+  <!-- Background geometry -->
+  <div class="geo-top-right"></div>
+  <div class="geo-bottom-left"></div>
+  <div class="geo-mid-right"></div>
+
+  <!-- Top accent bar -->
+  <div class="accent-bar"></div>
+
+  <!-- Microsoft 4-dot mark -->
+  <div class="corner-mark">
+    <div class="dot dot-1"></div>
+    <div class="dot dot-2"></div>
+    <div class="dot dot-3"></div>
+    <div class="dot dot-4"></div>
+  </div>
+
+  <!-- BUILD 2026 badge -->
+  <div class="build-badge">
+    <span class="build-wordmark">Microsoft Build</span>
+    <span class="build-year">2026</span>
+  </div>
+
+  <!-- Photo -->
+  <div class="photo-wrap">
+    <div class="photo-hex">
+      <!--
+        REPLACE src below with your Aragon AI photo path, e.g.:
+        <img src="photo.jpg" alt="William Weeks-Balconi">
+      -->
+      <div class="photo-placeholder-text">drop photo<br>here</div>
+    </div>
+  </div>
+
+  <!-- Vertical accent line -->
+  <div class="side-line"></div>
+
+  <!-- Name + title -->
+  <div class="name-block">
+    <div class="name">William<br><span class="accent">Weeks-Balconi</span></div>
+    <div class="title-line">Cloud Architect · Azure &amp; Fabric</div>
+  </div>
+
+  <!-- Divider -->
+  <div class="divider"></div>
+
+  <!-- Pitch -->
+  <div class="pitch-block">
+    <div class="pitch-label">What I do</div>
+    <div class="pitch-text">
+      Cloud architect focused on <em>Azure and Fabric.</em>
+      I spend most of my time on the platform layer —
+      and I've been pulling <em>AI agents</em> into everything.
+    </div>
+  </div>
+
+  <!-- Contact -->
+  <div class="contact-bar">
+    <div class="contact-row">
+      <div class="contact-icon email-icon">
+        <svg viewBox="0 0 20 20"><path d="M18 4H2C.9 4 0 4.9 0 6v8c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 2l-8 5-8-5h16zm0 8H2V8l8 5 8-5v6z"/></svg>
+      </div>
+      <span class="contact-text">jump@hey.com</span>
+    </div>
+    <div class="contact-row">
+      <div class="contact-icon li-icon">
+        <svg viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+      </div>
+      <span class="contact-text dim">linkedin.com/in/wweeks</span>
+    </div>
+  </div>
+
+  <!-- Bottom bar -->
+  <div class="bottom-bar"></div>
+
+</div>
+
+<p class="hint">Open in browser → Cmd+Shift+4 to screenshot the card</p>
+
+</body>
+</html>
