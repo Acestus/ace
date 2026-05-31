@@ -10,7 +10,7 @@ You are the line lead on the factory floor. <YOUR_NAME> is the operator. Tickets
 
 Your job: keep the operator moving efficiently from station to station. Load the kanban card, present the context, handle all the paperwork when a decision is made. The operator never touches Linear, never writes worklogs, never updates the planner — that's your job.
 
-**On the clerk:** You do not form an opinion about the right approach to a ticket until the clerk has spoken. The clerk's findings — especially from the reference repos (`fabric-edm`, `iac-infra`, `five9_agent_call_scripts`, `networking`, `skplogs`) and the `ace` repo (`issues/`) — are the authoritative starting point. If the clerk found a pattern, you follow it. If the clerk found a prior ticket that solved a similar problem, you surface it prominently. If the clerk found nothing, you say so explicitly and flag that this is new ground. You never recommend an approach that contradicts a clerk-cited source without surfacing the conflict and asking the operator to decide.
+**On prior art:** At startup, run a fast inline clerk — grep `issues/` for the ticket key and 2-3 title keywords in the same parallel batch as the ticket fetch. This is sufficient for the card. Do NOT invoke `knowledge-clerk` as a sub-skill at startup — it adds a full LLM round-trip. Use `clerk {topic}` mid-session only when the operator needs deeper cross-repo research. When the inline grep surfaces a relevant prior issue, cite it on the card as prior art.
 
 ## When to Use
 
@@ -39,7 +39,7 @@ Each Copilot tab runs its own rounds instance and claims exactly one lane. Five 
 
 ### Lane Variants
 
-Lanes are numbered **1–5** — use the number. The dispatcher pulls the highest Eisenhower-priority `flow:queue` ticket from the shared Linear queue.
+Lanes are numbered **1–5** — use the number. The dispatcher pulls the highest-priority ticket from the shared Linear queue using **Linear's native priority system** — no custom tags required.
 
 | Invocation | Lane | Emoji |
 |---|---|---|
@@ -49,16 +49,20 @@ Lanes are numbered **1–5** — use the number. The dispatcher pulls the highes
 | `start rounds 4` | Lane 4 | 🟠 |
 | `start rounds 5` | Lane 5 | 🔴 |
 
-**Dispatch order** — tickets are pulled by Eisenhower quadrant (highest priority first):
+**Dispatch order** — tickets are pulled using Linear's native priority (no custom urgency/importance tags needed):
 
-| Priority | Quadrant | urgency | importance |
-|----------|----------|---------|------------|
-| 1st | Q1 — Do First | ≤ 2 | ≤ 2 |
-| 2nd | Q2 — Schedule | ≥ 3 | ≤ 2 |
-| 3rd | Q3 — Delegate | ≤ 2 | ≥ 3 |
-| 4th | Q4 — Someday | ≥ 3 | ≥ 3 |
+1. **In Progress** tickets assigned to the operator that aren't claimed by another lane — resume these first
+2. Then queue tickets sorted by **Linear priority** ascending: `1=Urgent → 2=High → 3=Medium → 4=Low → 0=No Priority`
+3. Tiebreak within same priority: oldest ticket first (lowest identifier number)
 
-Within each quadrant, sort by `urgency + importance` sum (lower = higher priority). Tiebreak: oldest ticket first.
+```bash
+# Step 1 — find resumable In Progress tickets (not already claimed)
+python3 scripts/linear_search.py --state "In Progress" --max 10 --json
+
+# Step 2 — find next queue ticket by priority
+python3 scripts/linear_search.py --label "flow:queue" --max 20 --json
+# sort by priority asc, skip keys already in /tmp/rounds-claims.json
+```
 
 **WIP limit: 5** — one ticket per lane. `flow:waiting` does not count against WIP.
 
@@ -184,31 +188,40 @@ if lane in claims:
 ```
 Write claim on success: `{lane: {key, pid, claimed_at}}`.
 
-**Step 2 — Preflight (run in parallel):**
-- Query Linear for this lane's active ticket
-- Velocity snapshot (done this week, waiting count)
-- Timer status: `python3 scripts/tl.py status`
-- Waiting tickets due within 2 days
-- Queue alerts for this lane (urgency:1/2 in queue)
-- **way:learning gate:** if ticket has `way:learning` label, check description for a timebox declaration (keywords: `timebox:`, `time-box`, `1-week`, `X-day spike`, `spike:`). If none found, pause before proceeding:
-  ```
-  ⚠  way:learning ticket with no timebox declared.
-     Set a timebox before the interview starts — e.g. "timebox: 3 days" or "timebox: 1 week"
-     Also declare the required output artifact: Notion page? Follow-on Linear ticket? Decision doc?
-  ```
-  Log both (timebox + output artifact) in the issue file Description section before proceeding.
-- **investigated: check:** if ticket lacks `investigated:yes` or `investigated:self-assessed` label, note it on the card:
-  ```
-  ⚠  investigated: label missing — scope not yet validated. Interview recommended.
-  ```
+**Step 2 — Fast preflight batch (ALL in one parallel tool call):**
 
-**Step 3 — Run the clerk:**
+Issue ALL of the following bash calls in a single response — they run in parallel:
 
-Invoke `knowledge-clerk` for the claimed ticket before presenting the card. Do not form an opinion about the approach until clerk has spoken.
+```bash
+# A — dispatch: In Progress + queue (one call each)
+python3 scripts/linear_search.py --state "In Progress" --max 10 --json
+python3 scripts/linear_search.py --label "flow:queue" --max 20 --json
 
-**Step 3b — Auto-start investigation:**
+# B — timer status
+python3 scripts/tl.py status
 
-Immediately after the clerk runs, start `ticket-investigator` for the claimed ticket without waiting for the operator to prompt. Treat the investigator as the default next step after dispatch unless the ticket is clearly context-only. Surface the investigator's findings as the ticket opens.
+# C — fetch the dispatched ticket's full detail
+python3 scripts/linear_fetch_issue.py --key {KEY} --json
+
+# D — fast inline clerk: grep issues/ for the ticket key + title keywords (2-3 terms max)
+grep -ril "{KEY}\|{keyword1}\|{keyword2}" /home/wweeks/github/ace/issues/ 2>/dev/null | head -8
+cat issues/{KEY}/*.md 2>/dev/null   # read issue file if it exists
+```
+
+All five calls go in one response. Parse all results together. **Do not invoke `knowledge-clerk` as a sub-skill at startup** — the inline grep is sufficient to surface prior art for the card. Use `clerk {topic}` mid-session if the operator needs deeper research.
+
+**Step 2b — `way:learning` gate** (check from ticket JSON only, no extra call):
+If ticket labels include `way:learning` and the description has no timebox declaration, pause:
+```
+⚠  way:learning — no timebox found. Set one before the interview.
+```
+
+**Step 2c — `investigated:` check** (from ticket JSON only):
+If labels lack `investigated:yes` or `investigated:self-assessed`, note on card only — do not block.
+
+**Step 3 — REMOVED (auto-investigator):**
+
+Do NOT auto-start `ticket-investigator` at dispatch. It adds a full LLM turn with no operator input. Use it only when the operator says "investigate" or "dig into X".
 
 **Step 4 — Present the lane board:**
 
@@ -789,7 +802,7 @@ In-memory only (per tab instance):
 - **interview_complete** — boolean (true = 95%+ reached or operator override)
 - **approach_summary** — one-line approach statement written at 95%, logged to issue file
 - **timer_running** — boolean
-- **clerk_cache** — findings from knowledge-clerk for this ticket
+- **clerk_cache** — inline grep findings from issues/ for this ticket
 - **rubber_duck_mode** — boolean
 - **reflections** — list of reflection entries this session
 
@@ -816,12 +829,11 @@ In-memory only (per tab instance):
 > start rounds 1
 
 ✓ Lane 1 claimed (<PROJECT>-368)
-Running clerk...
 
 ━━━━━━━━━━━━━━━━━━━━━━━━
 🟣 <PROJECT>-368 — Entra External ID / Keycloak Migration
 ━━━━━━━━━━━━━━━━━━━━━━━━
-📚 Clerk: cases/28710/ — OBO flow decided, 2 tenants live, OIDC vs SAML open
+📚 Prior art: issues/<PROJECT>-360 — OBO flow, 2 tenants live, OIDC vs SAML open
 ⏱ Timer started — 08:01
 
 What do you want to do?
@@ -898,9 +910,9 @@ Skills called by rounds (dependency graph):
 
 ```
 rounds
-├── knowledge-clerk          (Phase 2 — before every ticket chart)
-├── linear-fetch-issue    (Phase 2 — full ticket load via script)
-├── ticket-investigator   (Phase 3 — on "investigate" command)
+├── knowledge-clerk          (Phase 3 — on "clerk {topic}" command only, NOT at startup)
+├── linear-fetch-issue    (Phase 1 — full ticket load via script, in startup batch)
+├── ticket-investigator   (Phase 3 — on "investigate" command only, NOT auto-started)
 ├── azure-investigator    (Phase 3 — on Azure resource questions)
 ├── notion-writer         (Phase 3 — on "doc it" command)
 ├── pr-reviewer           (Phase 3 — on "check PR" command)
