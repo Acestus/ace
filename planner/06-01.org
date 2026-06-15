@@ -1,0 +1,42 @@
++TITLE: Daily Note — 2026-06-01 (Sun)
+#+DATE: <2026-06-01 Sun>
+#+AUTHOR: wweeks
+
+* Time Log
+| Ticket | Start | Stop | Duration | Notes |
+|--------|-------|------|----------|-------|
+|        |       |      |          |       |
+
+* Kanban Board — WIP: 2/5
+# Dispatcher always rewrites this section. Status board, not a calendar.
+
+** Lane 1
+*** TODO ACE-10 — Microsoft Build — Narrative Outline {🟣 AGENTIC-5}
+    SCHEDULED: <2026-06-01 Sun 07:00-08:00>
+    :NEXT: Practice the arc out loud before June 2
+
+** Lane 2
+*** TODO ACE-8 — Make $50 — Scope Discovery {🟡 AGENTIC-3}
+    SCHEDULED: <2026-06-01 Sun 10:00-11:00>
+    :NEXT: Define the smallest viable path and assumptions
+
+** Lane 3
+*** (empty)
+
+** Lane 4
+*** (empty)
+
+** Lane 5
+*** (empty)
+
+* Standup
+** Yesterday
+   - N/A (session start)
+** Today
+   - ACE-10 — shape the Build narrative and rehearse the story out loud before June 2
+   - ACE-8 — scope the smallest viable Make $50 path and capture assumptions
+** Blockers
+   - None
+
+* Notes
+

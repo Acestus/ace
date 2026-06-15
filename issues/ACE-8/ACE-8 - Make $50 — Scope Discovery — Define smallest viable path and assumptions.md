@@ -94,6 +94,11 @@ Start with a narrow offer such as a cloud architecture / cost / capacity review,
 
 ## Actions
 
+### 2026-06-01 19:35
+
+- COMMENT: Confirmed ACE-8 is already documented as the scope-discovery ticket for the Make $50 project. The local mirror captures the completed offer definition, buyer channel, outreach draft, and follow-on tickets ACE-19 and ACE-20, and the live Linear issue still sits In Progress. No additional scope work is needed here; this lane is ready to close and move on.
+- WORKLOG: Reconciled the Linear state with the issue mirror before transition.
+
 ### 2026-05-30 23:36
 
 - COMMENT: Completed scope discovery for the Make $50 project. The offer landed as a Fabric CI/CD readiness review at $50 — a fixed-scope engagement covering an intake call, workspace and repo review, a gap checklist, and the top 3 fixes for repeatable deployment. The buyer channel is Microsoft Build attendees (in-person June 3), with contact exchange on the floor and follow-up afterward pointing to a marketing landing page. Investigation confirmed the event is upcoming (not over), the operator is attending in person, and done for this ticket means scope documented — not first sale. The LinkedIn outreach draft in the Notes section is the post-event follow-up template. Two action tickets filed: ACE-19 (attend Build + collect contacts + send follow-ups) and ACE-20 (Hugo SWA landing page at fabric.acestus.com). ACE-20 is time-sensitive — needs to be live before or by Tuesday.

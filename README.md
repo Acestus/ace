@@ -12,7 +12,7 @@ This is the de-identified, reusable version of a working personal toolkit. Fork 
 
 | Layer | Count | What it does |
 |---|---|---|
-| **Skills** (`.github/skills/`) | 24 | Triggered behaviors for the Copilot CLI agent (e.g. `start-my-day`, `rounds`, `jira-worklog`) |
+| **Skills** (`.github/skills/`) | 24 | Triggered behaviors for the Copilot CLI agent (e.g. `start-my-day`, `rounds`, `linear-worklog`) |
 | **Instructions** (`.github/instructions/`) | 17 | File-pattern-scoped rules for AI assistance (issue docs, Confluence pages, PySpark notebooks, etc.) |
 | **Scripts** (`scripts/`) | 81 | Python CLI tools — Jira, SDP, Entra, Azure, Confluence, Fabric, PIM, timers |
 | **Workflows** (`.github/workflows/`) | 12 | GitHub Actions for auto-sync, scheduled jobs, smoke tests |
@@ -50,7 +50,7 @@ Tickets carry exactly one `flow:` label and live in one of 6 lanes:
 
 ### Skill triggers
 
-Skills are markdown files (`.github/skills/<name>/SKILL.md`) with natural-language triggers. Say "start my day" and the agent runs the `start-my-day` skill. Say "this one's done" and `jira-dispatcher` advances the lane. Say "write a confluence page" and `confluence-writer` handles the full publish workflow.
+Skills are markdown files (`.github/skills/<name>/SKILL.md`) with natural-language triggers. Say "start my day" and the agent runs the `start-my-day` skill. Say "this one's done" and `linear-dispatcher` advances the lane. Say "write a confluence page" and `confluence-writer` handles the full publish workflow.
 
 ---
 
@@ -112,6 +112,26 @@ For the workflows in `.github/workflows/` to work, set repo secrets:
 mkdir -p issues cases planner confluence assets
 ```
 
+### 6. Use the ACE .NET CLI (GitHub + Linear)
+
+The repo includes a local .NET command surface at `src/Ace.Tools.Cli`.
+
+```bash
+dotnet run --project src/Ace.Tools.Cli -- help
+
+# GitHub via gh
+dotnet run --project src/Ace.Tools.Cli -- github issues list --repo <owner/repo>
+dotnet run --project src/Ace.Tools.Cli -- github issues view <number> --repo <owner/repo>
+
+# Linear via existing scripts
+dotnet run --project src/Ace.Tools.Cli -- linear get-issue --key <TEAM-123>
+dotnet run --project src/Ace.Tools.Cli -- linear search --query "text"
+dotnet run --project src/Ace.Tools.Cli -- linear set-flow --key <TEAM-123> --flow active --transition
+dotnet run --project src/Ace.Tools.Cli -- linear comment --key <TEAM-123> --comment "Status update"
+```
+
+`Ace.Tools.Cli` auto-loads `.env` from the repo root and delegates to `gh` plus the existing `scripts/linear_*.py` tooling.
+
 ---
 
 ## Daily Workflow
@@ -127,10 +147,10 @@ mkdir -p issues cases planner confluence assets
 # Working
 tl start <PROJECT>-87           # start a timer
 # ... do work, edit code ...
-"log 30 minutes on <PROJECT>-87, found root cause" # → jira-worklog skill
+"log 30 minutes on <PROJECT>-87, found root cause" # → linear-worklog skill
 
 # Wrapping a ticket
-"this one's done"               # → jira-dispatcher: marks done, pulls next from queue
+"this one's done"               # → linear-dispatcher: marks done, pulls next from queue
 "waiting on vendor"             # → marks flow:waiting
 
 # End of day
@@ -146,8 +166,8 @@ tl start <PROJECT>-87           # start a timer
 - `end-my-day` — close out, generate standup, post to Teams
 - `rounds` — kanban station rotation, one ticket per lane at a time
 - `jira-router` — fuzzy intent router for ticket-adjacent requests
-- `jira-dispatcher` — advance the next queue ticket into active
-- `jira-worklog` — log time + comments via markdown
+- `linear-dispatcher` — advance the next queue ticket into active
+- `linear-worklog` — log time + comments via markdown
 - `ticket-investigator` — structured investigation on a Jira ticket
 - `phoenix-backlog` — create new work items with scoring labels
 - `weekly-summary` — generate brag doc / sprint summary

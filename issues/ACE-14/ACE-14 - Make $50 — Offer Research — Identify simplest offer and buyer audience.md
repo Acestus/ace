@@ -2,8 +2,8 @@
 LINEAR: ACE-14
 title: Make $50 — Offer Research — Identify simplest offer and buyer audience
 team: Acestus
-state: Backlog
-flow: queue
+state: Done
+flow: done
 urgency: 4
 due: None
 created: 2026-05-29
@@ -49,6 +49,11 @@ WORKLOG: Stub created from Linear ACE-14
 ### 2026-05-30
 
 WORKLOG: Buyer profile and market context defined. 10x Fabric growth = 27k new companies with no enterprise experience on staff. William's Microsoft-adjacent enterprise background is the differentiator.
+
+### 2026-06-01
+
+WORKLOG: Closed ACE-14 after confirming the offer is a $50, one-hour Fabric readiness review and that the website at ~/github/fabricweb is deployed.
+COMMENT: The offer is now concrete and testable: a $50, one-hour Fabric readiness review. The handoff site is deployed at ~/github/fabricweb, so the immediate next signal is whether it produces booked calls. Success is measured by whether the site drives traffic, inquiries, and eventually booked calls, with booked calls as the primary signal. No blockers remain on this ticket, so it is ready to close.
 
 ## Follow-up
 

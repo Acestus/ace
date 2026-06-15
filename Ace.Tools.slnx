@@ -1,0 +1,5 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Ace.Tools.Cli/Ace.Tools.Cli.csproj" />
+  </Folder>
+</Solution>

@@ -11,10 +11,10 @@ Usage:
     rounds_transition.py --key <PROJECT>-123 --action park
 
 Actions:
-    done     Stop timer · flow:done · activate next · refresh board · commit+push
-    waiting  Stop timer · flow:waiting · activate next · refresh board · commit+push
-    blocked  Stop timer · flow stays active · refresh board · commit+push
-    park     Stop timer only — flow unchanged, no board refresh, no push
+    done     Stop timer · flow:done · activate next · commit+push
+    waiting  Stop timer · flow:waiting · activate next · commit+push
+    blocked  Stop timer · flow stays active · commit+push
+    park     Stop timer only — flow unchanged, no push
 """
 
 import argparse
@@ -33,23 +33,25 @@ def run(cmd: list[str], check: bool = True) -> subprocess.CompletedProcess:
 
 
 def stop_timer(key: str) -> None:
+    status = subprocess.run(
+        ["python3", str(SCRIPTS / "tl.py"), "status"],
+        check=False,
+        capture_output=True,
+        text=True,
+        cwd=str(PROJECTS_DIR),
+    )
+    if key not in status.stdout:
+        return
     run(["python3", str(SCRIPTS / "tl.py"), "stop", key], check=False)
 
 
-def set_flow(key: str, flow: str, transition: bool = True) -> None:
-    cmd = ["python3", str(SCRIPTS / "jira_set_flow.py"), "--key", key, "--flow", flow]
-    if transition:
-        cmd.append("--transition")
-    run(cmd)
+def set_flow(key: str, flow: str) -> None:
+    run(["python3", str(SCRIPTS / "linear_set_flow.py"), "--key", key, "--flow", flow])
 
 
 def create_stub(key: str) -> None:
     """Idempotent — no-op if file already exists."""
-    run(["python3", str(SCRIPTS / "jira_create_stub.py"), "--key", key], check=False)
-
-
-def refresh_board() -> None:
-    run(["python3", str(SCRIPTS / "daily_note.py"), "--refresh"])
+    run(["python3", str(SCRIPTS / "linear_create_stub.py"), "--key", key], check=False)
 
 
 def git_commit_push(key: str, action: str, next_key: str) -> None:
@@ -73,7 +75,6 @@ def cmd_done(key: str, next_key: str, no_push: bool) -> None:
     set_flow(key, "done")
     if next_key:
         activate_next(next_key)
-    refresh_board()
     if not no_push:
         git_commit_push(key, "done", next_key)
     print(f"✓ {key} → done")
@@ -86,7 +87,6 @@ def cmd_waiting(key: str, next_key: str, no_push: bool) -> None:
     set_flow(key, "waiting")
     if next_key:
         activate_next(next_key)
-    refresh_board()
     if not no_push:
         git_commit_push(key, "waiting", next_key)
     print(f"✓ {key} → waiting")
@@ -95,12 +95,10 @@ def cmd_waiting(key: str, next_key: str, no_push: bool) -> None:
 
 
 def cmd_blocked(key: str, next_key: str, no_push: bool) -> None:
-    """Flow label stays flow:active. Board refresh makes the blocker visible in planner."""
+    """Flow label stays flow:active."""
     stop_timer(key)
-    # flow label intentionally unchanged — ticket stays active, operator notes blocker in issue file
     if next_key:
         activate_next(next_key)
-    refresh_board()
     if not no_push:
         git_commit_push(key, "blocked", next_key)
     print(f"✓ {key} → blocked (flow:active retained)")
@@ -109,7 +107,7 @@ def cmd_blocked(key: str, next_key: str, no_push: bool) -> None:
 
 
 def cmd_park(key: str) -> None:
-    """Stop timer only. Flow unchanged, no board refresh, no push."""
+    """Stop timer only. Flow unchanged, no push."""
     stop_timer(key)
     print(f"⏸  {key} parked — timer stopped, flow unchanged.")
 

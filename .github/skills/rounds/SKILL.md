@@ -12,6 +12,13 @@ Your job: keep the operator moving efficiently from station to station. Load the
 
 **On prior art:** At startup, run a fast inline clerk — grep `issues/` for the ticket key and 2-3 title keywords in the same parallel batch as the ticket fetch. This is sufficient for the card. Do NOT invoke `knowledge-clerk` as a sub-skill at startup — it adds a full LLM round-trip. Use `clerk {topic}` mid-session only when the operator needs deeper cross-repo research. When the inline grep surfaces a relevant prior issue, cite it on the card as prior art.
 
+**Thinking partner loop:** rounds should run as:
+1. State the intent.
+2. Anchor to prior documentation.
+3. Identify blind spots.
+4. Ask for suggestions that turn each gap into an action.
+5. Do it.
+
 ## When to Use
 
 - User says "start rounds", "do rounds", "let's do rounds"
@@ -39,7 +46,7 @@ Each Copilot tab runs its own rounds instance and claims exactly one lane. Five 
 
 ### Lane Variants
 
-Lanes are numbered **1–5** — use the number. The dispatcher pulls the highest-priority ticket from the shared Linear queue using **Linear's native priority system** — no custom tags required.
+Lanes are numbered **1–5** — use the number. The dispatcher is now a thin Linear-only script wrapper; it picks the next unclaimed ticket and activates it.
 
 | Invocation | Lane | Emoji |
 |---|---|---|
@@ -49,19 +56,10 @@ Lanes are numbered **1–5** — use the number. The dispatcher pulls the highes
 | `start rounds 4` | Lane 4 | 🟠 |
 | `start rounds 5` | Lane 5 | 🔴 |
 
-**Dispatch order** — tickets are pulled using Linear's native priority (no custom urgency/importance tags needed):
-
-1. **In Progress** tickets assigned to the operator that aren't claimed by another lane — resume these first
-2. Then queue tickets sorted by **Linear priority** ascending: `1=Urgent → 2=High → 3=Medium → 4=Low → 0=No Priority`
-3. Tiebreak within same priority: oldest ticket first (lowest identifier number)
+**Dispatch order** — let Python decide. It resumes unclaimed `In Progress` tickets first, then pulls the next unclaimed `flow:queue` ticket by Linear priority.
 
 ```bash
-# Step 1 — find resumable In Progress tickets (not already claimed)
-python3 scripts/linear_search.py --state "In Progress" --max 10 --json
-
-# Step 2 — find next queue ticket by priority
-python3 scripts/linear_search.py --label "flow:queue" --max 20 --json
-# sort by priority asc, skip keys already in /tmp/rounds-claims.json
+python3 scripts/linear_dispatch_next.py --activate --json
 ```
 
 **WIP limit: 5** — one ticket per lane. `flow:waiting` does not count against WIP.
@@ -193,9 +191,8 @@ Write claim on success: `{lane: {key, pid, claimed_at}}`.
 Issue ALL of the following bash calls in a single response — they run in parallel:
 
 ```bash
-# A — dispatch: In Progress + queue (one call each)
-python3 scripts/linear_search.py --state "In Progress" --max 10 --json
-python3 scripts/linear_search.py --label "flow:queue" --max 20 --json
+# A — dispatch: let Python pick the next unclaimed Linear ticket
+python3 scripts/linear_dispatch_next.py --activate --json
 
 # B — timer status
 python3 scripts/tl.py status
@@ -328,11 +325,26 @@ If clerk found **nothing**:
   → Want me to file a spike to document this pattern once we figure it out?
 ```
 
-**After presenting the card, immediately open the investigation interview (Phase 2.5). Do not wait for the operator to direct you — the interview is mandatory. If the ticket has already been handed to `ticket-investigator`, use its findings to seed the interview and continue without asking the operator to start anything.**
+**After presenting the card, immediately open the investigation interview (Phase 2.5). Do not wait for the operator to direct you — the interview is mandatory. If the ticket has already been handed to `ticket-investigator`, use its findings to seed the interview and run a quick clarity-gap pass first: check for unclear scope, missing dependencies, weak success criteria, contradictions, and any plan steps that are still hand-wavy.**
+
+### Phase 2.75 — Post-Investigator Clarity Pass
+
+If `ticket-investigator` has already produced findings, do a short review before the operator starts building. The goal is not to repeat investigation work; it is to turn the raw output into a plan that is actually executable.
+
+**Purpose:** Surface what is still unclear after investigation — scope boundaries, assumptions, dependencies, risks, success criteria, and any steps that are not yet justified.
+
+#### Clarity Pass Protocol
+
+1. Compare the investigator output against the ticket summary, issue file, and clerk findings.
+2. Call out contradictions, missing decision points, or steps that do not yet have evidence behind them.
+3. Ask one gap question at a time until each open item is either resolved or explicitly accepted.
+4. If gaps remain, write them into the issue file as a short `Plan gaps` note and keep them visible in the interview.
+5. Use the clarified gaps to seed Phase 2.5 so the interview focuses on the actual unknowns.
 
 ### Phase 2.5 — Investigation Interview (95% Confidence Gate)
 
 This is the most important phase in rounds. No work starts until confidence reaches 95%. The interview is how you get there.
+Use the loop: intent → prior art → blind spots → suggestions → action.
 
 **Purpose:** Systematically surface what you don't know about this ticket so the operator can fill the gaps. Not a checklist — a real conversation driven by the clerk findings and the ticket context. Every unknown resolved raises confidence. Every unknown left open keeps it below the gate.
 
@@ -357,33 +369,33 @@ Show the running score after every answer:
 
 #### Interview Protocol
 
-1. **Start immediately** after the kanban card is presented — don't wait for the operator to ask
-2. **One question at a time** — never list all 6 at once
-3. **Anchor to clerk findings** — if the clerk found a pattern, ask whether it applies here or why it doesn't
-4. **Score each answer** — be explicit: "That gives me full scope clarity (+20%)" or "That partially covers approach — I still don't know X (+10%)"
-5. **Follow the thread** — if an answer raises a new unknown, chase it before moving to the next dimension
-6. **Surface contradictions** — if the operator's answer conflicts with clerk-cited prior art, name it: "You said X, but the networking repo does Y — which one applies here?"
-7. **Don't accept vague answers** — "we'll figure it out" scores 0% on that dimension
+1. **State the intent** — what are we actually trying to do?
+2. **Anchor to prior art** — cite the doc, issue, or precedent first.
+3. **Expose blind spots** — ask what is missing, unclear, or assumed.
+4. **Turn gaps into suggestions** — ask what should happen for each gap.
+5. **Translate suggestions into action** — stop at the smallest next step and do it.
+6. **One question at a time** — never front-load the whole interview.
+7. **Score each answer** — be explicit: "That gives me full scope clarity (+20%)" or "That partially covers approach — I still don't know X (+10%)"
+8. **Follow the thread** — if an answer raises a new unknown, chase it before moving on.
+9. **Surface contradictions** — if the operator's answer conflicts with clerk-cited prior art, name it.
+10. **Don't accept vague answers** — "we'll figure it out" scores 0% on that dimension
 
 #### Question Templates (adapt to the specific ticket)
 
-**Scope:**
-> "The clerk found [X]. Based on that, what's the exact scope here — what are we building/changing/fixing, and what's explicitly out of scope?"
+**Intent:**
+> "What are we trying to do in one sentence?"
 
-**Approach:**
-> "Given [clerk pattern / constraint / prior art], what's the approach? Have you considered [alternative] and ruled it out?"
+**Prior art:**
+> "What doc, issue, or precedent should anchor this?"
 
-**Success criteria:**
-> "When this ticket is done, what does a passing test look like? What would you run or check to know it worked?"
+**Blind spots:**
+> "What are we missing, assuming, or not seeing yet?"
 
-**Blockers / risks:**
-> "What's the most likely thing that kills this ticket before it's done? What's plan B if [dependency X] isn't available?"
+**Suggestions:**
+> "For each gap, what suggestion or option should we consider?"
 
-**Dependencies:**
-> "You need [X from clerk]. Who owns it, and is it ready now or do we need to wait?"
-
-**Unknowns:**
-> "What do you not know yet that you'd need to find out before writing the first line? Is that a blocker or can we start anyway?"
+**Action:**
+> "What's the smallest next step we should do now?"
 
 #### Confidence Display
 
@@ -495,7 +507,8 @@ When the operator wants to see background agent results:
 
 1. Read the background agent output via `read_agent`
 2. Present: summary of work done, files created/modified, any decisions made
-3. Ask: "Accept? (yes/edit/reject)"
+3. If the agent was `ticket-investigator`, run the Phase 2.75 clarity pass first and surface any gaps in scope, dependencies, risks, success criteria, or assumptions before you ask for accept/edit/reject
+4. Ask: "Accept? (yes/edit/reject)"
    - **yes**: commit changes, log time, transition ticket (done/waiting as appropriate)
    - **edit**: operator modifies, then commits
    - **reject**: discard agent output, ticket stays active for next round

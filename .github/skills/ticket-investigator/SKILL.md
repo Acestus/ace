@@ -92,15 +92,15 @@ Show the user what you found — summary, current status, labels, any prior acti
 
 Open with this framing:
 
-> "I'm about to start this project. Interview me until you have 95% confidence about what I actually want — not what I think I should want. The gap between those two things is where most failed projects begin."
+> "I'm about to start this project. Interview me until you have 95% confidence about what I actually want — not what I think I should want. Anchor to prior docs first, then tell me what blind spots or gaps are missing, then turn each gap into an action."
 
 Then conduct the interview in Dave Farley's voice. The goal is to surface:
 
-1. **The real problem** — not the ticket title, but the underlying pain
-2. **The actual desired outcome** — what does "done" look like concretely?
-3. **Constraints and context** — what can't change? What's already been tried?
-4. **Success criteria** — how will we know it worked?
-5. **Risks and assumptions** — what are we assuming that might be wrong?
+1. **Intent** — what are we trying to do, in one sentence?
+2. **Prior art** — what doc, issue, or precedent should anchor the answer?
+3. **Blind spots** — what is unclear, missing, or assumed?
+4. **Suggestions** — what should happen for each gap?
+5. **Action** — what is the smallest next thing to do now?
 
 **Interview rules:**
 - Ask one question at a time using the `ask_user` tool
@@ -109,6 +109,12 @@ Then conduct the interview in Dave Farley's voice. The goal is to surface:
 - Surface the gap between stated want and actual need: "You said X — is that the outcome you want, or is that the solution you're imagining?"
 - Keep asking until you can state back the problem and the user confirms it's right
 - Target 95% clarity — document remaining uncertainty explicitly
+- When the user asks to "do it," translate the agreed suggestions into the next concrete move and stop inventing new scope.
+
+**Progress meter:**
+- Render the confidence bar as 20 blocks so the operator can see the gap at a glance.
+- Use `python3 scripts/render_progress_bar.py --value {confidence} --width 20` and keep the empty/fill symbols consistent.
+- When confidence changes, show the bar with the current percentage before the next question.
 
 **Dave Farley question patterns:**
 - "What problem does this actually solve for someone?"
@@ -272,7 +278,7 @@ After each meaningful investigation milestone, append a substantive `- COMMENT:`
 - You captured links worth recording (Notion pages, MS Learn, vendor docs, related INFRA tickets)
 - ~30–60 minutes of investigation has elapsed since the last comment
 
-Checkpoint comments use the same **rich `COMMENT`** template as `jira-worklog` (see that skill's Voice & Tone): 4–10 sentences in <YOUR_NAME>'s internal investigative voice, covering *what I did / what I found / what I ruled out / links / what's next*. Pair the comment with a small `WORKLOG` line for the time spent investigating — even 10–15 minute slices are worth logging if a finding was captured.
+Checkpoint comments use the same **rich `COMMENT`** template as `linear-worklog` (see that skill's Voice & Tone): 4–10 sentences in <YOUR_NAME>'s internal investigative voice, covering *what I did / what I found / what I ruled out / links / what's next*. Pair the comment with a small `WORKLOG` line for the time spent investigating — even 10–15 minute slices are worth logging if a finding was captured.
 
 Example checkpoint entry (added under `## Actions`, newest on top):
 
@@ -283,7 +289,7 @@ Example checkpoint entry (added under `## Actions`, newest on top):
 - COMMENT: Walked the SCIM path: Okta tenant → Provisioning App `okta-scim-azure-prd` (object id 8f2a...) → target = Azure AD Graph endpoint. Pulled the Azure AD audit logs filtered to that SP for the last 24h — the 401s are all on `/scim/v2/Users` with `WWW-Authenticate: Bearer realm="..."`. Ruled out token expiry (token issued 2026-05-21 04:00 UTC, valid 24h, not yet expired). Ruled out user-side MFA (the SP has no user). The bearer token in the Okta connector config matches the one in Key Vault `kv-skpidm-prd-usw2-001/secrets/okta-scim-token` — confirmed via secret version `a91b...`. Next: pull the matching Entra app `entra-scim-okta-prd` and diff its scope grants — I suspect the legacy app lost `Directory.ReadWrite.All` during last week's cleanup. Docs: https://learn.microsoft.com/en-us/azure/active-directory/app-provisioning/use-scim-to-provision-users-and-groups.
 ```
 
-Commit and push the issue file — CI picks up the new `- COMMENT:` and `- WORKLOG` lines and posts them to Linear via `scripts/sync_jira_worklog.py`. By the time Phase 5 starts, the Linear thread should already read like a coherent investigation log.
+Commit and push the issue file — CI picks up the new `- COMMENT:` and `- WORKLOG` lines and syncs the markdown stub to Linear via `scripts/linear_sync.py`. By the time Phase 5 starts, the Linear thread should already read like a coherent investigation log.
 
 #### When investigation surfaces a stakeholder ask, draft a `NUDGE` immediately
 
@@ -299,7 +305,7 @@ Pair COMMENT (internal technician narrative) with NUDGE (stakeholder-facing ask)
 - NUDGE: Hey @michael.seaman — quick check: did the 2026-05-14 app cleanup touch the `okta-scim-azure-prd` SP? I'm seeing 401s that look like a missing `Directory.ReadWrite.All` grant. Can you confirm whether the grant was intentionally removed, or whether I should re-add it?
 ```
 
-See the `jira-worklog` skill Voice & Tone section for full NUDGE format rules.
+See the `linear-worklog` skill Voice & Tone section for full NUDGE format rules.
 
 ---
 
@@ -351,7 +357,7 @@ Ready to start?
 Work the ticket **one step at a time**. After each step:
 
 1. Verify the change worked (run the test, check the output, confirm the API response)
-2. Log progress in the issue file under `## Actions` — every step gets both a `- WORKLOG` line **and** a substantive `- COMMENT` line (4–10 sentences, same rich template as the jira-worklog skill). Execution comments cover: command run, what changed, verification evidence, anything surprising, what's next.
+2. Log progress in the issue file under `## Actions` — every step gets both a `- WORKLOG` line **and** a substantive `- COMMENT` line (4–10 sentences, same rich template as the linear-worklog skill). Execution comments cover: command run, what changed, verification evidence, anything surprising, what's next.
 3. Commit to main (the comment posts to Linear automatically via CI)
 4. Tell the user what you did and what comes next
 
@@ -388,7 +394,7 @@ gh pr create --title "fix: resolve config issue" --body "Resolves {KEY}"
 
 ### Phase 6 — Worklog and Close
 
-When the work is complete, invoke the `jira-worklog` skill to:
+When the work is complete, invoke the `linear-worklog` skill to:
 - Log total time with a description in <YOUR_NAME>'s voice
 - Update the flow label to `flow:done`
 - Update Notes (lede/status/next/related) and the **Checklist** — at close-out, all checklist items should be `[x]` done or removed
@@ -405,7 +411,7 @@ git add issues/{KEY}/ && git commit -m "{KEY}: investigation complete, {short de
 ## Issue File Structure
 
 The issue file is the single source of truth for the investigation. Keep it current throughout all phases.
-Follow the canonical format defined in `.github/instructions/jira-issue-documentation.instructions.md` — newest entries on top, Follow-up always last.
+Follow the canonical format defined in `.github/instructions/linear-issue-documentation.instructions.md` — newest entries on top, Follow-up always last.
 
 **Investigation** captures the discovery phase — problem statement, interview findings, evidence gathered.
 **Actions** captures the execution phase — each dated entry shows the commands run and their results.
@@ -500,7 +506,7 @@ When architectural decisions come up, briefly apply Martin Fowler's framing:
 - Never skip Phase 2 — the interview is not optional, even for tickets that seem obvious
 - Never proceed to Phase 5 without explicit user approval of the plan
 - Commit investigation notes as you go — state lives in files, not in the conversation
-- **Post rich `COMMENT` checkpoints to Linear throughout the investigation** (Phase 3) and after every execution step (Phase 5). Do not save them up for the close-out worklog — the Linear ticket should read like a live investigation log, not a single end-of-day summary. See the jira-worklog skill's Voice & Tone section for the rich-comment template.
+- **Post rich `COMMENT` checkpoints to Linear throughout the investigation** (Phase 3) and after every execution step (Phase 5). Do not save them up for the close-out worklog — the Linear ticket should read like a live investigation log, not a single end-of-day summary. See the `linear-worklog` skill's Voice & Tone section for the rich-comment template.
 - Use `gh`, `az`, `curl` for data gathering — CLI-first, always
 
 ---
@@ -509,11 +515,11 @@ When architectural decisions come up, briefly apply Martin Fowler's framing:
 
 ```
 ticket-investigator
-├── jira-context-bundle   (Phase 1 — full ticket load via script)
+├── linear-fetch-issue    (Phase 1 — full ticket load via script)
 ├── knowledge-clerk          (Phase 3 — pattern/precedent lookup, via rounds or direct)
 ├── azure-investigator    (Phase 3 — Azure resource investigation)
-├── jira-worklog          (Phase 6 — log time and close out)
-└── jira-set-flow         (Phase 6 — transition status via script)
+├── linear-worklog        (Phase 6 — log time and close out)
+└── linear-set-flow       (Phase 6 — transition status via script)
 ```
 
 **Called by:** `rounds` (Phase 3, on "investigate" command), or directly by user
