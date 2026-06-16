@@ -123,14 +123,14 @@ dotnet run --project src/Ace.Tools.Cli -- help
 dotnet run --project src/Ace.Tools.Cli -- github issues list --repo <owner/repo>
 dotnet run --project src/Ace.Tools.Cli -- github issues view <number> --repo <owner/repo>
 
-# Linear via existing scripts
+# Linear via the native CLI
 dotnet run --project src/Ace.Tools.Cli -- linear get-issue --key <TEAM-123>
-dotnet run --project src/Ace.Tools.Cli -- linear search --query "text"
-dotnet run --project src/Ace.Tools.Cli -- linear set-flow --key <TEAM-123> --flow active --transition
+dotnet run --project src/Ace.Tools.Cli -- linear search --state "In Progress"
+dotnet run --project src/Ace.Tools.Cli -- linear set-flow --key <TEAM-123> --flow active
 dotnet run --project src/Ace.Tools.Cli -- linear comment --key <TEAM-123> --comment "Status update"
 ```
 
-`Ace.Tools.Cli` auto-loads `.env` from the repo root and delegates to `gh` plus the existing `scripts/linear_*.py` tooling.
+`Ace.Tools.Cli` auto-loads `.env` from the repo root and handles Linear and GitHub directly.
 
 ---
 
@@ -226,27 +226,14 @@ File-pattern-scoped rules that govern AI generation against this repo:
 export $(grep -v '^#' .env | xargs)
 
 # Jira
-python3 scripts/jira_fetch_ticket.py --key <PROJECT>-87
-python3 scripts/jira_search.py --jql 'labels = "flow:active"'
-python3 scripts/jira_set_flow.py --key <PROJECT>-87 --flow done --transition
-python3 scripts/jira_update_fields.py --key <PROJECT>-87 --notes "..."
 
 # SDP
-python3 scripts/sdp_fetch_ticket.py --id 33903
-python3 scripts/sdp_set_flow.py --id 33903 --flow active --transition
-python3 scripts/sdp_create_request.py --subject "..." --requester user@<ORG_DOMAIN> ...
 
 # Azure / Entra
-python3 scripts/entra_lookup.py --user user@<ORG_DOMAIN>
-python3 scripts/az_pim.py --action check --role "Contributor"
 
 # Confluence
-python3 scripts/create-confluence-page.py confluence/stub.md --space-key <SPACE> --parent-id <PAGE_ID>
-python3 scripts/publish-markdown-to-confluence.py confluence/<PAGE_ID>-title.md
 
 # Timers
-python3 scripts/tl.py start <PROJECT>-87
-python3 scripts/tl.py stop <PROJECT>-87
 ```
 
 ---

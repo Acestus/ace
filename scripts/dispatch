@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# dispatch — shim; all logic lives in dispatch_board.py
+# dispatch — native CLI shim
 set -euo pipefail
 PROJECTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-exec python3 "$PROJECTS_DIR/scripts/dispatch_board.py" "$@"
+exec dotnet run --project "$PROJECTS_DIR/src/Ace.Tools.Cli" -- linear dispatch-next "$@"

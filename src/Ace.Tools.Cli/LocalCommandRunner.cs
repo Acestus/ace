@@ -4,6 +4,8 @@ namespace Ace.Tools.Cli;
 
 internal static class LocalCommandRunner
 {
+    public static string CapturedStdout { get; private set; } = string.Empty;
+
     public static async Task<int> RunAsync(
         string fileName,
         IReadOnlyList<string> arguments,
@@ -40,11 +42,24 @@ internal static class LocalCommandRunner
             await stdout.WriteAsync(output);
         }
 
+        CapturedStdout = output;
+
         if (!string.IsNullOrWhiteSpace(error))
         {
             await stderr.WriteAsync(error);
         }
 
         return process.ExitCode;
+    }
+
+    public static async Task<(int ExitCode, string Stdout, string Stderr)> RunCaptureAsync(
+        string fileName,
+        IReadOnlyList<string> arguments,
+        CancellationToken cancellationToken)
+    {
+        var stdout = new StringWriter();
+        var stderr = new StringWriter();
+        var exitCode = await RunAsync(fileName, arguments, stdout, stderr, cancellationToken);
+        return (exitCode, stdout.ToString(), stderr.ToString());
     }
 }

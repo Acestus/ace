@@ -13,7 +13,6 @@ Edits committed to main are automatically pushed to Notion via the sync-notion C
 
 - Edit `notion/test-page.md` locally
 - Commit and push to main
-- `sync-notion.yaml` triggers, runs `scripts/notion_sync.py`
 - Page content is replaced in Notion with the current markdown
 
 ## Notes

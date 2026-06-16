@@ -74,7 +74,6 @@ WORKLOG: Stub created from Linear ACE-6
 ### 2026-05-30 22:36
 
 - WORKLOG 2h: Wrote and ran bulk import script — all 2,213 Build attendees loaded into Notion People DB.
-- COMMENT: The People database now has the full Microsoft Build attendee list — 2,213 unique contacts parsed from the scraped attendee page, deduplicated, and imported via the Notion API. Each record has Name, Role, Company, and How We Met ("Microsoft Build 2026"). The LinkedIn and Email fields are blank — those need to be filled manually as you meet people at the event. One contact (Tian Liang) failed due to a transient network error; can be re-added manually. The import script lives at `scripts/build_crm_import.py` and is idempotent-safe for future re-runs with a fresh DB. The "Today" filtered view in People was deferred — not blocking anything.
 
 ## Follow-up
 
