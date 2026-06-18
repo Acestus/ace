@@ -27,6 +27,7 @@ public static class WorkflowHandler
                 "start-my-day" => await HandleStartMyDay(stdout, stderr),
                 "end-my-day" => await HandleEndMyDay(stdout, stderr),
                 "dispatch" => await HandleDispatch(args, stdout, stderr),
+                "standup" => await HandleStandup(stdout, stderr),
                 _ => UnknownCommand(args[0], stderr)
             };
         }
@@ -168,6 +169,37 @@ public static class WorkflowHandler
         catch (Exception ex)
         {
             stderr.WriteLine($"❌ dispatch failed: {ex.Message}");
+            return 1;
+        }
+    }
+
+    private static async Task<int> HandleStandup(TextWriter stdout, TextWriter stderr)
+    {
+        try
+        {
+            stdout.WriteLine("\n📋 Generating standup summary...");
+            
+            var reader = new CatalogSnapshotReader();
+            
+            if (!reader.IsAvailable)
+            {
+                stdout.WriteLine("⚠️  No local snapshot found");
+                stdout.WriteLine("   Run 'workflow end-my-day' to create .catalog/assigned-work.db");
+                return 0;
+            }
+
+            var snapshotTimestamp = reader.GetSnapshotTimestamp();
+            stdout.WriteLine($"📸 Using local snapshot: {snapshotTimestamp:yyyy-MM-dd HH:mm:ss UTC}");
+            
+            var markdown = await reader.GenerateStandupMarkdownAsync();
+            stdout.WriteLine("");
+            stdout.WriteLine(markdown);
+            
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            stderr.WriteLine($"❌ standup failed: {ex.Message}");
             return 1;
         }
     }

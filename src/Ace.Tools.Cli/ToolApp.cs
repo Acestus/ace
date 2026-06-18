@@ -53,6 +53,7 @@ public static class ToolApp
         stdout.WriteLine("  workflow start-my-day");
         stdout.WriteLine("  workflow end-my-day");
         stdout.WriteLine("  workflow dispatch --lane <1-5>");
+        stdout.WriteLine("  workflow standup");
         stdout.WriteLine("  legacy invoke --command <exe> -- [args...]");
     }
 
@@ -70,6 +71,8 @@ public static class ToolApp
                 stdout.WriteLine("  workflow end-my-day");
                 stdout.WriteLine("Dispatch next pending ticket to a lane:");
                 stdout.WriteLine("  workflow dispatch --lane <1-5>");
+                stdout.WriteLine("Generate standup summary from local snapshot (deterministic, no live queries):");
+                stdout.WriteLine("  workflow standup");
                 break;
             default:
                 stdout.WriteLine($"Unknown command: {command}");
