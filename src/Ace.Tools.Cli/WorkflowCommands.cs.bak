@@ -1,0 +1,256 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Spectre.Console;
+using Microsoft.Extensions.Logging;
+
+namespace Ace.Tools.Cli;
+
+/// <summary>
+/// Workflow commands for start-my-day, end-my-day, and daily syncing.
+/// Manages SQLite as the single source of truth during the day.
+/// </summary>
+public class WorkflowCommands
+{
+    private readonly WorkflowDbContext _dbContext;
+    private readonly LinearSyncService _linearSync;
+    private readonly NotionPublishService _notionPublish;
+    private readonly ILogger<WorkflowCommands> _logger;
+
+    public WorkflowCommands(
+        WorkflowDbContext dbContext,
+        LinearSyncService linearSync,
+        NotionPublishService notionPublish,
+        ILogger<WorkflowCommands> logger)
+    {
+        _dbContext = dbContext;
+        _linearSync = linearSync;
+        _notionPublish = notionPublish;
+        _logger = logger;
+    }
+
+    /// <summary>
+    /// Initialize database schema on first run.
+    /// </summary>
+    public async Task InitializeDatabaseAsync()
+    {
+        _logger.LogInformation("🗄️  Initializing workflow database...");
+        try
+        {
+            await _dbContext.InitializeAsync();
+            _logger.LogInformation("✅ Database initialized");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "❌ Failed to initialize database");
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Start the day: Refresh SQLite from Linear, Notion, and GitHub.
+    /// Minimizes data loss by detecting conflicts.
+    /// Prompts user for resolution if conflicts detected.
+    /// </summary>
+    public async Task<bool> StartMyDayAsync()
+    {
+        AnsiConsole.MarkupLine("[bold cyan]🌅 Starting your day...[/]");
+
+        try
+        {
+            // Initialize DB if needed
+            await InitializeDatabaseAsync();
+
+            // Sync from Linear (with conflict detection)
+            var linearResult = await _linearSync.SyncTicketsFromLinearAsync(detectConflicts: true);
+            AnsiConsole.WriteLine($"   {GetStatusIcon(linearResult.Status)} Linear: {linearResult.UpsertCount} tickets synced");
+
+            if (linearResult.Conflicts?.Any() == true)
+            {
+                AnsiConsole.MarkupLine("[yellow]⚠️  Conflicts detected. Prompting for resolution...[/]");
+                foreach (var conflict in linearResult.Conflicts)
+                {
+                    await PromptConflictResolutionAsync(conflict);
+                }
+            }
+
+            // TODO: Sync from Notion (CRM, job search data)
+            // TODO: Sync from GitHub (PRs, issues)
+
+            // Show today's dashboard
+            await ShowTodaysDashboardAsync();
+
+            AnsiConsole.MarkupLine("[bold green]✅ Day started successfully[/]");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine($"[bold red]❌ Failed to start day: {ex.Message}[/]");
+            _logger.LogError(ex, "Failed to start day");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// End the day: Publish all pending changes to Linear, Notion, and GitHub.
+    /// Then trigger git push for CI/CD.
+    /// </summary>
+    public async Task<bool> EndMyDayAsync()
+    {
+        AnsiConsole.MarkupLine("[bold cyan]🌙 Ending your day...[/]");
+
+        try
+        {
+            var allSuccess = true;
+
+            // Post pending comments to Linear
+            var commentsResult = await _linearSync.PostPendingCommentsAsync();
+            AnsiConsole.WriteLine($"   {GetStatusIcon(commentsResult.Status)} Linear comments: {commentsResult.UpsertCount} posted");
+            if (commentsResult.Status == "error") allSuccess = false;
+
+            // Sync work logs to Linear
+            var worklogsResult = await _linearSync.SyncWorkLogsToLinearAsync();
+            AnsiConsole.WriteLine($"   {GetStatusIcon(worklogsResult.Status)} Work logs: {worklogsResult.UpsertCount} synced");
+            if (worklogsResult.Status == "error") allSuccess = false;
+
+            // Publish Notion pages
+            var pagesResult = await _notionPublish.PublishPendingPagesAsync();
+            AnsiConsole.WriteLine($"   {GetStatusIcon(pagesResult.Status)} Notion pages: {pagesResult.SuccessCount} published");
+            if (pagesResult.Status == "error") allSuccess = false;
+
+            // Sync CRM to Notion
+            var crmResult = await _notionPublish.SyncCrmToNotionAsync();
+            AnsiConsole.WriteLine($"   {GetStatusIcon(crmResult.Status)} CRM contacts: {crmResult.SuccessCount} synced");
+            if (crmResult.Status == "error") allSuccess = false;
+
+            // Sync job search to Notion
+            var jobResult = await _notionPublish.SyncJobSearchToNotionAsync();
+            AnsiConsole.WriteLine($"   {GetStatusIcon(jobResult.Status)} Job search: {jobResult.SuccessCount} synced");
+            if (jobResult.Status == "error") allSuccess = false;
+
+            if (allSuccess)
+            {
+                AnsiConsole.MarkupLine("[bold green]✅ All syncs completed successfully[/]");
+                AnsiConsole.MarkupLine("[bold cyan]📤 Ready for git push and CI/CD[/]");
+                return true;
+            }
+            else
+            {
+                AnsiConsole.MarkupLine("[bold yellow]⚠️  Some syncs failed. Review errors above.[/]");
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine($"[bold red]❌ Failed to end day: {ex.Message}[/]");
+            _logger.LogError(ex, "Failed to end day");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Show today's work dashboard from SQLite.
+    /// Displays active tickets, pending tickets, and rounds state.
+    /// </summary>
+    private async Task ShowTodaysDashboardAsync()
+    {
+        AnsiConsole.MarkupLine("\n[bold cyan]📊 Today's Dashboard[/]");
+
+        var activeTickets = await _dbContext.GetTicketsByStatusAsync("in_progress");
+        var pendingTickets = await _dbContext.GetTicketsByStatusAsync("pending");
+        var waitingTickets = await _dbContext.GetTicketsByStatusAsync("waiting_review");
+
+        var table = new Table();
+        table.AddColumn("Status");
+        table.AddColumn("Count");
+        table.AddColumn("Examples");
+
+        table.AddRow(
+            "🔴 In Progress",
+            activeTickets.Count().ToString(),
+            string.Join(", ", activeTickets.Take(3).Select(t => t.Id))
+        );
+
+        table.AddRow(
+            "⚪ Pending",
+            pendingTickets.Count().ToString(),
+            string.Join(", ", pendingTickets.Take(3).Select(t => t.Id))
+        );
+
+        table.AddRow(
+            "🟡 Waiting Review",
+            waitingTickets.Count().ToString(),
+            string.Join(", ", waitingTickets.Take(3).Select(t => t.Id))
+        );
+
+        AnsiConsole.Write(table);
+    }
+
+    /// <summary>
+    /// Prompt user to resolve a ticket conflict.
+    /// Conflicts occur when local changes haven't been synced to Linear yet.
+    /// </summary>
+    private async Task PromptConflictResolutionAsync(TicketConflict conflict)
+    {
+        AnsiConsole.MarkupLine($"\n[yellow]⚠️  Conflict: {conflict.TicketId} - {conflict.Title}[/]");
+        AnsiConsole.MarkupLine($"   Local:  {conflict.LocalStatus} (updated {conflict.LocalUpdatedAt:g})");
+        AnsiConsole.MarkupLine($"   Remote: {conflict.RemoteStatus} (updated {conflict.RemoteUpdatedAt:g})");
+
+        var resolution = AnsiConsole.Prompt(
+            new SelectionPrompt<string>()
+                .Title("How should we resolve this?")
+                .AddChoices("Keep local changes", "Use remote (Linear) version", "Skip for now")
+        );
+
+        switch (resolution)
+        {
+            case "Keep local changes":
+                await _linearSync.ResolveConflictAsync(conflict.TicketId, "keep_local");
+                AnsiConsole.MarkupLine($"   ✅ Keeping local version (you must sync manually later)");
+                break;
+            case "Use remote (Linear) version":
+                await _linearSync.ResolveConflictAsync(conflict.TicketId, "keep_remote");
+                AnsiConsole.MarkupLine($"   ✅ Using Linear version (local changes discarded)");
+                break;
+            case "Skip for now":
+                AnsiConsole.MarkupLine($"   ⏭️  Skipped (will prompt again next sync)");
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Dispatch the next unclaimed ticket from SQLite to a lane.
+    /// </summary>
+    public async Task<Ticket?> DispatchNextTicketAsync(int laneNumber)
+    {
+        var nextTicket = (await _dbContext.GetTicketsByStatusAsync("pending"))
+            .FirstOrDefault();
+
+        if (nextTicket == null)
+        {
+            _logger.LogWarning("No pending tickets available to dispatch");
+            return null;
+        }
+
+        // Update lane state
+        var lane = await _dbContext.GetRoundsStateAsync(laneNumber) ?? new RoundsState { LaneNumber = laneNumber };
+        lane.CurrentTicketId = nextTicket.Id;
+        lane.Status = "active";
+        lane.StartedAt = DateTime.UtcNow;
+        lane.UpdatedAt = DateTime.UtcNow;
+        await _dbContext.UpsertRoundsStateAsync(lane);
+
+        _logger.LogInformation($"📌 Lane {laneNumber} assigned {nextTicket.Id}");
+        return nextTicket;
+    }
+
+    private string GetStatusIcon(string status) => status switch
+    {
+        "success" => "✅",
+        "success_with_conflicts" => "⚠️ ",
+        "success_with_errors" => "⚠️ ",
+        "error" => "❌",
+        _ => "❓"
+    };
+}

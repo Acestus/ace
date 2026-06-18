@@ -1,0 +1,328 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Text;
+using System.Text.Json;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+
+namespace Ace.Tools.Cli;
+
+/// <summary>
+/// Publishes Notion pages and syncs CRM/job search data to Notion database.
+/// Called from dotnet CLI at end-my-day.
+/// </summary>
+public class NotionPublishService
+{
+    private readonly HttpClient _httpClient;
+    private readonly WorkflowDbContext _dbContext;
+    private readonly ILogger<NotionPublishService> _logger;
+    private readonly string _notionToken;
+    private readonly string _notionDatabaseId;
+
+    public NotionPublishService(
+        HttpClient httpClient,
+        WorkflowDbContext dbContext,
+        ILogger<NotionPublishService> logger,
+        string notionToken,
+        string notionDatabaseId)
+    {
+        _httpClient = httpClient;
+        _dbContext = dbContext;
+        _logger = logger;
+        _notionToken = notionToken;
+        _notionDatabaseId = notionDatabaseId;
+
+        _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {notionToken}");
+        _httpClient.DefaultRequestHeaders.Add("Notion-Version", "2022-06-28");
+    }
+
+    /// <summary>
+    /// Publish all pending Notion pages from SQLite.
+    /// </summary>
+    public async Task<PublishResult> PublishPendingPagesAsync()
+    {
+        _logger.LogInformation("📄 Publishing pending Notion pages...");
+        var result = new PublishResult { Target = "notion_pages" };
+
+        try
+        {
+            var pendingPages = await _dbContext.GetPendingPagesAsync();
+            _logger.LogInformation($"  📤 Found {pendingPages.Count()} pages to publish");
+
+            int successCount = 0;
+            int failureCount = 0;
+
+            foreach (var page in pendingPages)
+            {
+                try
+                {
+                    var pageId = await CreateNotionPageAsync(page);
+                    await _dbContext.UpdatePageStatusAsync(page.Id, "published", pageId);
+                    successCount++;
+                    _logger.LogInformation($"  ✅ Published '{page.Title}' ({pageId})");
+                }
+                catch (Exception ex)
+                {
+                    failureCount++;
+                    await _dbContext.UpdatePageStatusAsync(page.Id, "failed", errorMessage: ex.Message);
+                    _logger.LogError($"  ❌ Failed to publish '{page.Title}': {ex.Message}");
+                }
+            }
+
+            result.SuccessCount = successCount;
+            result.FailureCount = failureCount;
+            result.Status = failureCount == 0 ? "success" : "success_with_errors";
+            _logger.LogInformation($"  ✅ Published {successCount} pages ({failureCount} failed)");
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            result.Status = "error";
+            result.ErrorMessage = ex.Message;
+            _logger.LogError(ex, "❌ Failed to publish pages to Notion");
+            return result;
+        }
+    }
+
+    /// <summary>
+    /// Sync all CRM contacts to Notion database.
+    /// Creates or updates Notion database entries.
+    /// </summary>
+    public async Task<PublishResult> SyncCrmToNotionAsync()
+    {
+        _logger.LogInformation("👥 Syncing CRM contacts to Notion...");
+        var result = new PublishResult { Target = "notion_crm" };
+
+        try
+        {
+            var contacts = await _dbContext.GetCrmContactsAsync();
+            _logger.LogInformation($"  📤 Found {contacts.Count()} CRM contacts to sync");
+
+            int successCount = 0;
+            int failureCount = 0;
+
+            foreach (var contact in contacts)
+            {
+                try
+                {
+                    if (!contact.SyncedToNotion)
+                    {
+                        await CreateCrmContactInNotionAsync(contact);
+                        // TODO: Mark as synced in DB
+                        successCount++;
+                        _logger.LogInformation($"  ✅ Synced {contact.FirstName} {contact.LastName}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    failureCount++;
+                    _logger.LogError($"  ❌ Failed to sync contact: {ex.Message}");
+                }
+            }
+
+            result.SuccessCount = successCount;
+            result.FailureCount = failureCount;
+            result.Status = failureCount == 0 ? "success" : "success_with_errors";
+            _logger.LogInformation($"  ✅ Synced {successCount} contacts ({failureCount} failed)");
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            result.Status = "error";
+            result.ErrorMessage = ex.Message;
+            _logger.LogError(ex, "❌ Failed to sync CRM to Notion");
+            return result;
+        }
+    }
+
+    /// <summary>
+    /// Sync job search applications to Notion database.
+    /// </summary>
+    public async Task<PublishResult> SyncJobSearchToNotionAsync()
+    {
+        _logger.LogInformation("💼 Syncing job search applications to Notion...");
+        var result = new PublishResult { Target = "notion_job_search" };
+
+        try
+        {
+            var applications = await _dbContext.GetJobSearchApplicationsAsync();
+            _logger.LogInformation($"  📤 Found {applications.Count()} job applications to sync");
+
+            int successCount = 0;
+            int failureCount = 0;
+
+            foreach (var app in applications)
+            {
+                try
+                {
+                    if (!app.SyncedToNotion)
+                    {
+                        await CreateJobApplicationInNotionAsync(app);
+                        // TODO: Mark as synced in DB
+                        successCount++;
+                        _logger.LogInformation($"  ✅ Synced {app.Company} - {app.PositionTitle}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    failureCount++;
+                    _logger.LogError($"  ❌ Failed to sync application: {ex.Message}");
+                }
+            }
+
+            result.SuccessCount = successCount;
+            result.FailureCount = failureCount;
+            result.Status = failureCount == 0 ? "success" : "success_with_errors";
+            _logger.LogInformation($"  ✅ Synced {successCount} applications ({failureCount} failed)");
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            result.Status = "error";
+            result.ErrorMessage = ex.Message;
+            _logger.LogError(ex, "❌ Failed to sync job search to Notion");
+            return result;
+        }
+    }
+
+    private async Task<string> CreateNotionPageAsync(PagePending page)
+    {
+        var payload = new
+        {
+            parent = new { page_id = page.ParentPageId },
+            properties = new
+            {
+                title = new
+                {
+                    title = new[] { new { text = new { content = page.Title } } }
+                }
+            },
+            children = new[]
+            {
+                new
+                {
+                    @object = "block",
+                    type = "paragraph",
+                    paragraph = new
+                    {
+                        rich_text = new[] { new { text = new { content = page.Content } } }
+                    }
+                }
+            }
+        };
+
+        var content = new StringContent(
+            JsonSerializer.Serialize(payload),
+            Encoding.UTF8,
+            "application/json"
+        );
+
+        var response = await _httpClient.PostAsync("https://api.notion.com/v1/pages", content);
+        response.EnsureSuccessStatusCode();
+
+        var responseJson = await response.Content.ReadAsStringAsync();
+        using var jsonDoc = JsonDocument.Parse(responseJson);
+        return jsonDoc.RootElement.GetProperty("id").GetString() ?? throw new Exception("No page ID returned");
+    }
+
+    private async Task CreateCrmContactInNotionAsync(CrmContact contact)
+    {
+        var payload = new
+        {
+            parent = new { database_id = _notionDatabaseId },
+            properties = new
+            {
+                Name = new
+                {
+                    title = new[] { new { text = new { content = $"{contact.FirstName} {contact.LastName}".Trim() } } }
+                },
+                Email = new
+                {
+                    email = contact.Email
+                },
+                Phone = new
+                {
+                    phone_number = contact.Phone
+                },
+                Title = new
+                {
+                    rich_text = new[] { new { text = new { content = contact.Title ?? "" } } }
+                },
+                Notes = new
+                {
+                    rich_text = new[] { new { text = new { content = contact.Notes ?? "" } } }
+                }
+            }
+        };
+
+        var content = new StringContent(
+            JsonSerializer.Serialize(payload),
+            Encoding.UTF8,
+            "application/json"
+        );
+
+        var response = await _httpClient.PostAsync("https://api.notion.com/v1/pages", content);
+        response.EnsureSuccessStatusCode();
+    }
+
+    private async Task CreateJobApplicationInNotionAsync(JobSearchApplication app)
+    {
+        var payload = new
+        {
+            parent = new { database_id = _notionDatabaseId },
+            properties = new
+            {
+                Company = new
+                {
+                    title = new[] { new { text = new { content = app.Company } } }
+                },
+                Position = new
+                {
+                    rich_text = new[] { new { text = new { content = app.PositionTitle } } }
+                },
+                Status = new
+                {
+                    select = new { name = app.Status }
+                },
+                DateApplied = new
+                {
+                    date = new { start = app.DateApplied.ToString("yyyy-MM-dd") }
+                },
+                SalaryRange = new
+                {
+                    rich_text = new[] { new { text = new { content = app.SalaryRange ?? "" } } }
+                },
+                Notes = new
+                {
+                    rich_text = new[] { new { text = new { content = app.Notes ?? "" } } }
+                }
+            }
+        };
+
+        var content = new StringContent(
+            JsonSerializer.Serialize(payload),
+            Encoding.UTF8,
+            "application/json"
+        );
+
+        var response = await _httpClient.PostAsync("https://api.notion.com/v1/pages", content);
+        response.EnsureSuccessStatusCode();
+    }
+}
+
+/// <summary>
+/// Result of a publish operation.
+/// </summary>
+public class PublishResult
+{
+    public string Target { get; set; } = null!;
+    public string Status { get; set; } = "pending"; // pending, success, success_with_errors, error
+    public int SuccessCount { get; set; }
+    public int FailureCount { get; set; }
+    public string? ErrorMessage { get; set; }
+}

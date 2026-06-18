@@ -5,7 +5,7 @@ using System.Text.Json.Nodes;
 
 namespace Ace.Tools.Cli;
 
-internal sealed class LinearClient
+public sealed class LinearClient
 {
     private static readonly HttpClient HttpClient = new()
     {
@@ -123,6 +123,27 @@ internal sealed class LinearClient
         }
         """;
 
+    private const string ViewerAssignedIssuesQuery = """
+        query ViewerAssignedIssues {
+          viewer {
+            assignedIssues {
+              nodes {
+                id
+                identifier
+                title
+                priority
+                state { name }
+                labels { nodes { name } }
+                dueDate
+                createdAt
+                updatedAt
+                team { key name }
+              }
+            }
+          }
+        }
+        """;
+
     private readonly string _apiKey;
 
     public LinearClient()
@@ -214,6 +235,12 @@ internal sealed class LinearClient
     {
         var data = await QueryAsync(IssueQuery, new { id = key.ToUpperInvariant() }, cancellationToken);
         return data.GetProperty("issue").Clone();
+    }
+
+    public async Task<IReadOnlyList<JsonElement>> QueryViewerAssignedIssuesAsync(CancellationToken cancellationToken)
+    {
+        var data = await QueryAsync(ViewerAssignedIssuesQuery, null, cancellationToken);
+        return ReadNodes(data.GetProperty("viewer"), "assignedIssues");
     }
 
     public async Task<JsonElement> QueryTeamStatesAsync(string issueKey, CancellationToken cancellationToken)

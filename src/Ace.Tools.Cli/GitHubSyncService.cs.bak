@@ -1,0 +1,220 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+
+namespace Ace.Tools.Cli;
+
+/// <summary>
+/// Syncs GitHub pull requests and issues into SQLite.
+/// Called at start-my-day to refresh local state.
+/// </summary>
+public class GitHubSyncService
+{
+    private readonly GitHubClient _githubClient;
+    private readonly WorkflowDbContext _dbContext;
+    private readonly ILogger<GitHubSyncService> _logger;
+
+    public GitHubSyncService(
+        GitHubClient githubClient,
+        WorkflowDbContext dbContext,
+        ILogger<GitHubSyncService> logger)
+    {
+        _githubClient = githubClient;
+        _dbContext = dbContext;
+        _logger = logger;
+    }
+
+    /// <summary>
+    /// Sync all open pull requests from GitHub organization into SQLite.
+    /// </summary>
+    public async Task<SyncResult> SyncPullRequestsAsync(string org)
+    {
+        _logger.LogInformation($"🔄 Syncing PRs from {org}...");
+        var result = new SyncResult { Source = "github_pr" };
+
+        try
+        {
+            var prs = await _githubClient.GetOpenPullRequestsAsync(org);
+            _logger.LogInformation($"  📥 Fetched {prs.Count} open PRs from GitHub");
+
+            int upsertCount = 0;
+            foreach (var pr in prs)
+            {
+                await _dbContext.UpsertPullRequestAsync(pr);
+                upsertCount++;
+            }
+
+            result.UpsertCount = upsertCount;
+            result.Status = "success";
+            _logger.LogInformation($"  ✅ Synced {upsertCount} PRs from GitHub");
+
+            // Update sync state
+            var syncState = new SyncState
+            {
+                Source = "github_pr",
+                LastSyncAt = DateTime.UtcNow,
+                Status = "success",
+                SyncedCount = upsertCount
+            };
+            await _dbContext.UpdateSyncStateAsync(syncState);
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            result.Status = "error";
+            result.ErrorMessage = ex.Message;
+            _logger.LogError(ex, "❌ Failed to sync PRs from GitHub");
+
+            var syncState = new SyncState
+            {
+                Source = "github_pr",
+                Status = "error",
+                ErrorMessage = ex.Message
+            };
+            await _dbContext.UpdateSyncStateAsync(syncState);
+
+            return result;
+        }
+    }
+
+    /// <summary>
+    /// Sync all open issues from GitHub organization into SQLite.
+    /// </summary>
+    public async Task<SyncResult> SyncIssuesAsync(string org)
+    {
+        _logger.LogInformation($"🔄 Syncing issues from {org}...");
+        var result = new SyncResult { Source = "github_issue" };
+
+        try
+        {
+            var issues = await _githubClient.GetOpenIssuesAsync(org);
+            _logger.LogInformation($"  📥 Fetched {issues.Count} open issues from GitHub");
+
+            int upsertCount = 0;
+            foreach (var issue in issues)
+            {
+                await _dbContext.UpsertGitHubIssueAsync(issue);
+                upsertCount++;
+            }
+
+            result.UpsertCount = upsertCount;
+            result.Status = "success";
+            _logger.LogInformation($"  ✅ Synced {upsertCount} issues from GitHub");
+
+            // Update sync state
+            var syncState = new SyncState
+            {
+                Source = "github_issue",
+                LastSyncAt = DateTime.UtcNow,
+                Status = "success",
+                SyncedCount = upsertCount
+            };
+            await _dbContext.UpdateSyncStateAsync(syncState);
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            result.Status = "error";
+            result.ErrorMessage = ex.Message;
+            _logger.LogError(ex, "❌ Failed to sync issues from GitHub");
+
+            var syncState = new SyncState
+            {
+                Source = "github_issue",
+                Status = "error",
+                ErrorMessage = ex.Message
+            };
+            await _dbContext.UpdateSyncStateAsync(syncState);
+
+            return result;
+        }
+    }
+}
+
+/// <summary>
+/// GitHub API client for querying PRs and issues.
+/// </summary>
+public class GitHubClient
+{
+    private readonly HttpClient _httpClient;
+    private readonly string _githubToken;
+    private readonly ILogger<GitHubClient> _logger;
+
+    public GitHubClient(HttpClient httpClient, string githubToken, ILogger<GitHubClient> logger)
+    {
+        _httpClient = httpClient;
+        _githubToken = githubToken;
+        _logger = logger;
+
+        _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {githubToken}");
+        _httpClient.DefaultRequestHeaders.Add("Accept", "application/vnd.github.v3+json");
+    }
+
+    public async Task<List<PullRequest>> GetOpenPullRequestsAsync(string org)
+    {
+        var query = @"
+            query {
+              search(query: ""is:pr is:open org:" + org + @""" type:pr) {
+                nodes {
+                  ... on PullRequest {
+                    id
+                    number
+                    title
+                    url
+                    state
+                    author { login }
+                    createdAt
+                    updatedAt
+                    mergedAt
+                    repository { nameWithOwner }
+                    reviewDecision
+                    isDraft
+                  }
+                }
+              }
+            }
+        ";
+
+        var prs = new List<PullRequest>();
+        
+        // TODO: Implement GraphQL query execution
+        _logger.LogInformation($"TODO: Query GitHub GraphQL for PRs in {org}");
+
+        return prs;
+    }
+
+    public async Task<List<GitHubIssue>> GetOpenIssuesAsync(string org)
+    {
+        var query = @"
+            query {
+              search(query: ""is:issue is:open org:" + org + @""" type:issue -assignee:dependabot"") {
+                nodes {
+                  ... on Issue {
+                    id
+                    number
+                    title
+                    url
+                    state
+                    assignee { login }
+                    createdAt
+                    updatedAt
+                    labels(first: 10) { nodes { name } }
+                    repository { nameWithOwner }
+                  }
+                }
+              }
+            }
+        ";
+
+        var issues = new List<GitHubIssue>();
+
+        // TODO: Implement GraphQL query execution
+        _logger.LogInformation($"TODO: Query GitHub GraphQL for issues in {org}");
+
+        return issues;
+    }
+}

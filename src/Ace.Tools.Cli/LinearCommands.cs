@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
@@ -43,6 +44,7 @@ internal static class LinearCommands
             "create-issue" => await CreateIssueAsync(args[1..], stdout, stderr, cancellationToken),
             "create-project" => await CreateProjectAsync(args[1..], stdout, stderr, cancellationToken),
             "dispatch-next" => await DispatchNextAsync(args[1..], stdout, stderr, cancellationToken),
+            "start-my-day" => await StartMyDayAsync(args[1..], stdout, stderr, cancellationToken),
             _ => UnknownCommand($"linear {args[0]}", stderr)
         };
     }
@@ -423,6 +425,75 @@ internal static class LinearCommands
         return 0;
     }
 
+    private static async Task<int> StartMyDayAsync(string[] args, TextWriter stdout, TextWriter stderr, CancellationToken cancellationToken)
+    {
+        if (args.Length > 0 && CommandHelpers.HasOption(args, "--help", "-h"))
+        {
+            await stdout.WriteLineAsync("linear start-my-day");
+            await stdout.WriteLineAsync();
+            await stdout.WriteLineAsync("Usage:");
+            await stdout.WriteLineAsync("  linear start-my-day");
+            return 0;
+        }
+
+        var repoRoot = RepoPaths.FindRepoRoot();
+        var plannerDir = Path.Combine(repoRoot, "planner");
+        Directory.CreateDirectory(plannerDir);
+
+        var today = DateOnly.FromDateTime(DateTime.Now);
+        var notePath = Path.Combine(plannerDir, $"{today:MM-dd}.org");
+        if (File.Exists(notePath) && !string.IsNullOrWhiteSpace(await File.ReadAllTextAsync(notePath, cancellationToken)))
+        {
+            await stdout.WriteLineAsync($"✓ Daily note already exists: {Path.GetRelativePath(repoRoot, notePath)}");
+            return 0;
+        }
+
+        var client = new LinearClient();
+        var issues = await client.QueryViewerAssignedIssuesAsync(cancellationToken);
+        var activeState = ResolveFlowState("active");
+        var activeIssues = issues
+            .Where(issue => string.Equals(GetString(issue.GetProperty("state"), "name"), activeState, StringComparison.OrdinalIgnoreCase))
+            .OrderBy(IssueRank)
+            .ToList();
+
+        var boardedIssues = activeIssues
+            .Take(5)
+            .Select(issue => new DailyTicket(
+                GetString(issue, "identifier"),
+                GetString(issue, "title"),
+                GetInt(issue, "priority"),
+                GetString(issue.GetProperty("team"), "key"),
+                GetString(issue.GetProperty("team"), "name"),
+                FindIssueFilePath(repoRoot, GetString(issue, "identifier")),
+                string.Empty))
+            .Select(ticket => ticket with { NextStep = ReadNextStep(ticket.IssueFilePath) })
+            .ToList();
+
+        var note = BuildDailyNote(today, boardedIssues, await GetAuthorAsync(cancellationToken));
+        await File.WriteAllTextAsync(notePath, note, cancellationToken);
+
+        await stdout.WriteLineAsync($"✓ Daily note created: {Path.GetRelativePath(repoRoot, notePath)}");
+        await stdout.WriteLineAsync($"✓ Loaded {boardedIssues.Count} active ticket(s)");
+        if (activeIssues.Count > boardedIssues.Count)
+        {
+            await stdout.WriteLineAsync($"⚠ {activeIssues.Count - boardedIssues.Count} additional active ticket(s) omitted from the 5-lane board.");
+        }
+
+        if (boardedIssues.Count < 3)
+        {
+            await stdout.WriteLineAsync("⚠ Fewer than 3 active tickets loaded. Consider dispatching the next queue item.");
+        }
+
+        foreach (var (ticket, index) in boardedIssues.Select((ticket, index) => (ticket, index)))
+        {
+            await stdout.WriteLineAsync($"  Lane {index + 1}: {ticket.Identifier} — {ticket.Title}");
+            await stdout.WriteLineAsync($"    NEXT: {ticket.NextStep}");
+        }
+
+        await stdout.WriteLineAsync($"  Board: {Path.GetRelativePath(repoRoot, notePath)}");
+        return 0;
+    }
+
     private static async Task CreateStubAsync(string key, CancellationToken cancellationToken)
     {
         var client = new LinearClient();
@@ -516,6 +587,151 @@ TODO:
         var label = CommandHelpers.GetOptionValue(args, "--label");
         int? priority = int.TryParse(CommandHelpers.GetOptionValue(args, "--priority"), out var parsed) ? parsed : null;
         return BuildSearchFilter(state, label, team, priority);
+    }
+
+    private static string BuildDailyNote(DateOnly date, IReadOnlyList<DailyTicket> tickets, string author)
+    {
+        var builder = new System.Text.StringBuilder();
+        builder.AppendLine($"#+TITLE: Daily Note — {date:yyyy-MM-dd} ({date.ToDateTime(TimeOnly.MinValue).ToString("ddd", CultureInfo.InvariantCulture)})");
+        builder.AppendLine($"#+DATE: <{date:yyyy-MM-dd} {date.ToDateTime(TimeOnly.MinValue).ToString("ddd", CultureInfo.InvariantCulture)}>");
+        builder.AppendLine($"#+AUTHOR: {author}");
+        builder.AppendLine();
+        builder.AppendLine("* Time Log");
+        builder.AppendLine("| Ticket | Start | Stop | Duration | Notes |");
+        builder.AppendLine("|--------|-------|------|----------|-------|");
+        builder.AppendLine("|        |       |      |          |       |");
+        builder.AppendLine();
+        builder.AppendLine($"* Kanban Board — WIP: {tickets.Count}/{GetBoardCapacity(tickets.Count)}");
+        builder.AppendLine("# Dispatcher can update this section. Status board, not a calendar.");
+
+        for (var lane = 1; lane <= 5; lane++)
+        {
+            builder.AppendLine();
+            builder.AppendLine(lane switch
+            {
+                1 => "** Lane 1 (Urgent)",
+                2 => "** Lane 2 (Manual)",
+                3 => "** Lane 3 (Background)",
+                4 => "** Lane 4",
+                5 => "** Lane 5",
+                _ => "** Lane"
+            });
+
+            if (lane <= tickets.Count)
+            {
+                var ticket = tickets[lane - 1];
+                builder.AppendLine($"*** TODO {ticket.Identifier} — {ticket.Title}");
+                builder.AppendLine($"    :NEXT: {ticket.NextStep}");
+            }
+            else
+            {
+                builder.AppendLine("*** (empty)");
+            }
+        }
+
+        builder.AppendLine();
+        builder.AppendLine("* Standup");
+        builder.AppendLine("** Yesterday");
+        builder.AppendLine("   - (start of day)");
+        builder.AppendLine("** Today");
+        if (tickets.Count == 0)
+        {
+            builder.AppendLine("   - [ ] Pull the next ticket from queue");
+        }
+        else
+        {
+            foreach (var ticket in tickets)
+            {
+                builder.AppendLine($"   - [ ] {ticket.Identifier} — {ticket.NextStep}");
+            }
+        }
+        builder.AppendLine("** Blockers");
+        builder.AppendLine("   - None");
+        builder.AppendLine();
+        builder.AppendLine("* Notes");
+        builder.AppendLine();
+        return builder.ToString();
+    }
+
+    private static int GetBoardCapacity(int activeCount) => activeCount <= 3 ? 3 : 5;
+
+    private static string? FindIssueFilePath(string repoRoot, string key)
+    {
+        var issuesRoot = Path.Combine(repoRoot, "issues");
+        if (!Directory.Exists(issuesRoot) || string.IsNullOrWhiteSpace(key))
+        {
+            return null;
+        }
+
+        return Directory.EnumerateFiles(issuesRoot, "*.md", SearchOption.AllDirectories)
+            .Select(path => new { Path = path, Score = ScoreIssuePath(path, key) })
+            .Where(item => item.Score > 0)
+            .OrderByDescending(item => item.Score)
+            .ThenBy(item => item.Path.Length)
+            .Select(item => item.Path)
+            .FirstOrDefault();
+    }
+
+    private static int ScoreIssuePath(string path, string key)
+    {
+        var fileName = Path.GetFileName(path);
+        if (string.Equals(Path.GetFileName(Path.GetDirectoryName(path)), key, StringComparison.OrdinalIgnoreCase))
+        {
+            return 3;
+        }
+
+        if (fileName.StartsWith(key, StringComparison.OrdinalIgnoreCase))
+        {
+            return 2;
+        }
+
+        return path.Contains($"{Path.DirectorySeparatorChar}{key}{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
+    }
+
+    private static string ReadNextStep(string? issueFilePath)
+    {
+        if (string.IsNullOrWhiteSpace(issueFilePath) || !File.Exists(issueFilePath))
+        {
+            return "No next step defined";
+        }
+
+        var started = false;
+        var followUpLevel = 0;
+        foreach (var line in File.ReadLines(issueFilePath))
+        {
+            if (!started)
+            {
+                var heading = Regex.Match(line, @"^\s*(?<prefix>#{1,6}|\*{1,6})\s+Follow-up\b", RegexOptions.IgnoreCase);
+                if (heading.Success)
+                {
+                    followUpLevel = heading.Groups["prefix"].Value.Length;
+                    started = true;
+                }
+
+                continue;
+            }
+
+            var nextHeading = Regex.Match(line, @"^\s*(?<prefix>#{1,6}|\*{1,6})\s+\S+");
+            if (nextHeading.Success && nextHeading.Groups["prefix"].Value.Length <= followUpLevel)
+            {
+                break;
+            }
+
+            var match = Regex.Match(line, @"^\s*-\s+\[ \]\s+(?<step>.+)$");
+            if (match.Success)
+            {
+                return match.Groups["step"].Value.Trim();
+            }
+        }
+
+        return "No next step defined";
+    }
+
+    private static async Task<string> GetAuthorAsync(CancellationToken cancellationToken)
+    {
+        var result = await LocalCommandRunner.RunCaptureAsync("git", ["config", "user.name"], cancellationToken);
+        var author = result.ExitCode == 0 ? result.Stdout.Trim() : string.Empty;
+        return string.IsNullOrWhiteSpace(author) ? "acestus" : author;
     }
 
     private static IReadOnlyList<string> ResolveIssueLabelIds(JsonElement teamLabels, IReadOnlyList<string> labelNames, out List<string> missingLabels)
@@ -699,4 +915,13 @@ TODO:
         stderr.WriteLine($"❌ {message}");
         return 1;
     }
+
+    private sealed record DailyTicket(
+        string Identifier,
+        string Title,
+        int Priority,
+        string TeamKey,
+        string TeamName,
+        string? IssueFilePath,
+        string NextStep);
 }

@@ -128,6 +128,7 @@ dotnet run --project src/Ace.Tools.Cli -- linear get-issue --key <TEAM-123>
 dotnet run --project src/Ace.Tools.Cli -- linear search --state "In Progress"
 dotnet run --project src/Ace.Tools.Cli -- linear set-flow --key <TEAM-123> --flow active
 dotnet run --project src/Ace.Tools.Cli -- linear comment --key <TEAM-123> --comment "Status update"
+dotnet run --project src/Ace.Tools.Cli -- linear start-my-day
 ```
 
 `Ace.Tools.Cli` auto-loads `.env` from the repo root and handles Linear and GitHub directly.
@@ -138,7 +139,7 @@ dotnet run --project src/Ace.Tools.Cli -- linear comment --key <TEAM-123> --comm
 
 ```bash
 # Morning
-"start my day"                  # → start-my-day skill: pulls active tickets, creates planner note
+"start my day"                  # → start-my-day skill: runs `linear start-my-day` and creates planner note
 
 # Picking up work
 "rounds lane 1"                 # → rounds: routes to urgent lane, dispatches top queue ticket
@@ -162,7 +163,7 @@ tl start <PROJECT>-87           # start a timer
 ## Skill Reference
 
 ### Jira workflow
-- `start-my-day` — create today's planner note, load active tickets
+- `start-my-day` — create today's planner note and load active tickets via `linear start-my-day`
 - `end-my-day` — close out, generate standup, post to Teams
 - `rounds` — kanban station rotation, one ticket per lane at a time
 - `jira-router` — fuzzy intent router for ticket-adjacent requests

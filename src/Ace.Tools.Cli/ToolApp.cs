@@ -27,6 +27,7 @@ public static class ToolApp
             "linear" => await LinearCommands.RunAsync(args.Skip(1).ToArray(), stdout, stderr, cancellationToken),
             "github" => await GitHubCommands.RunAsync(args.Skip(1).ToArray(), stdout, stderr, cancellationToken),
             "legacy" => await LegacyCommands.RunAsync(args.Skip(1).ToArray(), stdout, stderr, cancellationToken),
+            "workflow" => await WorkflowHandler.RunAsync(args.Skip(1).ToArray(), stdout, stderr),
             _ => UnknownCommand(args[0], stderr)
         };
     }
@@ -43,10 +44,15 @@ public static class ToolApp
         stdout.WriteLine("  linear set-flow --key <KEY> --flow <queue|active|waiting|done> [--transition]");
         stdout.WriteLine("  linear comment --key <KEY> --comment <text>");
         stdout.WriteLine("  linear create-issue|create-project|dispatch-next [args...]");
+        stdout.WriteLine("  linear start-my-day");
         stdout.WriteLine("  github issues [gh issue args...]");
         stdout.WriteLine("  github prs [gh pr args...]");
         stdout.WriteLine("  github review-pr [args...]");
         stdout.WriteLine("  github daily-summary [args...]");
+        stdout.WriteLine("  workflow init-db");
+        stdout.WriteLine("  workflow start-my-day");
+        stdout.WriteLine("  workflow end-my-day");
+        stdout.WriteLine("  workflow dispatch --lane <1-5>");
         stdout.WriteLine("  legacy invoke --command <exe> -- [args...]");
     }
 
@@ -54,41 +60,27 @@ public static class ToolApp
     {
         switch (command)
         {
-            case "linear":
-                stdout.WriteLine("linear");
-                stdout.WriteLine();
-                stdout.WriteLine("Usage:");
-                stdout.WriteLine("  linear get-issue --key <KEY>");
-                stdout.WriteLine("  linear search [args...]");
-                stdout.WriteLine("  linear set-flow --key <KEY> --flow <queue|active|waiting|done> [--transition]");
-                stdout.WriteLine("  linear comment --key <KEY> --comment <text>");
-                stdout.WriteLine("  linear create-issue|create-project|dispatch-next [args...]");
-                return;
-            case "github":
-                stdout.WriteLine("github");
-                stdout.WriteLine();
-                stdout.WriteLine("Usage:");
-                stdout.WriteLine("  github issues [gh issue args...]");
-                stdout.WriteLine("  github prs [gh pr args...]");
-                stdout.WriteLine("  github review-pr [args...]");
-                stdout.WriteLine("  github daily-summary [args...]");
-                return;
-            case "legacy":
-                stdout.WriteLine("legacy");
-                stdout.WriteLine();
-                stdout.WriteLine("Usage:");
-                stdout.WriteLine("  legacy invoke --command <exe> -- [args...]");
-                return;
+            case "workflow":
+                stdout.WriteLine("Workflow Commands");
+                stdout.WriteLine("Initialize local SQLite database for work management:");
+                stdout.WriteLine("  workflow init-db");
+                stdout.WriteLine("Refresh database from Linear/Notion/GitHub and show today's dashboard:");
+                stdout.WriteLine("  workflow start-my-day");
+                stdout.WriteLine("Publish pending changes back to Linear/Notion:");
+                stdout.WriteLine("  workflow end-my-day");
+                stdout.WriteLine("Dispatch next pending ticket to a lane:");
+                stdout.WriteLine("  workflow dispatch --lane <1-5>");
+                break;
             default:
-                PrintHelp(stdout);
-                return;
+                stdout.WriteLine($"Unknown command: {command}");
+                break;
         }
     }
 
     private static int UnknownCommand(string command, TextWriter stderr)
     {
         stderr.WriteLine($"❌ Unknown command: {command}");
+        stderr.WriteLine("   Run with 'help' to see available commands");
         return 2;
     }
-
 }

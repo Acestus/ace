@@ -1,0 +1,289 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+
+namespace Ace.Tools.Cli;
+
+/// <summary>
+/// Syncs workflow data with Linear API.
+/// Refreshes local SQLite with current Linear state at start-my-day.
+/// Publishes local changes back to Linear at end-my-day.
+/// </summary>
+public class LinearSyncService
+{
+    private readonly LinearClient _linearClient;
+    private readonly WorkflowDbContext _dbContext;
+    private readonly ILogger<LinearSyncService> _logger;
+
+    public LinearSyncService(LinearClient linearClient, WorkflowDbContext dbContext, ILogger<LinearSyncService> logger)
+    {
+        _linearClient = linearClient;
+        _dbContext = dbContext;
+        _logger = logger;
+    }
+
+    /// <summary>
+    /// Sync all non-done tickets from Linear into SQLite.
+    /// Called at start-my-day to refresh local state.
+    /// </summary>
+    public async Task<SyncResult> SyncTicketsFromLinearAsync(bool detectConflicts = true)
+    {
+        _logger.LogInformation("🔄 Syncing tickets from Linear...");
+        var result = new SyncResult { Source = "linear" };
+
+        try
+        {
+            // Fetch all non-done tickets from Linear
+            var linearTickets = await _linearClient.GetActiveTicketsAsync();
+            _logger.LogInformation($"  📥 Fetched {linearTickets.Count} active tickets from Linear");
+
+            int upsertCount = 0;
+            int conflictCount = 0;
+            var conflicts = new List<TicketConflict>();
+
+            foreach (var linearTicket in linearTickets)
+            {
+                // Check if ticket exists locally
+                var localTicket = await _dbContext.GetTicketAsync(linearTicket.Id);
+
+                if (localTicket != null && detectConflicts)
+                {
+                    // Detect conflicts: Local changes not yet synced to Linear
+                    if (localTicket.UpdatedAt > linearTicket.UpdatedAt)
+                    {
+                        conflicts.Add(new TicketConflict
+                        {
+                            TicketId = linearTicket.Id,
+                            Title = linearTicket.Title,
+                            LocalStatus = localTicket.Status,
+                            RemoteStatus = linearTicket.Status,
+                            LocalUpdatedAt = localTicket.UpdatedAt,
+                            RemoteUpdatedAt = linearTicket.UpdatedAt,
+                            Resolution = "manual" // User must decide
+                        });
+                        conflictCount++;
+                        _logger.LogWarning($"  ⚠️  Conflict detected for {linearTicket.Id}: local newer than remote");
+                        continue; // Skip this ticket, don't clobber local changes
+                    }
+                }
+
+                // Safe to sync: either no local copy, or remote is newer
+                await _dbContext.UpsertTicketAsync(linearTicket);
+                upsertCount++;
+            }
+
+            result.UpsertCount = upsertCount;
+            result.ConflictCount = conflictCount;
+            result.Conflicts = conflicts;
+
+            if (conflictCount > 0)
+            {
+                result.Status = "success_with_conflicts";
+                _logger.LogWarning($"  ⚠️  Sync completed with {conflictCount} conflicts (not overwritten)");
+            }
+            else
+            {
+                result.Status = "success";
+                _logger.LogInformation($"  ✅ Synced {upsertCount} tickets from Linear (no conflicts)");
+            }
+
+            // Update sync state
+            var syncState = new SyncState
+            {
+                Source = "linear",
+                LastSyncAt = DateTime.UtcNow,
+                Status = result.Status,
+                SyncedCount = upsertCount
+            };
+            await _dbContext.UpdateSyncStateAsync(syncState);
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            result.Status = "error";
+            result.ErrorMessage = ex.Message;
+            _logger.LogError(ex, "❌ Failed to sync tickets from Linear");
+            
+            var syncState = new SyncState
+            {
+                Source = "linear",
+                Status = "error",
+                ErrorMessage = ex.Message
+            };
+            await _dbContext.UpdateSyncStateAsync(syncState);
+
+            return result;
+        }
+    }
+
+    /// <summary>
+    /// Post all pending comments from SQLite to Linear.
+    /// Called at end-my-day.
+    /// </summary>
+    public async Task<SyncResult> PostPendingCommentsAsync()
+    {
+        _logger.LogInformation("📝 Posting pending comments to Linear...");
+        var result = new SyncResult { Source = "linear_comments" };
+
+        try
+        {
+            var pendingComments = await _dbContext.GetPendingCommentsAsync();
+            _logger.LogInformation($"  📤 Found {pendingComments.Count()} pending comments");
+
+            int successCount = 0;
+            int failureCount = 0;
+
+            foreach (var comment in pendingComments)
+            {
+                try
+                {
+                    if (comment.TargetType != "linear_ticket")
+                    {
+                        continue; // Skip non-Linear comments here
+                    }
+
+                    // Post to Linear
+                    await _linearClient.PostCommentAsync(comment.TargetId, comment.Content);
+                    await _dbContext.UpdateCommentStatusAsync(comment.Id, "posted");
+                    successCount++;
+                    _logger.LogInformation($"  ✅ Posted comment to {comment.TargetId}");
+                }
+                catch (Exception ex)
+                {
+                    failureCount++;
+                    await _dbContext.UpdateCommentStatusAsync(comment.Id, "failed", ex.Message);
+                    _logger.LogError($"  ❌ Failed to post comment to {comment.TargetId}: {ex.Message}");
+                }
+            }
+
+            result.UpsertCount = successCount;
+            result.ConflictCount = failureCount;
+            result.Status = failureCount == 0 ? "success" : "success_with_errors";
+            _logger.LogInformation($"  ✅ Posted {successCount} comments ({failureCount} failed)");
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            result.Status = "error";
+            result.ErrorMessage = ex.Message;
+            _logger.LogError(ex, "❌ Failed to post comments to Linear");
+            return result;
+        }
+    }
+
+    /// <summary>
+    /// Sync work logs from SQLite to Linear as issue activity.
+    /// </summary>
+    public async Task<SyncResult> SyncWorkLogsToLinearAsync()
+    {
+        _logger.LogInformation("⏱️  Syncing work logs to Linear...");
+        var result = new SyncResult { Source = "linear_worklogs" };
+
+        try
+        {
+            // Get today's work logs that haven't been synced
+            var today = DateTime.Now.ToString("yyyy-MM-dd");
+            var workLogs = await _dbContext.GetWorkLogsForDateAsync(today);
+            var unsyncedLogs = workLogs.Where(wl => !wl.SyncedToLinear).ToList();
+
+            _logger.LogInformation($"  📤 Found {unsyncedLogs.Count} unsynced work logs for today");
+
+            int successCount = 0;
+            foreach (var log in unsyncedLogs)
+            {
+                try
+                {
+                    var ticket = await _dbContext.GetTicketAsync(log.TicketId);
+                    if (ticket == null) continue;
+
+                    var logNote = $"⏱️  {log.DurationMinutes} minutes\n{log.Notes}";
+                    await _linearClient.PostCommentAsync(ticket.LinearId, logNote);
+                    successCount++;
+                    _logger.LogInformation($"  ✅ Logged {log.DurationMinutes}m to {log.TicketId}");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning($"  ⚠️  Failed to sync worklog: {ex.Message}");
+                }
+            }
+
+            result.UpsertCount = successCount;
+            result.Status = "success";
+            _logger.LogInformation($"  ✅ Synced {successCount} work logs to Linear");
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            result.Status = "error";
+            result.ErrorMessage = ex.Message;
+            _logger.LogError(ex, "❌ Failed to sync work logs to Linear");
+            return result;
+        }
+    }
+
+    /// <summary>
+    /// Resolve conflicts detected during sync.
+    /// User must decide: keep_local, keep_remote, or merge.
+    /// </summary>
+    public async Task<bool> ResolveConflictAsync(string ticketId, string resolution)
+    {
+        _logger.LogInformation($"🔧 Resolving conflict for {ticketId}: {resolution}");
+
+        return resolution switch
+        {
+            "keep_local" => true, // Do nothing, keep local version
+            "keep_remote" => await RefreshTicketFromLinearAsync(ticketId),
+            _ => throw new ArgumentException($"Unknown resolution: {resolution}")
+        };
+    }
+
+    private async Task<bool> RefreshTicketFromLinearAsync(string ticketId)
+    {
+        try
+        {
+            var linearTicket = await _linearClient.GetTicketAsync(ticketId);
+            if (linearTicket == null) return false;
+
+            await _dbContext.UpsertTicketAsync(linearTicket);
+            _logger.LogInformation($"  ✅ Refreshed {ticketId} from Linear (remote wins)");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"  ❌ Failed to refresh {ticketId} from Linear");
+            return false;
+        }
+    }
+}
+
+/// <summary>
+/// Result of a sync operation.
+/// </summary>
+public class SyncResult
+{
+    public string Source { get; set; } = null!;
+    public string Status { get; set; } = "pending"; // pending, success, success_with_conflicts, success_with_errors, error
+    public int UpsertCount { get; set; }
+    public int ConflictCount { get; set; }
+    public string? ErrorMessage { get; set; }
+    public List<TicketConflict>? Conflicts { get; set; }
+}
+
+/// <summary>
+/// Represents a conflict between local and remote ticket state.
+/// </summary>
+public class TicketConflict
+{
+    public string TicketId { get; set; } = null!;
+    public string Title { get; set; } = null!;
+    public string LocalStatus { get; set; } = null!;
+    public string RemoteStatus { get; set; } = null!;
+    public DateTime LocalUpdatedAt { get; set; }
+    public DateTime RemoteUpdatedAt { get; set; }
+    public string Resolution { get; set; } = null!; // manual, auto_local, auto_remote
+}
