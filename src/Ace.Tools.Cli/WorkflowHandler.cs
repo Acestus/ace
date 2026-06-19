@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 namespace Ace.Tools.Cli;
 
 /// <summary>
-/// Simplified workflow handler for Phase 2 demo.
-/// Demonstrates the architecture is sound without full Linear/Notion integration.
+/// CLI handler for workflow commands.
+/// Delegates to WorkflowOperations for all business logic.
 /// </summary>
 public static class WorkflowHandler
 {
@@ -28,6 +28,7 @@ public static class WorkflowHandler
                 "end-my-day" => await HandleEndMyDay(stdout, stderr),
                 "dispatch" => await HandleDispatch(args, stdout, stderr),
                 "standup" => await HandleStandup(stdout, stderr),
+                "status" => await HandleStatus(stdout, stderr),
                 _ => UnknownCommand(args[0], stderr)
             };
         }
@@ -40,168 +41,200 @@ public static class WorkflowHandler
 
     private static async Task<int> HandleInitDb(TextWriter stdout, TextWriter stderr)
     {
-        try
+        stdout.WriteLine("🗄️  Initializing workflow database...");
+        var result = await WorkflowOperations.InitializeDatabaseAsync();
+        
+        if (result.Success)
         {
-            stdout.WriteLine("🗄️  Initializing workflow database...");
-            
-            using var db = new WorkflowDbContext();
-            await db.InitializeAsync();
-            
-            stdout.WriteLine("✅ Database initialized at ~/.acestus/workflow.db");
+            stdout.WriteLine($"✅ {result.Message}");
             stdout.WriteLine("✅ Schema created: 15+ tables ready");
             return 0;
         }
-        catch (Exception ex)
+        else
         {
-            stderr.WriteLine($"❌ Failed to initialize database: {ex.Message}");
+            stderr.WriteLine($"❌ {result.Message}");
             return 1;
         }
     }
 
     private static async Task<int> HandleStartMyDay(TextWriter stdout, TextWriter stderr)
     {
-        try
+        stdout.WriteLine();
+        stdout.WriteLine("🌅 Starting your day...");
+        
+        var result = await WorkflowOperations.StartMyDayAsync();
+        
+        if (!result.Success)
         {
-            stdout.WriteLine("\n🌅 Starting your day...");
+            stderr.WriteLine($"❌ {result.Message}");
+            return 1;
+        }
+
+        if (result.Data is { })
+        {
+            dynamic data = result.Data;
+            stdout.WriteLine($"   📥 SQLite ready (database path: {data.DatabasePath})");
+            stdout.WriteLine($"   ℹ️  Current pending tickets: {data.PendingTickets}");
             
-            using var db = new WorkflowDbContext();
-            
-            // Check if DB exists
-            var tickets = (await db.GetPendingTicketsAsync()).ToList();
-            
-            stdout.WriteLine($"   📥 SQLite ready (database path: ~/.acestus/workflow.db)");
-            stdout.WriteLine($"   ℹ️  Current pending tickets: {tickets.Count}");
-            
-            if (tickets.Count > 0)
+            if (data.PendingTickets > 0)
             {
                 stdout.WriteLine($"\n   📊 Today's Dashboard:");
-                stdout.WriteLine($"      • Pending: {tickets.Count(t => t.Status == "pending")}");
-                stdout.WriteLine($"      • In Progress: {tickets.Count(t => t.Status == "in_progress")}");
-                stdout.WriteLine($"      • Waiting Review: {tickets.Count(t => t.Status == "waiting_review")}");
+                stdout.WriteLine($"      • Pending: {data.TicketsByStatus.Pending}");
+                stdout.WriteLine($"      • In Progress: {data.TicketsByStatus.InProgress}");
+                stdout.WriteLine($"      • Waiting Review: {data.TicketsByStatus.WaitingReview}");
             }
             else
             {
                 stdout.WriteLine($"   ⚠️  No tickets in database yet. Run with --import to load from Linear.");
             }
-            
-            stdout.WriteLine("\n✅ Day started successfully");
-            return 0;
         }
-        catch (Exception ex)
-        {
-            stderr.WriteLine($"❌ start-my-day failed: {ex.Message}");
-            return 1;
-        }
+        
+        stdout.WriteLine("\n✅ Day started successfully");
+        return 0;
     }
 
     private static async Task<int> HandleEndMyDay(TextWriter stdout, TextWriter stderr)
     {
-        try
+        stdout.WriteLine();
+        stdout.WriteLine("🌙 Ending your day...");
+        
+        var result = await WorkflowOperations.EndMyDayAsync();
+        
+        if (!result.Success)
         {
-            stdout.WriteLine("\n🌙 Ending your day...");
-            
-            using var db = new WorkflowDbContext();
-            
-            var comments = (await db.GetPendingCommentsAsync()).ToList();
-            var pages = (await db.GetPendingPagesAsync()).ToList();
-            
+            stderr.WriteLine($"❌ {result.Message}");
+            return 1;
+        }
+
+        if (result.Data is { })
+        {
+            dynamic data = result.Data;
             stdout.WriteLine($"   📊 Sync Summary:");
-            stdout.WriteLine($"      ✅ Linear comments pending: {comments.Count}");
-            stdout.WriteLine($"      ✅ Notion pages pending: {pages.Count}");
+            stdout.WriteLine($"      ✅ Linear comments pending: {data.PendingSyncs.LinearComments}");
+            stdout.WriteLine($"      ✅ Notion pages pending: {data.PendingSyncs.NotionPages}");
             stdout.WriteLine($"      ✅ CRM contacts: (sync at end-my-day)");
             stdout.WriteLine($"      ✅ Job search apps: (sync at end-my-day)");
             
             stdout.WriteLine($"\n   📤 Ready for git push + CI/CD");
             stdout.WriteLine($"      → All changes published to Linear/Notion");
             stdout.WriteLine($"      → Run: git push");
-            
-            stdout.WriteLine("\n✅ Day ended successfully");
-            return 0;
         }
-        catch (Exception ex)
-        {
-            stderr.WriteLine($"❌ end-my-day failed: {ex.Message}");
-            return 1;
-        }
+        
+        stdout.WriteLine("\n✅ Day ended successfully");
+        return 0;
     }
 
     private static async Task<int> HandleDispatch(string[] args, TextWriter stdout, TextWriter stderr)
     {
-        try
+        int lane = 1;
+        for (int i = 0; i < args.Length - 1; i++)
         {
-            int lane = 1;
-            for (int i = 0; i < args.Length - 1; i++)
+            if (args[i] == "--lane" && int.TryParse(args[i + 1], out var laneNum))
             {
-                if (args[i] == "--lane" && int.TryParse(args[i + 1], out var laneNum))
-                {
-                    lane = laneNum;
-                    break;
-                }
+                lane = laneNum;
+                break;
             }
+        }
 
-            using var db = new WorkflowDbContext();
-            
-            var ticket = (await db.GetTicketsByStatusAsync("pending")).FirstOrDefault();
-            if (ticket == null)
-            {
-                stdout.WriteLine("⚠️  No pending tickets available");
-                return 0;
-            }
-
-            // Update lane state
-            var roundsState = new RoundsState
-            {
-                Id = Guid.NewGuid().ToString(),
-                LaneNumber = lane,
-                CurrentTicketId = ticket.Id,
-                Status = "active",
-                StartedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
-            await db.UpsertRoundsStateAsync(roundsState);
-
-            stdout.WriteLine($"📌 Lane {lane} assigned: {ticket.Id}");
-            stdout.WriteLine($"   Title: {ticket.Title}");
-            stdout.WriteLine($"   Status: {ticket.Status}");
-            
+        var result = await WorkflowOperations.DispatchNextTicketAsync(lane);
+        
+        if (!result.Success)
+        {
+            stdout.WriteLine($"⚠️  {result.Message}");
             return 0;
         }
-        catch (Exception ex)
+
+        if (result.Data is { })
         {
-            stderr.WriteLine($"❌ dispatch failed: {ex.Message}");
-            return 1;
+            dynamic data = result.Data;
+            stdout.WriteLine($"📌 Lane {data.Lane} assigned: {data.TicketId}");
+            stdout.WriteLine($"   Title: {data.Title}");
+            stdout.WriteLine($"   Status: {data.Status}");
         }
+        
+        return 0;
     }
 
     private static async Task<int> HandleStandup(TextWriter stdout, TextWriter stderr)
     {
-        try
+        stdout.WriteLine();
+        stdout.WriteLine("📋 Generating standup summary...");
+        
+        var result = await WorkflowOperations.GenerateStandupAsync();
+        
+        if (!result.Success)
         {
-            stdout.WriteLine("\n📋 Generating standup summary...");
-            
-            var reader = new CatalogSnapshotReader();
-            
-            if (!reader.IsAvailable)
-            {
-                stdout.WriteLine("⚠️  No local snapshot found");
-                stdout.WriteLine("   Run 'workflow end-my-day' to create .catalog/assigned-work.db");
-                return 0;
-            }
-
-            var snapshotTimestamp = reader.GetSnapshotTimestamp();
-            stdout.WriteLine($"📸 Using local snapshot: {snapshotTimestamp:yyyy-MM-dd HH:mm:ss UTC}");
-            
-            var markdown = await reader.GenerateStandupMarkdownAsync();
-            stdout.WriteLine("");
-            stdout.WriteLine(markdown);
-            
+            stdout.WriteLine($"⚠️  {result.Message}");
             return 0;
         }
-        catch (Exception ex)
+
+        if (result.Data is { })
         {
-            stderr.WriteLine($"❌ standup failed: {ex.Message}");
+            dynamic data = result.Data;
+            if (data.SnapshotTimestamp != null)
+            {
+                stdout.WriteLine($"📸 Using local snapshot: {data.SnapshotTimestamp:yyyy-MM-dd HH:mm:ss UTC}");
+            }
+            
+            if (!string.IsNullOrEmpty(data.Markdown))
+            {
+                stdout.WriteLine("");
+                stdout.WriteLine(data.Markdown);
+            }
+        }
+        
+        return 0;
+    }
+
+    private static async Task<int> HandleStatus(TextWriter stdout, TextWriter stderr)
+    {
+        stdout.WriteLine();
+        stdout.WriteLine("📊 Workflow Status");
+        stdout.WriteLine("═══════════════════════════════════════════");
+        
+        var result = await WorkflowOperations.GetStatusAsync();
+        
+        if (!result.Success)
+        {
+            stderr.WriteLine($"❌ {result.Message}");
             return 1;
         }
+
+        if (result.Data is { })
+        {
+            dynamic data = result.Data;
+            
+            stdout.WriteLine();
+            stdout.WriteLine("Database:");
+            stdout.WriteLine($"  Path: {data.DatabaseStatus.Path}");
+            stdout.WriteLine($"  Initialized: {(data.DatabaseStatus.Initialized ? "✅ Yes" : "❌ No")}");
+            
+            stdout.WriteLine();
+            stdout.WriteLine("Catalog Snapshot:");
+            stdout.WriteLine($"  Path: {data.CatalogStatus.Path}");
+            stdout.WriteLine($"  Available: {(data.CatalogStatus.Available ? "✅ Yes" : "❌ No")}");
+            if (data.CatalogStatus.Timestamp != null)
+            {
+                stdout.WriteLine($"  Created: {data.CatalogStatus.Timestamp:yyyy-MM-dd HH:mm:ss UTC}");
+            }
+            
+            stdout.WriteLine();
+            stdout.WriteLine("Tickets:");
+            stdout.WriteLine($"  Total: {data.Tickets.Total}");
+            stdout.WriteLine($"  Pending: {data.Tickets.Pending}");
+            stdout.WriteLine($"  In Progress: {data.Tickets.InProgress}");
+            stdout.WriteLine($"  Waiting Review: {data.Tickets.WaitingReview}");
+            stdout.WriteLine($"  Done: {data.Tickets.Done}");
+            
+            stdout.WriteLine();
+            stdout.WriteLine("Pending Syncs:");
+            stdout.WriteLine($"  Comments: {data.PendingSyncs.Comments}");
+            stdout.WriteLine($"  Pages: {data.PendingSyncs.Pages}");
+            
+            stdout.WriteLine();
+        }
+        
+        return 0;
     }
 
     private static int UnknownCommand(string command, TextWriter stderr)
