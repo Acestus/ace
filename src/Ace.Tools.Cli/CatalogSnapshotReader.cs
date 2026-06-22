@@ -4,7 +4,7 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
-using System.Data.SQLite;
+using Microsoft.Data.Sqlite;
 
 namespace Ace.Tools.Cli;
 
@@ -50,7 +50,7 @@ public class CatalogSnapshotReader
 
         try
         {
-            using var connection = new SQLiteConnection($"Data Source={_catalogPath};");
+            using var connection = new SqliteConnection($"Data Source={_catalogPath};");
             await connection.OpenAsync();
 
             // Query tickets modified today, ordered by priority
@@ -81,7 +81,7 @@ public class CatalogSnapshotReader
 
         try
         {
-            using var connection = new SQLiteConnection($"Data Source={_catalogPath};");
+            using var connection = new SqliteConnection($"Data Source={_catalogPath};");
             await connection.OpenAsync();
 
             var today = DateTime.UtcNow.Date.ToString("yyyy-MM-dd");
@@ -111,7 +111,7 @@ public class CatalogSnapshotReader
 
         try
         {
-            using var connection = new SQLiteConnection($"Data Source={_catalogPath};");
+            using var connection = new SqliteConnection($"Data Source={_catalogPath};");
             await connection.OpenAsync();
 
             var comments = await connection.QueryAsync<dynamic>(
@@ -139,7 +139,7 @@ public class CatalogSnapshotReader
 
         try
         {
-            using var connection = new SQLiteConnection($"Data Source={_catalogPath};");
+            using var connection = new SqliteConnection($"Data Source={_catalogPath};");
             await connection.OpenAsync();
 
             var pages = await connection.QueryAsync<dynamic>(

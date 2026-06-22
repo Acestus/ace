@@ -40,7 +40,15 @@ Before closing, ask the user if there are any blockers to document:
 
 If none, proceed. If yes, collect the text — you'll pass it as `--blocker` args.
 
-### Step 3 — Generate standup and close the note
+### Step 3 — End the workflow and sync to database
+
+First, sync today's state to the SQLite database:
+
+```bash
+dotnet run --project src/Ace.Tools.Cli -- workflow end-my-day
+```
+
+Then generate standup and close the note:
 
 ```bash
 cd /home/wweeks/github/ace
@@ -50,13 +58,14 @@ python3 scripts/daily_note.py --end \
 ```
 
 This will:
-1. Query Linear for completed today (`flow:done` state, updated today)
-2. Query Linear for waiting tickets (`flow:waiting` state)
-3. Query Linear for still-active tickets (`flow:active` state)
-4. Write the `* Standup` section into today's org file
-5. Print the Teams-formatted standup message
-6. Commit all changes and push (triggers `linear-worklog-sync.yaml` and `-worklog-sync.yaml`)
-7. Post to Teams if `TEAMS_WEBHOOK_URL` is set in `.env`
+1. Write workflow state snapshot to SQLite (`workflow end-my-day`)
+2. Query Linear for completed today (`flow:done` state, updated today)
+3. Query Linear for waiting tickets (`flow:waiting` state)
+4. Query Linear for still-active tickets (`flow:active` state)
+5. Write the `* Standup` section into today's org file
+6. Print the Teams-formatted standup message
+7. Commit all changes and push (triggers `linear-worklog-sync.yaml` and `-worklog-sync.yaml`)
+8. Post to Teams if `TEAMS_WEBHOOK_URL` is set in `.env`
 
 ### Step 4 — Present the summary
 

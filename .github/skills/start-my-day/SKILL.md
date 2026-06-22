@@ -6,10 +6,18 @@ argument-hint: 'Say "start my day" to create the daily note and load the board'
 
 # Start My Day Skill
 
-Use the .NET CLI to do the work deterministically:
+Load the environment and initialize the workflow database state:
 
 ```bash
+source .env.local.sh
+dotnet run --project src/Ace.Tools.Cli -- workflow start-my-day
+```
+
+Then call the linear command to create today's daily planning note:
+
+```bash
+source .env.local.sh
 dotnet run --project src/Ace.Tools.Cli -- linear start-my-day
 ```
 
-Then report the created note path, the active tickets loaded, and any empty lanes.
+Report the workflow state (database path, pending ticket counts), and the created daily note path with active tickets loaded.

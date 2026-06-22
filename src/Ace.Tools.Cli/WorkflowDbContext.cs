@@ -1,5 +1,5 @@
 using System;
-using System.Data.SQLite;
+using Microsoft.Data.Sqlite;
 using System.IO;
 using System.Threading.Tasks;
 using Dapper;
@@ -14,7 +14,7 @@ namespace Ace.Tools.Cli;
 public class WorkflowDbContext : IDisposable
 {
     private readonly string _dbPath;
-    private SQLiteConnection? _connection;
+    private SqliteConnection? _connection;
 
     public WorkflowDbContext(string? dbPath = null)
     {
@@ -27,12 +27,12 @@ public class WorkflowDbContext : IDisposable
         EnsureDirectoryExists();
     }
 
-    public SQLiteConnection GetConnection()
+    public SqliteConnection GetConnection()
     {
         if (_connection == null)
         {
-            var connectionString = $"Data Source={_dbPath};Version=3;";
-            _connection = new SQLiteConnection(connectionString);
+            var connectionString = $"Data Source={_dbPath};";
+            _connection = new SqliteConnection(connectionString);
             _connection.Open();
         }
         return _connection;
