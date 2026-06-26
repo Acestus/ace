@@ -6,7 +6,7 @@ namespace Ace.Tools.Cli;
 
 internal static class LinearCommands
 {
-    private const string ClaimsFile = "/tmp/rounds-claims.json";
+    // Claims are now in ~/.ace/rounds.db via RoundsDb (ACE-22)
     private static readonly Dictionary<string, string> DefaultFlowStates = new(StringComparer.OrdinalIgnoreCase)
     {
         ["queue"] = "Backlog",
@@ -405,6 +405,8 @@ internal static class LinearCommands
             var chosenKey = payload["key"]?.ToString() ?? string.Empty;
             await SetFlowAsync(new[] { "--key", chosenKey, "--flow", "active" }, TextWriter.Null, stderr, cancellationToken);
             await CreateStubAsync(chosenKey, cancellationToken);
+            // Claim the key in SQLite (lane 0 = unassigned / auto-dispatch)
+            await RoundsDb.AppendWorklogAsync(null, chosenKey, "dispatch", $"source:{source}", cancellationToken);
             payload["activated"] = true;
         }
 
@@ -878,31 +880,7 @@ TODO:
         => element.TryGetProperty(propertyName, out var property) && property.TryGetInt32(out var value) ? value : 0;
 
     private static List<string> LoadClaimedKeys()
-    {
-        if (!File.Exists(ClaimsFile))
-        {
-            return new List<string>();
-        }
-
-        try
-        {
-            using var document = JsonDocument.Parse(File.ReadAllText(ClaimsFile));
-            var claimed = new List<string>();
-            foreach (var entry in document.RootElement.EnumerateObject())
-            {
-                if (entry.Value.TryGetProperty("key", out var key) && !string.IsNullOrWhiteSpace(key.GetString()))
-                {
-                    claimed.Add(key.GetString()!.ToUpperInvariant());
-                }
-            }
-
-            return claimed;
-        }
-        catch
-        {
-            return new List<string>();
-        }
-    }
+        => RoundsDb.GetClaimedKeysAsync(CancellationToken.None).GetAwaiter().GetResult();
 
     private static int UnknownCommand(string command, TextWriter stderr)
     {
