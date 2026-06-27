@@ -15,6 +15,8 @@ This is the personal (Acestus) fork of the workflow-toolkit. It uses Linear + No
 | **CLI** (`src/Ace.Tools.Cli/`) | .NET command surface — Linear, rounds (SQLite), GitHub, legacy runner |
 | **Skills** (`.github/skills/`) | Thin collar skills for Copilot CLI. ~25 lines each. Routes intent to CLI. |
 | **Instructions** (`.github/instructions/`) | File-pattern-scoped rules for AI assistance |
+| **Quality Gates** (`scripts/Ace.Quality.Gates/`) | C# gate orchestration for preflight/postflight/promote/deploy |
+| **Quality Scoring Tests** (`tests/Quality.Reqnroll.Score.Tests/`) | Reqnroll/xUnit-based inner-loop and outer-loop score generation |
 | **IaC** (`.azure/`) | Azure Static Web App config and identity |
 
 ---
@@ -73,7 +75,56 @@ dotnet build src/Ace.Tools.Cli
 ```bash
 dotnet run --project src/Ace.Tools.Cli -- --help
 dotnet run --project src/Ace.Tools.Cli -- rounds status
+dotnet run --project scripts/Ace.Quality.Gates/Ace.Quality.Gates.csproj -- preflight
 ```
+
+---
+
+## Trunk CI/CD + Environment Flow
+
+This repo uses trunk-based workflows with `.yaml` workflow files:
+
+| Workflow | Trigger | Purpose |
+|---|---|---|
+| `preflight.yaml` | PRs to `dev`, `main`, `release/*` | Fast quality gate (C#-driven) |
+| `postflight.yaml` | Pushes to `dev`, `main`, `release/*` | Full quality gate + .NET artifact publish |
+| `promote.yaml` | Manual dispatch | Promote and publish artifacts for `dev/stg/prd` |
+
+Branch to environment mapping:
+
+| Branch | Environment |
+|---|---|
+| `dev` | `dev` |
+| `release/*` | `stg` |
+| `main` | `prd` |
+
+All gate orchestration is in C#:
+
+```bash
+dotnet run --project scripts/Ace.Quality.Gates/Ace.Quality.Gates.csproj -- preflight
+dotnet run --project scripts/Ace.Quality.Gates/Ace.Quality.Gates.csproj -- postflight
+dotnet run --project scripts/Ace.Quality.Gates/Ace.Quality.Gates.csproj -- promote --environment dev
+dotnet run --project scripts/Ace.Quality.Gates/Ace.Quality.Gates.csproj -- deploy-net-app --environment dev
+```
+
+---
+
+## Inner-Loop and Outer-Loop Testing
+
+Quality scoring commands:
+
+```bash
+dotnet test tests/Quality.Reqnroll.Score.Tests/Quality.Reqnroll.Score.Tests.csproj \
+  --filter "TestCategory=inner-loop-score|Category=inner-loop-score"
+
+dotnet test tests/Quality.Reqnroll.Score.Tests/Quality.Reqnroll.Score.Tests.csproj \
+  --filter "TestCategory=outer-loop-gherkin-score|Category=outer-loop-gherkin-score"
+```
+
+Reports are generated under `docs/testing/`:
+
+- `inner-loop-score.md` / `inner-loop-score.json`
+- `outer-loop-gherkin-score.md` / `outer-loop-gherkin-score.json`
 
 ---
 
@@ -142,6 +193,8 @@ dotnet run --project src/Ace.Tools.Cli -- linear --help
 | `pr-daily-summary` | Daily PR digest |
 | `lorcana` | Scrape Lorcana card lists |
 | `swa-deploy` | Azure Static Web App deploys |
+| `trunk-gates` | Run preflight/postflight/promote quality gates |
+| `service-tagger` | Apply and normalize service ownership tags |
 
 ---
 

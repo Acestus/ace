@@ -1,0 +1,68 @@
+name: postflight
+
+on:
+  push:
+    branches:
+      - dev
+      - main
+      - "release/**"
+
+permissions:
+  contents: read
+
+jobs:
+  resolve-environment:
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.branch-map.outputs.environment }}
+    steps:
+      - name: Map branch to environment
+        id: branch-map
+        run: |
+          branch="${GITHUB_REF_NAME}"
+          if [[ "$branch" == "dev" ]]; then
+            echo "environment=dev" >> "$GITHUB_OUTPUT"
+          elif [[ "$branch" == "main" ]]; then
+            echo "environment=prd" >> "$GITHUB_OUTPUT"
+          else
+            echo "environment=stg" >> "$GITHUB_OUTPUT"
+          fi
+
+  quality-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Run postflight gate (C#)
+        run: dotnet run --project scripts/Ace.Quality.Gates/Ace.Quality.Gates.csproj -- postflight
+
+  deploy-net-app:
+    runs-on: ubuntu-latest
+    needs:
+      - resolve-environment
+      - quality-gate
+    environment: ${{ needs.resolve-environment.outputs.environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Publish .NET app artifact (C#)
+        run: dotnet run --project scripts/Ace.Quality.Gates/Ace.Quality.Gates.csproj -- deploy-net-app --environment ${{ needs.resolve-environment.outputs.environment }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ace-tools-cli-${{ needs.resolve-environment.outputs.environment }}
+          path: artifacts/ace-tools-cli/${{ needs.resolve-environment.outputs.environment }}/
+          if-no-files-found: error
