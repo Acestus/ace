@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text;
 
 namespace Ace.Quality.Gates;
 
@@ -46,7 +47,7 @@ internal static class Program
         }
 
         Console.WriteLine($"🚦 Running promote gate checks for '{environment}'...");
-        return RunPipeline($"Promote ({environment})", PostflightCommands);
+        return RunPipeline($"Promote ({environment})", PostflightCommands, environment);
     }
 
     private static int RunDeploy(string? environment)
@@ -61,45 +62,72 @@ internal static class Program
             $"dotnet publish src/Ace.Tools.Cli/Ace.Tools.Cli.csproj --configuration Release --output \"{outputDir}\"";
 
         Console.WriteLine($"🚀 Publishing .NET app artifact for '{environment}'...");
-        var exitCode = RunCommand(publishCommand);
-        if (exitCode != 0)
+        var result = RunCommand(publishCommand);
+        if (result.ExitCode != 0)
         {
+            WriteGitHubSummary(
+                title: "Deploy .NET App",
+                environment: environment,
+                results: [result],
+                overallExitCode: 1,
+                details: $"Artifact output directory: `{outputDir}`");
             return Fail($"Publish failed for environment '{environment}'.");
         }
 
         Console.WriteLine($"✅ Published artifact to {outputDir}");
+        WriteGitHubSummary(
+            title: "Deploy .NET App",
+            environment: environment,
+            results: [result],
+            overallExitCode: 0,
+            details: $"Artifact output directory: `{outputDir}`");
         return 0;
     }
 
-    private static int RunPipeline(string name, IEnumerable<string> commands)
+    private static int RunPipeline(string name, IEnumerable<string> commands, string? environment = null)
     {
         Console.WriteLine($"🚦 {name} quality gate started.");
+        var results = new List<CommandResult>();
+
         foreach (var command in commands)
         {
-            var exitCode = RunCommand(command);
-            if (exitCode != 0)
+            var result = RunCommand(command);
+            results.Add(result);
+
+            if (result.ExitCode != 0)
             {
+                WriteGitHubSummary(
+                    title: $"{name} Quality Gate",
+                    environment: environment,
+                    results: results,
+                    overallExitCode: 1);
                 return Fail($"{name} failed while running: {command}");
             }
         }
 
         Console.WriteLine($"✅ {name} quality gate passed.");
+        WriteGitHubSummary(
+            title: $"{name} Quality Gate",
+            environment: environment,
+            results: results,
+            overallExitCode: 0);
         return 0;
     }
 
-    private static int RunCommand(string command)
+    private static CommandResult RunCommand(string command)
     {
         Console.WriteLine($"> {command}");
 
+        var startedAt = DateTimeOffset.UtcNow;
         var startInfo = CreateShellStartInfo(command);
         using var process = Process.Start(startInfo);
         if (process is null)
         {
-            return Fail("Failed to start child process.");
+            return new CommandResult(command, 1, DateTimeOffset.UtcNow - startedAt);
         }
 
         process.WaitForExit();
-        return process.ExitCode;
+        return new CommandResult(command, process.ExitCode, DateTimeOffset.UtcNow - startedAt);
     }
 
     private static ProcessStartInfo CreateShellStartInfo(string command)
@@ -150,4 +178,57 @@ internal static class Program
         Console.Error.WriteLine($"❌ {message}");
         return 1;
     }
+
+    private static void WriteGitHubSummary(
+        string title,
+        string? environment,
+        IReadOnlyList<CommandResult> results,
+        int overallExitCode,
+        string? details = null)
+    {
+        var summaryPath = Environment.GetEnvironmentVariable("GITHUB_STEP_SUMMARY");
+        if (string.IsNullOrWhiteSpace(summaryPath))
+        {
+            return;
+        }
+
+        var branch = Environment.GetEnvironmentVariable("GITHUB_REF_NAME") ?? "local";
+        var status = overallExitCode == 0 ? "✅ Passed" : "❌ Failed";
+        var markdown = new StringBuilder()
+            .AppendLine($"## {title}")
+            .AppendLine()
+            .AppendLine($"- **Status:** {status}")
+            .AppendLine($"- **Branch:** `{branch}`");
+
+        if (!string.IsNullOrWhiteSpace(environment))
+        {
+            markdown.AppendLine($"- **Environment:** `{environment}`");
+        }
+
+        markdown.AppendLine()
+            .AppendLine("| Step | Exit | Duration | Command |")
+            .AppendLine("| --- | ---: | ---: | --- |");
+
+        for (var i = 0; i < results.Count; i++)
+        {
+            var result = results[i];
+            var stepName = $"Step {i + 1}";
+            var duration = $"{result.Duration.TotalSeconds:F1}s";
+            var command = EscapePipes(result.Command);
+            markdown.AppendLine($"| {stepName} | `{result.ExitCode}` | {duration} | `{command}` |");
+        }
+
+        if (!string.IsNullOrWhiteSpace(details))
+        {
+            markdown.AppendLine()
+                .AppendLine($"**Details:** {details}");
+        }
+
+        markdown.AppendLine();
+        File.AppendAllText(summaryPath, markdown.ToString());
+    }
+
+    private static string EscapePipes(string value) => value.Replace("|", "\\|", StringComparison.Ordinal);
+
+    private sealed record CommandResult(string Command, int ExitCode, TimeSpan Duration);
 }
