@@ -1,6 +1,6 @@
 ﻿# Outer-Loop Gherkin Quality Scoring
 
-Generated: 2026-06-27T23:35:11.0063996+00:00
+Generated: 2026-06-27T23:43:39.7552467+00:00
 
 Scope: `**/*.feature` outer-loop acceptance files.
 

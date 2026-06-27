@@ -89,6 +89,7 @@ This repo uses trunk-based workflows with `.yaml` workflow files:
 | `preflight.yaml` | PRs to `dev`, `main`, `release/*` | Fast quality gate (C#-driven) |
 | `postflight.yaml` | Pushes to `dev`, `main`, `release/*` | Full quality gate + .NET artifact publish |
 | `promote.yaml` | Manual dispatch | Promote and publish artifacts for `dev/stg/prd` |
+| `test-acceptance.yaml` | Manual dispatch | Run outer-loop acceptance score tests for `dev/stg/prd` |
 
 Branch to environment mapping:
 
