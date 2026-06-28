@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text;
+using System.Xml.Linq;
 
 namespace Ace.Quality.Gates;
 
@@ -33,10 +34,52 @@ internal static class Program
         {
             "preflight" => RunPipeline("Preflight", PreflightCommands),
             "postflight" => RunPipeline("Postflight", PostflightCommands),
+            "acceptance" => RunAcceptance(environment),
             "promote" => RunPromote(environment),
             "deploy-net-app" => RunDeploy(environment),
             _ => Fail($"Unknown command: {command}")
         };
+    }
+
+    private static int RunAcceptance(string? environment)
+    {
+        if (string.IsNullOrWhiteSpace(environment))
+        {
+            return Fail("acceptance requires --environment <dev|stg|prd>.");
+        }
+
+        var resultsDirectory = Path.Combine("artifacts", "test-results", environment);
+        Directory.CreateDirectory(resultsDirectory);
+
+        const string trxFileName = "outer-loop-gherkin-score.trx";
+        var trxPath = Path.Combine(resultsDirectory, trxFileName);
+
+        var command =
+            "dotnet test tests/Quality.Reqnroll.Score.Tests/Quality.Reqnroll.Score.Tests.csproj " +
+            "--filter \"TestCategory=outer-loop-gherkin-score|Category=outer-loop-gherkin-score\" " +
+            $"--logger \"trx;LogFileName={trxFileName}\" --results-directory \"{resultsDirectory}\"";
+
+        Console.WriteLine($"🧪 Running acceptance tests for '{environment}'...");
+        var result = RunCommand(command);
+        var testCases = File.Exists(trxPath)
+            ? ParseTrxTestCases(trxPath)
+            : [];
+
+        WriteGitHubSummary(
+            title: "Acceptance Tests",
+            environment: environment,
+            results: [result],
+            overallExitCode: result.ExitCode,
+            details: $"TRX report: `{trxPath}`",
+            testCases: testCases);
+
+        if (result.ExitCode != 0)
+        {
+            return Fail($"Acceptance tests failed for environment '{environment}'.");
+        }
+
+        Console.WriteLine($"✅ Acceptance tests passed for '{environment}'.");
+        return 0;
     }
 
     private static int RunPromote(string? environment)
@@ -169,6 +212,7 @@ internal static class Program
         Console.WriteLine("Usage:");
         Console.WriteLine("  dotnet run --project scripts/Ace.Quality.Gates/Ace.Quality.Gates.csproj -- preflight");
         Console.WriteLine("  dotnet run --project scripts/Ace.Quality.Gates/Ace.Quality.Gates.csproj -- postflight");
+        Console.WriteLine("  dotnet run --project scripts/Ace.Quality.Gates/Ace.Quality.Gates.csproj -- acceptance --environment <dev|stg|prd>");
         Console.WriteLine("  dotnet run --project scripts/Ace.Quality.Gates/Ace.Quality.Gates.csproj -- promote --environment <dev|stg|prd>");
         Console.WriteLine("  dotnet run --project scripts/Ace.Quality.Gates/Ace.Quality.Gates.csproj -- deploy-net-app --environment <dev|stg|prd>");
     }
@@ -184,7 +228,8 @@ internal static class Program
         string? environment,
         IReadOnlyList<CommandResult> results,
         int overallExitCode,
-        string? details = null)
+        string? details = null,
+        IReadOnlyList<TestCaseResult>? testCases = null)
     {
         var summaryPath = Environment.GetEnvironmentVariable("GITHUB_STEP_SUMMARY");
         if (string.IsNullOrWhiteSpace(summaryPath))
@@ -224,11 +269,51 @@ internal static class Program
                 .AppendLine($"**Details:** {details}");
         }
 
+        if (testCases is { Count: > 0 })
+        {
+            markdown.AppendLine()
+                .AppendLine("### Test Results")
+                .AppendLine()
+                .AppendLine("| Test | Outcome | Duration |")
+                .AppendLine("| --- | --- | ---: |");
+
+            foreach (var testCase in testCases)
+            {
+                markdown.AppendLine(
+                    $"| {EscapePipes(testCase.Name)} | {OutcomeBadge(testCase.Outcome)} | {testCase.Duration} |");
+            }
+        }
+
         markdown.AppendLine();
         File.AppendAllText(summaryPath, markdown.ToString());
+    }
+
+    private static IReadOnlyList<TestCaseResult> ParseTrxTestCases(string trxPath)
+    {
+        var document = XDocument.Load(trxPath);
+        return document
+            .Descendants()
+            .Where(node => node.Name.LocalName == "UnitTestResult")
+            .Select(node => new TestCaseResult(
+                Name: node.Attribute("testName")?.Value ?? "unknown-test",
+                Outcome: node.Attribute("outcome")?.Value ?? "Unknown",
+                Duration: node.Attribute("duration")?.Value ?? "-"))
+            .ToArray();
+    }
+
+    private static string OutcomeBadge(string outcome)
+    {
+        return outcome.ToLowerInvariant() switch
+        {
+            "passed" => "✅ Passed",
+            "failed" => "❌ Failed",
+            "skipped" => "⏭️ Skipped",
+            _ => $"ℹ️ {outcome}"
+        };
     }
 
     private static string EscapePipes(string value) => value.Replace("|", "\\|", StringComparison.Ordinal);
 
     private sealed record CommandResult(string Command, int ExitCode, TimeSpan Duration);
+    private sealed record TestCaseResult(string Name, string Outcome, string Duration);
 }

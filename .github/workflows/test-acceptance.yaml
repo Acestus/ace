@@ -29,14 +29,21 @@ jobs:
         with:
           dotnet-version: "10.0.x"
 
-      - name: Run outer-loop acceptance score tests
+      - name: Run acceptance tests (C# summary)
         run: >
-          dotnet test tests/Quality.Reqnroll.Score.Tests/Quality.Reqnroll.Score.Tests.csproj
-          --filter "TestCategory=outer-loop-gherkin-score|Category=outer-loop-gherkin-score"
+          dotnet run --project scripts/Ace.Quality.Gates/Ace.Quality.Gates.csproj
+          -- acceptance --environment ${{ inputs.environment }}
 
       - name: Upload acceptance score reports
         uses: actions/upload-artifact@v4
         with:
           name: acceptance-score-${{ inputs.environment }}
           path: docs/testing/outer-loop-gherkin-score.*
+          if-no-files-found: error
+
+      - name: Upload acceptance TRX results
+        uses: actions/upload-artifact@v4
+        with:
+          name: acceptance-trx-${{ inputs.environment }}
+          path: artifacts/test-results/${{ inputs.environment }}/*.trx
           if-no-files-found: error
