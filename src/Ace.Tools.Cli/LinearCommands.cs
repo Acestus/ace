@@ -51,6 +51,12 @@ internal static class LinearCommands
 
     private static async Task<int> GetIssueAsync(string[] args, TextWriter stdout, TextWriter stderr, CancellationToken cancellationToken)
     {
+        if (args.Length == 0 || args[0] is "--help" or "-h")
+        {
+            await stdout.WriteLineAsync("linear get-issue --key <KEY> [--json]");
+            return 0;
+        }
+
         var key = CommandHelpers.GetRequiredOptionValue(args, "--key");
         var json = CommandHelpers.HasOption(args, "--json");
 
@@ -119,6 +125,12 @@ internal static class LinearCommands
 
     private static async Task<int> SetFlowAsync(string[] args, TextWriter stdout, TextWriter stderr, CancellationToken cancellationToken)
     {
+        if (args.Length == 0 || args[0] is "--help" or "-h")
+        {
+            await stdout.WriteLineAsync("linear set-flow --key <KEY> --flow <queue|active|waiting|done> [--transition]");
+            return 0;
+        }
+
         var key = CommandHelpers.GetRequiredOptionValue(args, "--key");
         var flow = CommandHelpers.GetOptionValue(args, "--flow");
         var state = CommandHelpers.GetOptionValue(args, "--state");
@@ -161,6 +173,12 @@ internal static class LinearCommands
 
     private static async Task<int> CommentAsync(string[] args, TextWriter stdout, TextWriter stderr, CancellationToken cancellationToken)
     {
+        if (args.Length == 0 || args[0] is "--help" or "-h")
+        {
+            await stdout.WriteLineAsync("linear comment --key <KEY> --comment <text>");
+            return 0;
+        }
+
         var key = CommandHelpers.GetRequiredOptionValue(args, "--key");
         var body = CommandHelpers.GetOptionValue(args, "--body");
         var file = CommandHelpers.GetOptionValue(args, "--file");
@@ -193,6 +211,12 @@ internal static class LinearCommands
 
     private static async Task<int> CreateIssueAsync(string[] args, TextWriter stdout, TextWriter stderr, CancellationToken cancellationToken)
     {
+        if (args.Length == 0 || args[0] is "--help" or "-h")
+        {
+            await stdout.WriteLineAsync("linear create-issue --team <TEAM> --title <title> [--description <text>] [--label <label>]... [--priority <1-4>] [--state <state>] [--project <name>|--project-id <id>] [--json]");
+            return 0;
+        }
+
         var teamKey = CommandHelpers.GetRequiredOptionValue(args, "--team");
         var title = CommandHelpers.GetRequiredOptionValue(args, "--title");
         var description = CommandHelpers.GetOptionValue(args, "--description") ?? string.Empty;
@@ -277,6 +301,12 @@ internal static class LinearCommands
 
     private static async Task<int> CreateProjectAsync(string[] args, TextWriter stdout, TextWriter stderr, CancellationToken cancellationToken)
     {
+        if (args.Length == 0 || args[0] is "--help" or "-h")
+        {
+            await stdout.WriteLineAsync("linear create-project --team <TEAM> --name <name> [--description <text>]");
+            return 0;
+        }
+
         var teamKey = CommandHelpers.GetRequiredOptionValue(args, "--team");
         var name = CommandHelpers.GetRequiredOptionValue(args, "--name");
         var description = CommandHelpers.GetOptionValue(args, "--description") ?? string.Empty;
