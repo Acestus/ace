@@ -42,6 +42,7 @@ internal static class LinearCommands
             "set-flow" => await SetFlowAsync(args[1..], stdout, stderr, cancellationToken),
             "comment" => await CommentAsync(args[1..], stdout, stderr, cancellationToken),
             "create-issue" => await CreateIssueAsync(args[1..], stdout, stderr, cancellationToken),
+            "plan-issue" => await PlanIssueAsync(args[1..], stdout, stderr, cancellationToken),
             "create-project" => await CreateProjectAsync(args[1..], stdout, stderr, cancellationToken),
             "dispatch-next" => await DispatchNextAsync(args[1..], stdout, stderr, cancellationToken),
             "start-my-day" => await StartMyDayAsync(args[1..], stdout, stderr, cancellationToken),
@@ -297,6 +298,66 @@ internal static class LinearCommands
         }
 
         return Fail("Failed to create issue.", stderr);
+    }
+
+    private static async Task<int> PlanIssueAsync(string[] args, TextWriter stdout, TextWriter stderr, CancellationToken cancellationToken)
+    {
+        if (args.Length == 0 || args[0] is "--help" or "-h")
+        {
+            await stdout.WriteLineAsync("linear plan-issue --title <title> --story-file <path> --plan-file <path> [--slug <slug>]");
+            await stdout.WriteLineAsync("  Writes a local draft (issues/_drafts/{slug}.md) combining an Atlassian-style");
+            await stdout.WriteLineAsync("  user story and an implementation plan. Does not call the Linear API.");
+            return 0;
+        }
+
+        var title = CommandHelpers.GetRequiredOptionValue(args, "--title");
+        var storyFilePath = CommandHelpers.GetRequiredOptionValue(args, "--story-file");
+        var planFilePath = CommandHelpers.GetRequiredOptionValue(args, "--plan-file");
+        var slug = CommandHelpers.GetOptionValue(args, "--slug") ?? SlugifyForFileName(title);
+
+        if (!File.Exists(storyFilePath))
+        {
+            return Fail($"Story file not found: {storyFilePath}", stderr);
+        }
+
+        if (!File.Exists(planFilePath))
+        {
+            return Fail($"Plan file not found: {planFilePath}", stderr);
+        }
+
+        var repoRoot = RepoPaths.FindRepoRoot();
+        var draftsFolder = Path.Combine(repoRoot, "issues", "_drafts");
+        var draftPath = Path.Combine(draftsFolder, $"{slug}.md");
+        if (File.Exists(draftPath))
+        {
+            return Fail($"Draft already exists: issues/_drafts/{slug}.md (choose a different --slug, or remove the existing draft).", stderr);
+        }
+
+        var story = await File.ReadAllTextAsync(storyFilePath, cancellationToken);
+        var plan = await File.ReadAllTextAsync(planFilePath, cancellationToken);
+        var today = DateTime.UtcNow.Date.ToString("yyyy-MM-dd");
+
+        var content = $"""
+---
+title: {title}
+created: {today}
+status: draft
+---
+
+## User Story
+
+{story.Trim()}
+
+## Implementation Plan
+
+{plan.Trim()}
+""";
+
+        Directory.CreateDirectory(draftsFolder);
+        await File.WriteAllTextAsync(draftPath, content, cancellationToken);
+
+        await stdout.WriteLineAsync($"✓ Draft saved: issues/_drafts/{slug}.md");
+        return 0;
     }
 
     private static async Task<int> CreateProjectAsync(string[] args, TextWriter stdout, TextWriter stderr, CancellationToken cancellationToken)
@@ -792,6 +853,12 @@ TODO:
     {
         var safe = new string(text.Where(ch => char.IsLetterOrDigit(ch) || char.IsWhiteSpace(ch) || ch == '-').ToArray());
         return Regex.Replace(safe, @"\s+", " ").Trim();
+    }
+
+    private static string SlugifyForFileName(string text)
+    {
+        var safe = new string(text.ToLowerInvariant().Where(ch => char.IsLetterOrDigit(ch) || char.IsWhiteSpace(ch) || ch == '-').ToArray());
+        return Regex.Replace(safe.Trim(), @"\s+", "-");
     }
 
     private static string BuildLabels(JsonElement issue)
