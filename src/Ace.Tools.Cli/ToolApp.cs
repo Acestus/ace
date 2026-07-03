@@ -29,6 +29,7 @@ public static class ToolApp
             "transcript" => await TranscriptCommands.RunAsync(args.Skip(1).ToArray(), stdout, stderr, cancellationToken),
             "github" => await GitHubCommands.RunAsync(args.Skip(1).ToArray(), stdout, stderr, cancellationToken),
             "legacy" => await LegacyCommands.RunAsync(args.Skip(1).ToArray(), stdout, stderr, cancellationToken),
+            "workflow" => await WorkflowHandler.RunAsync(args.Skip(1).ToArray(), stdout, stderr),
             _ => UnknownCommand(args[0], stderr)
         };
     }
@@ -58,6 +59,7 @@ public static class ToolApp
         stdout.WriteLine("  github review-pr [args...]");
         stdout.WriteLine("  github daily-summary [args...]");
         stdout.WriteLine("  legacy invoke --command <exe> -- [args...]");
+        stdout.WriteLine("  workflow init-db|start-my-day|end-my-day|dispatch|standup|status");
         stdout.WriteLine();
         stdout.WriteLine("NOTES");
         stdout.WriteLine("  SQLite state:  ~/.ace/rounds.db  (survives reboots)");
@@ -131,6 +133,21 @@ public static class ToolApp
                 stdout.WriteLine();
                 stdout.WriteLine("EXAMPLES");
                 stdout.WriteLine("  legacy invoke --command python3 -- scripts/my_script.py --key ACE-42");
+                return;
+            case "workflow":
+                stdout.WriteLine("workflow — Local SQLite-backed daily workflow (~/.acestus/workflow.db)");
+                stdout.WriteLine();
+                stdout.WriteLine("SUBCOMMANDS");
+                stdout.WriteLine("  init-db         Initialize the workflow database");
+                stdout.WriteLine("  start-my-day    Refresh dashboard from local database");
+                stdout.WriteLine("  end-my-day      Sync pending changes, show close-out summary");
+                stdout.WriteLine("  dispatch        Assign next ticket to a lane");
+                stdout.WriteLine("  standup         Generate a standup summary");
+                stdout.WriteLine("  status          Show workflow database status");
+                stdout.WriteLine();
+                stdout.WriteLine("EXAMPLES");
+                stdout.WriteLine("  workflow end-my-day");
+                stdout.WriteLine("  workflow standup");
                 return;
             default:
                 PrintHelp(stdout);
