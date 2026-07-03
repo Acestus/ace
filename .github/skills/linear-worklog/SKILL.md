@@ -24,13 +24,13 @@ Log work and comments to Linear issues. State lives in markdown files under `iss
 ### Step 1 — Find or create the issue file
 
 ```bash
-ls /home/wweeks/git/projects/issues/ | grep {KEY}
+ls /home/acestus/git/ace/issues/ | grep {KEY}
 ```
 
 If no file: create one.
 ```bash
-cd /home/wweeks/git/projects && export $(grep -v '^#' .env | xargs)
-python3 scripts/linear_create_stub.py --key {KEY}
+cd /home/acestus/git/ace
+dotnet run --project src/Ace.Tools.Cli -- linear create-stub --key {KEY}
 ```
 
 ### Step 2 — Gather what to log
@@ -57,19 +57,19 @@ COMMENT: Investigated auth timeout — root cause was token TTL set to 15m. Upda
 
 If a COMMENT line was added:
 ```bash
-python3 scripts/linear_comment.py --key {KEY} --body "Investigated auth timeout..."
+dotnet run --project src/Ace.Tools.Cli -- linear comment --key {KEY} --comment "Investigated auth timeout..."
 ```
 
 ### Step 5 — Update flow state if changed
 
 ```bash
-python3 scripts/linear_set_flow.py --key {KEY} --flow waiting
+dotnet run --project src/Ace.Tools.Cli -- linear set-flow --key {KEY} --flow waiting
 ```
 
 ### Step 6 — Commit and push
 
 ```bash
-cd /home/wweeks/git/projects
+cd /home/acestus/git/ace
 git add issues/
 git commit -m "worklog: {KEY} — {short description}
 

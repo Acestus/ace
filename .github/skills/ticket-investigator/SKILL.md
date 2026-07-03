@@ -61,7 +61,7 @@ This gate applies to EVERY ticket regardless of perceived simplicity. "Simple" t
 ### Phase 1 — Load the Ticket
 
 ```bash
-cd /home/wweeks/github/ace
+cd /home/acestus/git/ace
 dotnet run --project src/Ace.Tools.Cli -- linear get-issue --key {KEY}
 ls issues/ | grep {KEY}
 ```
@@ -202,7 +202,7 @@ Follow the canonical format in `.github/instructions/linear-issue-documentation.
 
 ## Important Notes
 
-- Issues directory: `/home/wweeks/github/ace/issues/`
+- Issues directory: `/home/acestus/git/ace/issues/`
 - Never skip Phase 2 — the interview is not optional, even for tickets that seem obvious
 - Never proceed to Phase 5 without explicit user approval of the plan
 - Post rich `COMMENT` checkpoints to Linear throughout investigation and after every execution step

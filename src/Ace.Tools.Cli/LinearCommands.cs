@@ -42,6 +42,8 @@ internal static class LinearCommands
             "set-flow" => await SetFlowAsync(args[1..], stdout, stderr, cancellationToken),
             "comment" => await CommentAsync(args[1..], stdout, stderr, cancellationToken),
             "create-issue" => await CreateIssueAsync(args[1..], stdout, stderr, cancellationToken),
+            "create-issue-from-draft" => await CreateIssueFromDraftAsync(args[1..], stdout, stderr, cancellationToken),
+            "create-stub" => await CreateStubCommandAsync(args[1..], stdout, stderr, cancellationToken),
             "plan-issue" => await PlanIssueAsync(args[1..], stdout, stderr, cancellationToken),
             "create-project" => await CreateProjectAsync(args[1..], stdout, stderr, cancellationToken),
             "dispatch-next" => await DispatchNextAsync(args[1..], stdout, stderr, cancellationToken),
@@ -228,6 +230,77 @@ internal static class LinearCommands
         var projectId = CommandHelpers.GetOptionValue(args, "--project-id") ?? string.Empty;
         var projectName = CommandHelpers.GetOptionValue(args, "--project") ?? string.Empty;
 
+        return await CreateIssueCoreAsync(teamKey, title, description, stateName, priority, labelNames, projectId, projectName, json, stdout, stderr, cancellationToken);
+    }
+
+    private static async Task<int> CreateIssueFromDraftAsync(string[] args, TextWriter stdout, TextWriter stderr, CancellationToken cancellationToken)
+    {
+        if (args.Length == 0 || args[0] is "--help" or "-h")
+        {
+            await stdout.WriteLineAsync("linear create-issue-from-draft --draft <path> [--team <TEAM>] [--priority <1-4>] [--label <label>]... [--state <state>] [--project <name>|--project-id <id>] [--json]");
+            await stdout.WriteLineAsync("  Promotes an issues/_drafts/*.md file (from `linear plan-issue`) into a real Linear");
+            await stdout.WriteLineAsync("  ticket. Defaults: --team ACE, --priority 3 (Medium), --label flow:queue.");
+            return 0;
+        }
+
+        var draftPath = CommandHelpers.GetRequiredOptionValue(args, "--draft");
+        if (!File.Exists(draftPath))
+        {
+            return Fail($"Draft file not found: {draftPath}", stderr);
+        }
+
+        var (title, description) = ParseDraftFile(await File.ReadAllTextAsync(draftPath, cancellationToken));
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            return Fail($"Draft file has no 'title' front matter field: {draftPath}", stderr);
+        }
+
+        var teamKey = CommandHelpers.GetOptionValue(args, "--team") ?? "ACE";
+        var stateName = CommandHelpers.GetOptionValue(args, "--state") ?? "Backlog";
+        var json = CommandHelpers.HasOption(args, "--json");
+        var priority = int.TryParse(CommandHelpers.GetOptionValue(args, "--priority"), out var parsedPriority) ? parsedPriority : 3;
+        var labelNames = CommandHelpers.GetRepeatableOptionValues(args, "--label");
+        if (labelNames.Count == 0)
+        {
+            labelNames = new List<string> { "flow:queue" };
+        }
+
+        var projectId = CommandHelpers.GetOptionValue(args, "--project-id") ?? string.Empty;
+        var projectName = CommandHelpers.GetOptionValue(args, "--project") ?? string.Empty;
+
+        return await CreateIssueCoreAsync(teamKey, title, description, stateName, priority, labelNames, projectId, projectName, json, stdout, stderr, cancellationToken, autoCreateStub: true);
+    }
+
+    private static (string Title, string Description) ParseDraftFile(string content)
+    {
+        var match = Regex.Match(content, @"^---\s*\n(.*?)\n---\s*\n(.*)$", RegexOptions.Singleline);
+        if (!match.Success)
+        {
+            return (string.Empty, content.Trim());
+        }
+
+        var frontMatter = match.Groups[1].Value;
+        var body = match.Groups[2].Value.Trim();
+        var titleMatch = Regex.Match(frontMatter, @"^title:\s*(.+)$", RegexOptions.Multiline);
+        var title = titleMatch.Success ? titleMatch.Groups[1].Value.Trim() : string.Empty;
+        return (title, body);
+    }
+
+    private static async Task<int> CreateIssueCoreAsync(
+        string teamKey,
+        string title,
+        string description,
+        string stateName,
+        int priority,
+        IReadOnlyList<string> labelNames,
+        string projectId,
+        string projectName,
+        bool json,
+        TextWriter stdout,
+        TextWriter stderr,
+        CancellationToken cancellationToken,
+        bool autoCreateStub = false)
+    {
         var client = new LinearClient();
         var team = await client.QueryTeamAsync(teamKey, cancellationToken);
         var stateId = FindStateByName(team.GetProperty("states").GetProperty("nodes"), stateName);
@@ -291,9 +364,21 @@ internal static class LinearCommands
         if (created.GetProperty("success").GetBoolean())
         {
             var issue = created.GetProperty("issue");
-            await stdout.WriteLineAsync($"✓ Created {GetString(issue, "identifier")} — {GetString(issue, "title")}");
+            var identifier = GetString(issue, "identifier");
+            await stdout.WriteLineAsync($"✓ Created {identifier} — {GetString(issue, "title")}");
             await stdout.WriteLineAsync($"  URL: {GetString(issue, "url")}");
             await stdout.WriteLineAsync($"  State: {GetString(issue.GetProperty("state"), "name")}");
+
+            if (autoCreateStub)
+            {
+                await CreateStubAsync(identifier, cancellationToken);
+                var repoRoot = RepoPaths.FindRepoRoot();
+                var stubPath = IssueFileLocator.FindIssueFilePath(repoRoot, identifier);
+                await stdout.WriteLineAsync(stubPath is null
+                    ? $"⚠ Stub not created — check for an existing issue file under a different naming convention for {identifier}."
+                    : $"✓ Stub ready: {Path.GetRelativePath(repoRoot, stubPath)}");
+            }
+
             return 0;
         }
 
@@ -584,6 +669,34 @@ status: draft
         }
 
         await stdout.WriteLineAsync($"  Board: {Path.GetRelativePath(repoRoot, notePath)}");
+        return 0;
+    }
+
+    private static async Task<int> CreateStubCommandAsync(string[] args, TextWriter stdout, TextWriter stderr, CancellationToken cancellationToken)
+    {
+        if (args.Length == 0 || args[0] is "--help" or "-h")
+        {
+            await stdout.WriteLineAsync("linear create-stub --key <KEY>");
+            await stdout.WriteLineAsync("  Creates the local issues/{KEY} - {title}/ stub file from the live Linear issue.");
+            await stdout.WriteLineAsync("  No-op if a stub already exists for that key.");
+            return 0;
+        }
+
+        var key = CommandHelpers.GetRequiredOptionValue(args, "--key");
+        try
+        {
+            await CreateStubAsync(key, cancellationToken);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Fail(ex.Message, stderr);
+        }
+
+        var repoRoot = RepoPaths.FindRepoRoot();
+        var stubPath = IssueFileLocator.FindIssueFilePath(repoRoot, key);
+        await stdout.WriteLineAsync(stubPath is null
+            ? $"⚠ Stub not created — an issue file may already exist under a different folder naming convention for {key}."
+            : $"✓ Stub ready: {Path.GetRelativePath(repoRoot, stubPath)}");
         return 0;
     }
 

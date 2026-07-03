@@ -51,8 +51,8 @@ Labels:     flow:queue
 ### Step 3 — Create the issue
 
 ```bash
-cd /home/wweeks/git/projects && export $(grep -v '^#' .env | xargs)
-python3 scripts/linear_create_issue.py \
+cd /home/acestus/git/ace
+dotnet run --project src/Ace.Tools.Cli -- linear create-issue \
     --team ENG \
     --title "Fix auth token timeout" \
     --description "Token TTL set to 15m causing user logouts. Should be 60m." \
@@ -63,13 +63,23 @@ python3 scripts/linear_create_issue.py \
 ### Step 4 — Create local stub
 
 ```bash
-python3 scripts/linear_create_stub.py --key {KEY}
+dotnet run --project src/Ace.Tools.Cli -- linear create-stub --key {KEY}
+```
+
+If you planned this ticket first with the `ticket-planner` skill and already have a
+draft under `issues/_drafts/`, use `create-issue-from-draft` instead — it creates
+the issue AND the stub in one step, defaulting `--team ACE`, `--priority 3`, and
+`--label flow:queue`:
+
+```bash
+dotnet run --project src/Ace.Tools.Cli -- linear create-issue-from-draft \
+    --draft "issues/_drafts/{slug}.md"
 ```
 
 ### Step 5 — Commit
 
 ```bash
-cd /home/wweeks/git/projects
+cd /home/acestus/git/ace
 git add issues/
 git commit -m "backlog: add {KEY} — {title}
 

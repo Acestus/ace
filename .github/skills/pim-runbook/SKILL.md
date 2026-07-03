@@ -22,7 +22,7 @@ Manage Azure Privileged Identity Management (PIM) role assignments — check eli
 ### Check current state
 
 ```bash
-cd /home/wweeks/git/projects && export $(grep -v '^#' .env | xargs)
+cd /home/acestus/git/ace && export $(grep -v '^#' .env | xargs)
 
 # Your own eligible and active assignments
 python3 scripts/az_pim.py --list-eligible

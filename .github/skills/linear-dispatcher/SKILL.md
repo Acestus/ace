@@ -10,14 +10,14 @@ Pull the next unclaimed Linear issue and assign it to an open lane.
 
 ## Workflow
 
-Run the dispatcher script and let Python choose the ticket:
+Run the dispatcher command and let the CLI choose the ticket:
 
 ```bash
-cd /home/wweeks/github/ace
-python3 scripts/linear_dispatch_next.py --activate
+cd /home/acestus/git/ace
+dotnet run --project src/Ace.Tools.Cli -- linear dispatch-next --activate
 ```
 
-That script:
+That command:
 - skips already-claimed tickets
 - resumes unclaimed `In Progress` tickets first
 - otherwise pulls the next `flow:queue` ticket

@@ -22,7 +22,7 @@ Ask the user where this page should live, or use the default:
 
 ```bash
 # List top-level pages to find the right parent
-cd /home/wweeks/git/projects && export $(grep -v '^#' .env | xargs)
+cd /home/acestus/git/ace && export $(grep -v '^#' .env | xargs)
 python3 scripts/notion_search.py --query "Infrastructure"
 ```
 

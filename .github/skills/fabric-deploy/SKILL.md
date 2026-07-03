@@ -33,7 +33,7 @@ Set default: `FABRIC_WORKSPACE_ID` in `.env`
 ### List pipelines
 
 ```bash
-cd /home/wweeks/git/projects && export $(grep -v '^#' .env | xargs)
+cd /home/acestus/git/ace && export $(grep -v '^#' .env | xargs)
 
 python3 scripts/fabric_pipeline.py --workspace-id {WS_ID} --list
 ```

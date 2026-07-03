@@ -77,6 +77,9 @@ public static class ToolApp
                 stdout.WriteLine("  set-flow        Transition issue to a flow state");
                 stdout.WriteLine("  comment         Post a comment to an issue");
                 stdout.WriteLine("  create-issue    Create a new Linear issue");
+                stdout.WriteLine("  plan-issue      Draft a local user story + plan (no ticket created yet)");
+                stdout.WriteLine("  create-issue-from-draft  Promote a plan-issue draft into a real Linear issue");
+                stdout.WriteLine("  create-stub     Create the local issue stub file for an existing Linear key");
                 stdout.WriteLine("  create-project  Create a new Linear project");
                 stdout.WriteLine("  dispatch-next   Claim and activate the next unclaimed issue");
                 stdout.WriteLine();
@@ -85,6 +88,7 @@ public static class ToolApp
                 stdout.WriteLine("  linear search --state \"In Progress\"");
                 stdout.WriteLine("  linear set-flow --key ACE-42 --flow done");
                 stdout.WriteLine("  linear dispatch-next --activate --json");
+                stdout.WriteLine("  linear create-issue-from-draft --draft issues/_drafts/my-idea.md");
                 return;
             case "rounds":
                 stdout.WriteLine("rounds — Work session lane management");

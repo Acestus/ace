@@ -30,7 +30,7 @@ The data flow is one-way: `issues/` → `planner/outbox/*.md` → Notion. Steeri
 ## Standard Commands
 
 ```bash
-cd /home/wweeks/git/projects && export $(grep -v '^#' .env | xargs)
+cd /home/acestus/git/ace && export $(grep -v '^#' .env | xargs)
 
 # The 90% case — refresh + publish
 python3 scripts/outbox_refresh.py
