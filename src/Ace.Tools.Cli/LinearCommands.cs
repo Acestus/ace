@@ -6,7 +6,7 @@ namespace Ace.Tools.Cli;
 
 internal static class LinearCommands
 {
-    private const string ClaimsFile = "/tmp/rounds-claims.json";
+    // Claims are now in ~/.ace/rounds.db via RoundsDb (ACE-22)
     private static readonly Dictionary<string, string> DefaultFlowStates = new(StringComparer.OrdinalIgnoreCase)
     {
         ["queue"] = "Backlog",
@@ -405,6 +405,8 @@ internal static class LinearCommands
             var chosenKey = payload["key"]?.ToString() ?? string.Empty;
             await SetFlowAsync(new[] { "--key", chosenKey, "--flow", "active" }, TextWriter.Null, stderr, cancellationToken);
             await CreateStubAsync(chosenKey, cancellationToken);
+            // Claim the key in SQLite (lane 0 = unassigned / auto-dispatch)
+            await RoundsDb.AppendWorklogAsync(null, chosenKey, "dispatch", $"source:{source}", cancellationToken);
             payload["activated"] = true;
         }
 
@@ -464,7 +466,7 @@ internal static class LinearCommands
                 GetInt(issue, "priority"),
                 GetString(issue.GetProperty("team"), "key"),
                 GetString(issue.GetProperty("team"), "name"),
-                FindIssueFilePath(repoRoot, GetString(issue, "identifier")),
+                IssueFileLocator.FindIssueFilePath(repoRoot, GetString(issue, "identifier")),
                 string.Empty))
             .Select(ticket => ticket with { NextStep = ReadNextStep(ticket.IssueFilePath) })
             .ToList();
@@ -654,39 +656,6 @@ TODO:
     }
 
     private static int GetBoardCapacity(int activeCount) => activeCount <= 3 ? 3 : 5;
-
-    private static string? FindIssueFilePath(string repoRoot, string key)
-    {
-        var issuesRoot = Path.Combine(repoRoot, "issues");
-        if (!Directory.Exists(issuesRoot) || string.IsNullOrWhiteSpace(key))
-        {
-            return null;
-        }
-
-        return Directory.EnumerateFiles(issuesRoot, "*.md", SearchOption.AllDirectories)
-            .Select(path => new { Path = path, Score = ScoreIssuePath(path, key) })
-            .Where(item => item.Score > 0)
-            .OrderByDescending(item => item.Score)
-            .ThenBy(item => item.Path.Length)
-            .Select(item => item.Path)
-            .FirstOrDefault();
-    }
-
-    private static int ScoreIssuePath(string path, string key)
-    {
-        var fileName = Path.GetFileName(path);
-        if (string.Equals(Path.GetFileName(Path.GetDirectoryName(path)), key, StringComparison.OrdinalIgnoreCase))
-        {
-            return 3;
-        }
-
-        if (fileName.StartsWith(key, StringComparison.OrdinalIgnoreCase))
-        {
-            return 2;
-        }
-
-        return path.Contains($"{Path.DirectorySeparatorChar}{key}{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
-    }
 
     private static string ReadNextStep(string? issueFilePath)
     {
@@ -878,31 +847,7 @@ TODO:
         => element.TryGetProperty(propertyName, out var property) && property.TryGetInt32(out var value) ? value : 0;
 
     private static List<string> LoadClaimedKeys()
-    {
-        if (!File.Exists(ClaimsFile))
-        {
-            return new List<string>();
-        }
-
-        try
-        {
-            using var document = JsonDocument.Parse(File.ReadAllText(ClaimsFile));
-            var claimed = new List<string>();
-            foreach (var entry in document.RootElement.EnumerateObject())
-            {
-                if (entry.Value.TryGetProperty("key", out var key) && !string.IsNullOrWhiteSpace(key.GetString()))
-                {
-                    claimed.Add(key.GetString()!.ToUpperInvariant());
-                }
-            }
-
-            return claimed;
-        }
-        catch
-        {
-            return new List<string>();
-        }
-    }
+        => RoundsDb.GetClaimedKeysAsync(CancellationToken.None).GetAwaiter().GetResult();
 
     private static int UnknownCommand(string command, TextWriter stderr)
     {

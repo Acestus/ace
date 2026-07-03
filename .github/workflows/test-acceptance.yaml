@@ -1,0 +1,67 @@
+name: test-acceptance
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment for acceptance test execution"
+        required: true
+        type: choice
+        options:
+          - dev
+          - stg
+          - prd
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  acceptance-tests:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Run acceptance tests (C# summary)
+        run: >
+          dotnet run --project scripts/Ace.Quality.Gates/Ace.Quality.Gates.csproj
+          -- acceptance --environment ${{ inputs.environment }}
+
+      - name: Upload acceptance score reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: acceptance-score-${{ inputs.environment }}
+          path: docs/testing/outer-loop-gherkin-score.*
+          if-no-files-found: error
+
+      - name: Upload acceptance TRX results
+        uses: actions/upload-artifact@v4
+        with:
+          name: acceptance-trx-${{ inputs.environment }}
+          path: artifacts/test-results/${{ inputs.environment }}/*.trx
+          if-no-files-found: error
+
+  troubleshooting:
+    name: Troubleshooting hints
+    runs-on: ubuntu-latest
+    needs: acceptance-tests
+    if: failure()
+    steps:
+      - name: Print hints
+        run: |
+          echo "❌ Acceptance workflow failed."
+          echo "   Likely causes:"
+          echo "     • Environment configuration is missing for '${{ inputs.environment }}'"
+          echo "     • Acceptance test dependencies or fixtures failed to initialize"
+          echo "     • Expected report artifacts were not produced"
+          echo "   Try:"
+          echo "     • Re-run with the same environment and inspect the acceptance-tests job logs"
+          echo "     • Run locally: dotnet run --project scripts/Ace.Quality.Gates/Ace.Quality.Gates.csproj -- acceptance --environment ${{ inputs.environment }}"
+          echo "     • Verify report outputs: docs/testing/outer-loop-gherkin-score.* and artifacts/test-results/${{ inputs.environment }}/"

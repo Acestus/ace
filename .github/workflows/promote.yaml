@@ -1,0 +1,49 @@
+name: promote
+
+on:
+  workflow_dispatch:
+    inputs:
+      targetEnvironment:
+        description: "Promotion target environment"
+        required: true
+        type: choice
+        options:
+          - dev
+          - stg
+          - prd
+      ref:
+        description: "Git ref to promote"
+        required: false
+        type: string
+        default: main
+
+permissions:
+  contents: read
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.targetEnvironment }}
+    steps:
+      - name: Checkout requested ref
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Run promote gate (C#)
+        run: dotnet run --project scripts/Ace.Quality.Gates/Ace.Quality.Gates.csproj -- promote --environment ${{ inputs.targetEnvironment }}
+
+      - name: Publish .NET app artifact (C#)
+        run: dotnet run --project scripts/Ace.Quality.Gates/Ace.Quality.Gates.csproj -- deploy-net-app --environment ${{ inputs.targetEnvironment }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ace-tools-cli-${{ inputs.targetEnvironment }}
+          path: artifacts/ace-tools-cli/${{ inputs.targetEnvironment }}/
+          if-no-files-found: error

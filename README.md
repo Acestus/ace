@@ -1,56 +1,55 @@
-# Workflow Toolkit
+# Ace — Personal Workflow Toolkit
 
-A file-driven personal kanban and ITSM workflow for engineers who live in the terminal.
+A file-driven personal kanban for engineers who live in the terminal.
 
-Tickets, time logs, and follow-ups are markdown files. CI/CD syncs them to Jira and ServiceDesk Plus on push. Skills, Copilot CLI agents, and a stack of Python scripts wrap the day-to-day operations: dispatching work, logging time, investigating tickets, publishing Confluence docs, and closing out the day.
+Tickets, time logs, and follow-ups are markdown files. A .NET CLI and GitHub Copilot skills wrap daily operations: dispatching work, logging time, investigating tickets, publishing to Notion, and closing out the day. SQLite is the local source of truth for lane state, worklogs, and operational history.
 
-This is the de-identified, reusable version of a working personal toolkit. Fork it, replace the bracketed placeholders, and adapt it to your own stack.
+This is the personal (Acestus) fork of the workflow-toolkit. It uses Linear + Notion instead of Jira/Confluence and adds IaC for Azure Static Web Apps.
 
 ---
 
 ## What's Inside
 
-| Layer | Count | What it does |
-|---|---|---|
-| **Skills** (`.github/skills/`) | 24 | Triggered behaviors for the Copilot CLI agent (e.g. `start-my-day`, `rounds`, `linear-worklog`) |
-| **Instructions** (`.github/instructions/`) | 17 | File-pattern-scoped rules for AI assistance (issue docs, Confluence pages, PySpark notebooks, etc.) |
-| **Scripts** (`scripts/`) | 81 | Python CLI tools — Jira, SDP, Entra, Azure, Confluence, Fabric, PIM, timers |
-| **Workflows** (`.github/workflows/`) | 12 | GitHub Actions for auto-sync, scheduled jobs, smoke tests |
+| Layer | What it does |
+|---|---|
+| **CLI** (`src/Ace.Tools.Cli/`) | .NET command surface — Linear, rounds (SQLite), GitHub, legacy runner |
+| **Skills** (`.github/skills/`) | Thin collar skills for Copilot CLI. ~25 lines each. Routes intent to CLI. |
+| **Instructions** (`.github/instructions/`) | File-pattern-scoped rules for AI assistance |
+| **Quality Gates** (`scripts/Ace.Quality.Gates/`) | C# gate orchestration for preflight/postflight/promote/deploy |
+| **Quality Scoring Tests** (`tests/Quality.Reqnroll.Score.Tests/`) | Reqnroll/xUnit-based inner-loop and outer-loop score generation |
+| **IaC** (`.azure/`) | Azure Static Web App config and identity |
 
 ---
 
 ## The Core Mental Model
 
-### File-driven state
+### SQLite as source of truth
+
+Lane claims and worklogs persist in `~/.ace/rounds.db`.
+
+```bash
+dotnet run --project src/Ace.Tools.Cli -- rounds status
+sqlite3 ~/.ace/rounds.db "SELECT * FROM worklogs ORDER BY ts DESC LIMIT 20;"
+```
+
+### File-driven issue state
 
 | State lives in | Synced to |
 |---|---|
-| `issues/<KEY>/<KEY>.md` | Jira (via `jira-worklog-sync.yaml`) |
-| `cases/<ID>/<ID>.md` | ServiceDesk Plus (via `sdp-worklog-sync.yaml`) |
-| `planner/MM-DD.org` | Local time log (org-mode tables) |
-| `confluence/<PAGE_ID>-<title>.md` | Confluence (via publish script) |
+| `issues/<KEY>/<KEY>.md` | Linear (via CLI) |
+| `planner/MM-DD.org` | Local time log |
+| `notion/<title>.md` | Notion (via notion-writer skill) |
 
-You edit markdown, commit, push. CI reconciles to the system of record.
+### Flow labels
 
-### Kanban Flow Model
-
-Tickets carry exactly one `flow:` label and live in one of 6 lanes:
-
-- **Jira lanes:** 🔴 Lane 1 Urgent · 🔵 Lane 2 Manual · 🟢 Lane 3 Background
-- **SDP lanes:** 🔴 Lane 4 SDP-Urgent · 🟠 Lane 5 SDP-Approval · 🟢 Lane 6 SDP-Background
-
-**WIP limit: 6** — one active ticket per lane. `flow:waiting` doesn't count.
-
-| Flow label | Meaning |
+| Label | Meaning |
 |---|---|
-| `flow:queue` | In the backlog for its lane |
+| `flow:queue` | In the backlog |
 | `flow:active` | Currently working it |
-| `flow:waiting` | Blocked on someone/something external |
+| `flow:waiting` | Blocked externally |
 | `flow:done` | Closed |
 
-### Skill triggers
-
-Skills are markdown files (`.github/skills/<name>/SKILL.md`) with natural-language triggers. Say "start my day" and the agent runs the `start-my-day` skill. Say "this one's done" and `linear-dispatcher` advances the lane. Say "write a confluence page" and `confluence-writer` handles the full publish workflow.
+**WIP limit: 5** — one lane per tab, one ticket per lane.
 
 ---
 
@@ -59,190 +58,147 @@ Skills are markdown files (`.github/skills/<name>/SKILL.md`) with natural-langua
 ### 1. Clone and configure
 
 ```bash
-git clone https://github.com/<GITHUB_ORG>/workflow-toolkit.git
-cd workflow-toolkit
+git clone https://github.com/Acestus/workflow-toolkit.git ace
+cd ace
 cp .env.example .env
-# Edit .env — fill in your Atlassian, SDP, GitHub, Azure credentials
+# Fill in LINEAR_API_KEY, NOTION_API_KEY, GITHUB_TOKEN, Azure creds
 ```
 
-### 2. Install dependencies
+### 2. Build the CLI
 
 ```bash
-pip install -r scripts/requirements.txt   # if you add one
-# Most scripts use stdlib + `az` CLI + `gh` CLI
+dotnet build src/Ace.Tools.Cli
 ```
 
-### 3. Replace placeholders
-
-Sweep the repo for `<PLACEHOLDER>` style tokens and replace with your real values:
+### 3. Verify
 
 ```bash
-grep -rh "<[A-Z_]*>" .github/ scripts/ | grep -oE "<[A-Z_]+>" | sort -u
+dotnet run --project src/Ace.Tools.Cli -- --help
+dotnet run --project src/Ace.Tools.Cli -- rounds status
+dotnet run --project scripts/Ace.Quality.Gates/Ace.Quality.Gates.csproj -- preflight
 ```
 
-Common ones:
+---
 
-| Placeholder | What to replace with |
+## Trunk CI/CD + Environment Flow
+
+This repo uses trunk-based workflows with `.yaml` workflow files:
+
+| Workflow | Trigger | Purpose |
+|---|---|---|
+| `preflight.yaml` | PRs to `dev`, `main`, `release/*` | Fast quality gate (C#-driven) |
+| `postflight.yaml` | Pushes to `dev`, `main`, `release/*` | Full quality gate + .NET artifact publish |
+| `promote.yaml` | Manual dispatch | Promote and publish artifacts for `dev/stg/prd` |
+| `test-acceptance.yaml` | Manual dispatch | Run outer-loop acceptance score tests for `dev/stg/prd` |
+
+Branch to environment mapping:
+
+| Branch | Environment |
 |---|---|
-| `<YOUR_NAME>` | Your real name |
-| `<YOUR_EMAIL>` | Your work email |
-| `<YOUR_ATLASSIAN>` | Your Atlassian Cloud subdomain |
-| `<YOUR_SDP>` | Your ServiceDesk Plus subdomain |
-| `<ORG_NAME>` / `<ORG_SHORT>` | Your company name + short code |
-| `<ORG_DOMAIN>` | Your work email domain |
-| `<PROJECT>` | Your Jira project key (e.g. `INFRA`, `OPS`) |
-| `<SPACE>` | Your Confluence space key |
-| `<GITHUB_ORG>` | Your GitHub org |
-| `<AZURE_TENANT_ID>` / `<AZURE_SUBSCRIPTION_ID>` | Your Azure context |
-| `<APPROVER_NAME>` / `<APPROVER_EMAIL>` | Default ticket approver |
+| `dev` | `dev` |
+| `release/*` | `stg` |
+| `main` | `prd` |
 
-### 4. Wire up GitHub secrets
-
-For the workflows in `.github/workflows/` to work, set repo secrets:
-
-- `JIRA_BASE_URL`, `JIRA_EMAIL`, `JIRA_API_TOKEN`
-- `CONFLUENCE_EMAIL`, `CONFLUENCE_API_TOKEN`
-- `WWEEKS_SDP` (SDP OAuth JSON blob)
-- `AZURE_CREDENTIALS` (for OIDC or service principal)
-- `TEAMS_WEBHOOK_URL` (optional)
-
-### 5. Create the directory scaffolding
+All gate orchestration is in C#:
 
 ```bash
-mkdir -p issues cases planner confluence assets
+dotnet run --project scripts/Ace.Quality.Gates/Ace.Quality.Gates.csproj -- preflight
+dotnet run --project scripts/Ace.Quality.Gates/Ace.Quality.Gates.csproj -- postflight
+dotnet run --project scripts/Ace.Quality.Gates/Ace.Quality.Gates.csproj -- promote --environment dev
+dotnet run --project scripts/Ace.Quality.Gates/Ace.Quality.Gates.csproj -- deploy-net-app --environment dev
 ```
 
-### 6. Use the ACE .NET CLI (GitHub + Linear)
+---
 
-The repo includes a local .NET command surface at `src/Ace.Tools.Cli`.
+## Inner-Loop and Outer-Loop Testing
+
+Quality scoring commands:
 
 ```bash
-dotnet run --project src/Ace.Tools.Cli -- help
+dotnet test tests/Quality.Reqnroll.Score.Tests/Quality.Reqnroll.Score.Tests.csproj \
+  --filter "TestCategory=inner-loop-score|Category=inner-loop-score"
 
-# GitHub via gh
-dotnet run --project src/Ace.Tools.Cli -- github issues list --repo <owner/repo>
-dotnet run --project src/Ace.Tools.Cli -- github issues view <number> --repo <owner/repo>
+dotnet test tests/Quality.Reqnroll.Score.Tests/Quality.Reqnroll.Score.Tests.csproj \
+  --filter "TestCategory=outer-loop-gherkin-score|Category=outer-loop-gherkin-score"
+```
 
-# Linear via the native CLI
-dotnet run --project src/Ace.Tools.Cli -- linear get-issue --key <TEAM-123>
+Reports are generated under `docs/testing/`:
+
+- `inner-loop-score.md` / `inner-loop-score.json`
+- `outer-loop-gherkin-score.md` / `outer-loop-gherkin-score.json`
+
+---
+
+## CLI Reference
+
+```bash
+# Linear
+dotnet run --project src/Ace.Tools.Cli -- linear get-issue --key ACE-42
 dotnet run --project src/Ace.Tools.Cli -- linear search --state "In Progress"
-dotnet run --project src/Ace.Tools.Cli -- linear set-flow --key <TEAM-123> --flow active
-dotnet run --project src/Ace.Tools.Cli -- linear comment --key <TEAM-123> --comment "Status update"
-dotnet run --project src/Ace.Tools.Cli -- linear start-my-day
-```
+dotnet run --project src/Ace.Tools.Cli -- linear set-flow --key ACE-42 --flow done
+dotnet run --project src/Ace.Tools.Cli -- linear dispatch-next --activate
 
-`Ace.Tools.Cli` auto-loads `.env` from the repo root and handles Linear and GitHub directly.
+# Rounds (SQLite-backed lane management)
+dotnet run --project src/Ace.Tools.Cli -- rounds start --lane 1
+dotnet run --project src/Ace.Tools.Cli -- rounds start --lane 2 --key ACE-42
+dotnet run --project src/Ace.Tools.Cli -- rounds transition --lane 1 --flow done
+dotnet run --project src/Ace.Tools.Cli -- rounds status
+
+# GitHub
+dotnet run --project src/Ace.Tools.Cli -- github issues list
+dotnet run --project src/Ace.Tools.Cli -- github review-pr --pr 42
+
+# Full help
+dotnet run --project src/Ace.Tools.Cli -- --help
+dotnet run --project src/Ace.Tools.Cli -- rounds --help
+dotnet run --project src/Ace.Tools.Cli -- linear --help
+```
 
 ---
 
 ## Daily Workflow
 
 ```bash
-# Morning
-"start my day"                  # → start-my-day skill: runs `linear start-my-day` and creates planner note
-
-# Picking up work
-"rounds lane 1"                 # → rounds: routes to urgent lane, dispatches top queue ticket
-"<PROJECT>-87"                  # → jira-router: opens or investigates a specific ticket
-
-# Working
-tl start <PROJECT>-87           # start a timer
-# ... do work, edit code ...
-"log 30 minutes on <PROJECT>-87, found root cause" # → linear-worklog skill
-
-# Wrapping a ticket
-"this one's done"               # → linear-dispatcher: marks done, pulls next from queue
-"waiting on vendor"             # → marks flow:waiting
-
-# End of day
-"end my day"                    # → end-my-day: stops timers, generates standup, posts to Teams
+"start my day"              # → start-my-day: board + planner note
+"start rounds 1"            # → rounds: dispatch next ticket into lane 1
+"log 30m on ACE-42"         # → linear-worklog: logs time + comment
+"this one's done"           # → rounds transition --lane N --flow done
+"end my day"                # → end-my-day: standup, commit worklogs
 ```
 
 ---
 
 ## Skill Reference
 
-### Jira workflow
-- `start-my-day` — create today's planner note and load active tickets via `linear start-my-day`
-- `end-my-day` — close out, generate standup, post to Teams
-- `rounds` — kanban station rotation, one ticket per lane at a time
-- `jira-router` — fuzzy intent router for ticket-adjacent requests
-- `linear-dispatcher` — advance the next queue ticket into active
-- `linear-worklog` — log time + comments via markdown
-- `ticket-investigator` — structured investigation on a Jira ticket
-- `phoenix-backlog` — create new work items with scoring labels
-- `weekly-summary` — generate brag doc / sprint summary
-- `waiting-ticket-followup` — draft follow-ups for stale `flow:waiting` tickets
-- `outbox-refresh` — build per-stakeholder newspaper-lede cards
-
-### ServiceDesk Plus workflow (mirror set)
-- `sdp-router`, `sdp-dispatcher`, `sdp-rounds`, `sdp-worklog`, `sdp-investigator`, `sdp-backlog`
-
-### Knowledge & writing
-- `knowledge-clerk` — retrieve precedent, process, architecture before building
-- `confluence-writer` — create and publish new Confluence pages
-- `confluence-updater` — patch sections, append content to existing pages
-- `editorial-assistant` — three-pass editorial review (developmental, line, copy)
-
-### Infrastructure
-- `aws-investigator` — IAM, CloudWatch, CloudTrail investigations
-- `azure-investigator` — Azure RBAC, managed identity, resource investigations
-- `pim-runbook` — Azure PIM eligibility and activation
-- `fabric-deploy` — Microsoft Fabric pipeline deployments and schedule restore
-- `pr-reviewer` — GitHub PR review with automated checklist
-- `pr-daily-summary` — daily merged/opened PR digest
-
-### Operators / orchestration
-- `customize-cloud-agent` — Copilot cloud agent setup-step configuration
-
----
-
-## Instructions Reference
-
-File-pattern-scoped rules that govern AI generation against this repo:
-
-- `jira-issue-documentation.instructions.md` — `issues/**/*.md` format
-- `sdp-case-documentation.instructions.md` — `cases/**/*.md` format
-- `confluence-live-docs.instructions.md` — `confluence/**/*.md` format
-- `topic-article-creation.instructions.md` — end-to-end Confluence topic article workflow
-- `backlog-management.instructions.md` — backlog hygiene + scoring
-- `editorial-writing.instructions.md` — general prose standards
-- `pyspark-notebooks.instructions.md` — Fabric notebook authoring
-- `fabric-artifacts.instructions.md` — Fabric workspace artifact structure
-- `plantuml-style.instructions.md` — diagram conventions
-- `html-document-style.instructions.md` — HTML doc conventions
-- `acceptance-criteria.instructions.md` — IaC change acceptance gates
-- `ai-coding-guidelines.instructions.md` — AI code quality principles
-- `pr-review.instructions.md` — PR review checklist
-- `vsdd.instructions.md` — Verified Spec-Driven Development
-- `error-messaging.instructions.md` — error message style
-- `workflow-file-conventions.instructions.md` — `.yaml` vs `.yml`
-
----
-
-## Scripts Cheat Sheet
-
-```bash
-# Load env
-export $(grep -v '^#' .env | xargs)
-
-# Jira
-
-# SDP
-
-# Azure / Entra
-
-# Confluence
-
-# Timers
-```
+| Skill | When to use |
+|---|---|
+| `start-my-day` | Morning setup |
+| `end-my-day` | EOD standup + commit |
+| `rounds` | Lane rotation — one ticket per lane |
+| `linear-dispatcher` | Pull next queue ticket |
+| `linear-worklog` | Log time + comments |
+| `linear-backlog` | Create issues with Eisenhower scoring |
+| `ticket-investigator` | Structured ticket investigation |
+| `weekly-summary` | Brag doc / sprint summary |
+| `waiting-ticket-followup` | Follow up on stale flow:waiting |
+| `outbox-refresh` | Per-stakeholder status cards |
+| `knowledge-clerk` | Retrieve precedent before building |
+| `notion-writer` | Create and publish Notion pages |
+| `sharepoint-writer` | Publish HTML docs to SharePoint |
+| `editorial-assistant` | Three-pass editorial review |
+| `aws-investigator` | AWS IAM / CloudWatch |
+| `azure-investigator` | Azure RBAC, identity, resources |
+| `pim-runbook` | Azure PIM roles |
+| `fabric-deploy` | Fabric pipeline deployments |
+| `pr-reviewer` | GitHub PR review |
+| `pr-daily-summary` | Daily PR digest |
+| `lorcana` | Scrape Lorcana card lists |
+| `swa-deploy` | Azure Static Web App deploys |
+| `trunk-gates` | Run preflight/postflight/promote quality gates |
+| `service-tagger` | Apply and normalize service ownership tags |
 
 ---
 
 ## License
 
 MIT — do what you want, no warranty. See [LICENSE](LICENSE).
-
-## Credits
-
-Built on the [Copilot CLI](https://github.blog/changelog/) skill model. PRs and forks welcome.

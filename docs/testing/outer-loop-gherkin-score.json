@@ -1,0 +1,22 @@
+﻿{
+  "generated_at": "2026-06-28T00:00:24.1443083\u002B00:00",
+  "files": [
+    {
+      "path": "/home/wweeks/github/ace/tests/Quality.Reqnroll.Score.Tests/Features/QualityScoring.feature",
+      "tests": 2,
+      "properties": {
+        "U": 9.08,
+        "M": 6.07,
+        "R": 9.08,
+        "A": 9.08,
+        "N": 6.63,
+        "G": 9.08,
+        "F": 9.08,
+        "T": 9.08
+      },
+      "quality_index": 8.31,
+      "rating": "Excellent"
+    }
+  ],
+  "overall_quality_index": 8.31
+}
