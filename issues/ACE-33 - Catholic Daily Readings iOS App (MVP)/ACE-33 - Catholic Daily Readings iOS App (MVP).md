@@ -1,10 +1,15 @@
 ---
+LINEAR: ACE-33
 title: Catholic Daily Readings iOS App (MVP)
+team: Acestus
+state: Backlog
+flow: queue
+urgency: 3
+due:
 created: 2026-07-03
-status: draft
 ---
 
-## User Story
+## Description
 
 ## User Story
 
@@ -41,8 +46,6 @@ Hallow.
 - Paid Apple Developer account, TestFlight, or App Store submission.
 - Backend caching/storage layer (Function scrapes live per request for v1).
 - Pre-recorded or generated audio files.
-
-## Implementation Plan
 
 ## Implementation Plan
 
@@ -95,3 +98,16 @@ stack. Azure backend kept as simple as possible (no caching layer) for MVP.
 - No changes to the `ace` repo — this is a fully separate project/repo.
 - No Android work, no other Hallow-style features, no App Store/TestFlight
   pipeline in this ticket.
+
+## Actions
+
+### 2026-07-03
+
+WORKLOG: Stub created from Linear ACE-33. Planned via ticket-planner skill
+(draft: issues/_drafts/catholic-daily-ios-mvp.md), then filed via
+linear-backlog skill.
+
+## Follow-up
+
+Status: Backlog
+TODO:
