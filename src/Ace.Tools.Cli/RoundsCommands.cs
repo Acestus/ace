@@ -1,5 +1,7 @@
 namespace Ace.Tools.Cli;
 
+using System.Text.Json;
+
 internal static class RoundsCommands
 {
     private static readonly string[] LaneEmojis = ["", "🟣", "🔵", "🟡", "🟠", "🔴"];
@@ -58,12 +60,13 @@ internal static class RoundsCommands
             return 1;
         }
 
-        // If no key provided, dispatch next
+        // If no key provided, dispatch next and claim this lane with whatever came back
         if (string.IsNullOrWhiteSpace(key))
         {
+            var dispatchOutput = new StringWriter();
             var dispatchResult = await LinearCommands.RunAsync(
                 ["dispatch-next", "--activate", "--json"],
-                TextWriter.Null,
+                dispatchOutput,
                 stderr,
                 cancellationToken);
 
@@ -72,7 +75,25 @@ internal static class RoundsCommands
                 return dispatchResult;
             }
 
-            await stderr.WriteLineAsync("ℹ  Use 'rounds start --lane N --key <KEY>' to claim a specific ticket.");
+            using var payload = JsonDocument.Parse(dispatchOutput.ToString());
+            var root = payload.RootElement;
+            if (!root.TryGetProperty("found", out var found) || !found.GetBoolean())
+            {
+                await stdout.WriteLineAsync("ℹ  Nothing left to dispatch — queue and active board are both empty.");
+                return 0;
+            }
+
+            var dispatchedKey = root.GetProperty("key").GetString() ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(dispatchedKey))
+            {
+                await stderr.WriteLineAsync("⛔ dispatch-next returned no ticket key.");
+                return 1;
+            }
+
+            await RoundsDb.SetClaimAsync(lane, dispatchedKey, cancellationToken);
+            await RoundsDb.AppendWorklogAsync(lane, dispatchedKey, "start", null, cancellationToken);
+
+            await stdout.WriteLineAsync($"✓ {LaneEmojis[lane]} Lane {lane} claimed → {dispatchedKey}");
             return 0;
         }
 

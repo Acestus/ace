@@ -1,0 +1,37 @@
+#+TITLE: Daily Note — 2026-07-02 (Thu)
+#+DATE: <2026-07-02 Thu>
+#+AUTHOR: acestus
+
+* Time Log
+| Ticket | Start | Stop | Duration | Notes |
+|--------|-------|------|----------|-------|
+|        |       |      |          |       |
+
+* Kanban Board — WIP: 0/3
+# Dispatcher can update this section. Status board, not a calendar.
+
+** Lane 1 (Urgent)
+*** (empty)
+
+** Lane 2 (Manual)
+*** (empty)
+
+** Lane 3 (Background)
+*** (empty)
+
+** Lane 4
+*** (empty)
+
+** Lane 5
+*** (empty)
+
+* Standup
+** Yesterday
+   - (start of day)
+** Today
+   - [ ] Pull the next ticket from queue
+** Blockers
+   - None
+
+* Notes
+
