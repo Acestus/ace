@@ -606,7 +606,7 @@ TODO:
         builder.AppendLine($"* Kanban Board — WIP: {tickets.Count}/{GetBoardCapacity(tickets.Count)}");
         builder.AppendLine("# Dispatcher can update this section. Status board, not a calendar.");
 
-        for (var lane = 1; lane <= 5; lane++)
+        for (var lane = 1; lane <= tickets.Count; lane++)
         {
             builder.AppendLine();
             builder.AppendLine(lane switch
@@ -619,16 +619,9 @@ TODO:
                 _ => "** Lane"
             });
 
-            if (lane <= tickets.Count)
-            {
-                var ticket = tickets[lane - 1];
-                builder.AppendLine($"*** TODO {ticket.Identifier} — {ticket.Title}");
-                builder.AppendLine($"    :NEXT: {ticket.NextStep}");
-            }
-            else
-            {
-                builder.AppendLine("*** (empty)");
-            }
+            var ticket = tickets[lane - 1];
+            builder.AppendLine($"*** TODO {ticket.Identifier} — {ticket.Title}");
+            builder.AppendLine($"    :NEXT: {ticket.NextStep}");
         }
 
         builder.AppendLine();
@@ -832,10 +825,14 @@ TODO:
     private static string GetPriorityLabel(int priority) => PriorityLabels.TryGetValue(priority, out var label) ? label : "Unknown";
 
     private static string GetString(JsonElement element, string propertyName)
-        => element.TryGetProperty(propertyName, out var property) ? (property.GetString() ?? string.Empty) : string.Empty;
+        => element.ValueKind == JsonValueKind.Object && element.TryGetProperty(propertyName, out var property)
+            ? (property.GetString() ?? string.Empty)
+            : string.Empty;
 
     private static int GetInt(JsonElement element, string propertyName)
-        => element.TryGetProperty(propertyName, out var property) && property.TryGetInt32(out var value) ? value : 0;
+        => element.ValueKind == JsonValueKind.Object && element.TryGetProperty(propertyName, out var property) && property.TryGetInt32(out var value)
+            ? value
+            : 0;
 
     private static List<string> LoadClaimedKeys()
         => RoundsDb.GetClaimedKeysAsync(CancellationToken.None).GetAwaiter().GetResult();
