@@ -2,8 +2,8 @@
 LINEAR: ACE-32
 title: Michigan Trip — Vacation Info Site (Acestus.com, Static Web App)
 team: Acestus
-state: Backlog
-flow: queue
+state: Done
+flow: done
 urgency: 5
 importance: 4
 due:
@@ -68,11 +68,14 @@ Custom domain resource deferred until Hover CNAME is confirmed (mi-09).
 
 ## Follow-up
 
-Status: Backlog
+Status: Done
 TODO:
 - [x] Create Linear issue
-- [ ] Draft implementation plan
-- [ ] Scaffold Vite + TypeScript site
-- [ ] Write Bicep IaC (SWA Free SKU)
-- [ ] Write GitHub Actions OIDC deploy workflow
-- [ ] Configure custom domain (Acestus.com via Hover)
+- [x] Draft implementation plan
+- [x] Scaffold Vite + TypeScript site
+- [x] Write Bicep IaC (SWA Free SKU)
+- [x] Write GitHub Actions OIDC deploy workflow
+- [x] Configure custom domain (michigan2026.bluegreen.love via Hover)
+
+Live: https://michigan2026.bluegreen.love
+Repo: https://github.com/Acestus/michiganweb
