@@ -545,6 +545,13 @@ internal static class LinearCommands
         var due = GetString(issue, "dueDate");
         var folderName = $"{identifier} - {Slugify(title)}";
         var repoRoot = RepoPaths.FindRepoRoot();
+        if (IssueFileLocator.FindIssueFilePath(repoRoot, identifier) is not null)
+        {
+            // An issue file already exists under some other folder naming convention
+            // (e.g. a bare "issues/{KEY}/" directory) — don't create a duplicate stub.
+            return;
+        }
+
         var folder = Path.Combine(repoRoot, "issues", folderName);
         if (Directory.Exists(folder))
         {
