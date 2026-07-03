@@ -17,8 +17,6 @@ title: Fix auth timeout on token refresh
 team: ENG
 state: In Progress
 flow: active
-urgency: 2
-importance: 3
 due: 2026-06-15
 created: 2026-05-30
 ---
@@ -53,15 +51,12 @@ COMMENT: Opened an issue on the auth-service repo pointing to the race condition
 | `waiting`     | In Review   | Blocked / waiting on external |
 | `done`        | Done        | Completed |
 
-## Urgency / Importance (Eisenhower Matrix)
-| Value | Meaning |
-|-------|---------|
-| 1     | Highest |
-| 2     | High    |
-| 3     | Medium  |
-| 4     | Low     |
-| 5     | Lowest  |
-
 ## Dispatch Priority
-Tickets are ranked for dispatch using: `urgency` first, then `importance`.
-Labels `urgency:N` and `importance:N` must exist in the Linear team to be applied via API.
+Tickets are ranked for dispatch using Linear's native `priority` field: Urgent (1) first,
+then High (2), Medium (3), Low (4), with No Priority (0) ranked last. Issue number is the
+tie-break when priority is equal. This is the sole ranking mechanism — see
+`LinearRanking.cs`, used by both the live `linear dispatch-next` command and the local
+SQLite `workflow dispatch` command, so the two never diverge.
+
+Set priority directly on the Linear issue (`--priority N` at creation, or via the Linear
+UI) — no separate urgency/importance labels are needed or read by dispatch.

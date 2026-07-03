@@ -53,6 +53,19 @@ WORKLOG: Stub created from Linear ACE-32. Reviewed acewatch repo architecture
 pattern, minus the Functions API/Storage backend since this site has no
 dynamic data.
 
+WORKLOG: Interviewed for decisions — domain (was michigan.acestus.com, since
+switched to michigan2026.bluegreen.love, matches disney2025.bluegreen.love
+reference site pattern; also on Hover DNS), dedicated resource group
+rg-michiganweb, dev-only environment, new OIDC app registration. Scaffolded
+and pushed Acestus/michiganweb repo (Vite+TS site, Bicep IaC, GH Actions
+deploy workflow). Wrote real trip content (Oscoda, MI, Aug 12-19: lighthouses,
+Alpena parks/movies/ice cream/church, NOAA museum, Chaotic Games, Aldi
+cooking). Created Azure resource group, app registration + 2 federated
+credentials (main branch + dev environment), Contributor RBAC scoped to the
+resource group, GitHub secrets/environment. Deployed Bicep — SWA live at
+swa-michiganweb-dev-001 (lively-forest-060e1261e.7.azurestaticapps.net).
+Custom domain resource deferred until Hover CNAME is confirmed (mi-09).
+
 ## Follow-up
 
 Status: Backlog

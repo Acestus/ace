@@ -1,45 +1,30 @@
 ---
 name: linear-backlog
-description: 'Create new Linear issues with Eisenhower scoring and local stub files. Use when the user says "add a work item", "create a Linear issue", "new backlog item", or wants to file new work. Handles scoring, issue creation, label application, and local stub creation.'
+description: 'Create new Linear issues with native priority and local stub files. Use when the user says "add a work item", "create a Linear issue", "new backlog item", or wants to file new work. Handles priority selection, issue creation, label application, and local stub creation.'
 argument-hint: 'Describe the work item to create'
 ---
 
 # Linear Backlog Skill
 
-Create a new Linear issue with Eisenhower scoring and a local stub file.
+Create a new Linear issue with a native Linear priority and a local stub file.
 
 ## When to Use
 
 - User says "add a work item", "create a Linear issue", "new backlog item", "add to backlog"
-- User wants to file new work with proper scoring
+- User wants to file new work with proper prioritization
 
-## Eisenhower Scoring Heuristics
+## Priority Selection
 
-Score the issue before creating it. Ask the user if unclear.
+Set Linear's native `priority` field directly — this is the sole dispatch ranking
+mechanism (see `LinearRanking.cs`). Ask the user if unclear.
 
-**Urgency (u) — time pressure:**
-| Score | Meaning |
-|-------|---------|
-| 1 | Due today or actively blocking something |
-| 2 | Due this week or causing real slowdown |
-| 3 | Due this month or moderate friction |
-| 4 | Vague future / nice to have |
-| 5 | No real deadline |
-
-**Importance (i) — business/mission impact:**
-| Score | Meaning |
-|-------|---------|
-| 1 | Mission-critical; failure has major consequences |
-| 2 | High impact; affects key workflows |
-| 3 | Moderate impact; improves things meaningfully |
-| 4 | Low impact; minor improvement |
-| 5 | Negligible impact |
-
-**Quadrant assignment:**
-- Q1 (u≤2, i≤2) → Priority: Urgent or High
-- Q2 (u≥3, i≤2) → Priority: Medium
-- Q3 (u≤2, i≥3) → Priority: Medium or High
-- Q4 (u≥3, i≥3) → Priority: Low
+| Priority | Value | Meaning |
+|----------|-------|---------|
+| Urgent   | 1     | Due today or actively blocking something |
+| High     | 2     | Due this week or causing real slowdown |
+| Medium   | 3     | Due this month or moderate friction |
+| Low      | 4     | Vague future / nice to have |
+| No priority | 0  | No real deadline; ranked last for dispatch |
 
 ## Workflow
 
@@ -49,22 +34,18 @@ Ask the user for:
 - Title (required)
 - Description (recommended)
 - Team key (required — e.g. ENG)
-- Urgency score (1–5)
-- Importance score (1–5)
+- Priority (1–4, or 0 for none)
 - Due date (optional)
 - Any additional labels
 
-### Step 2 — Score and confirm
+### Step 2 — Confirm
 
-Present the scoring before creating:
+Present the ticket before creating:
 ```
 Title:      Fix auth token timeout
 Team:       ENG
-Urgency:    2 (due this week)
-Importance: 2 (affects key workflows)
-Quadrant:   Q1 — Do Now
-Priority:   High
-Labels:     flow:queue, urgency:2, importance:2
+Priority:   2 (High — due this week)
+Labels:     flow:queue
 ```
 
 ### Step 3 — Create the issue
@@ -76,9 +57,7 @@ python3 scripts/linear_create_issue.py \
     --title "Fix auth token timeout" \
     --description "Token TTL set to 15m causing user logouts. Should be 60m." \
     --priority 2 \
-    --label "flow:queue" \
-    --label "urgency:2" \
-    --label "importance:2"
+    --label "flow:queue"
 ```
 
 ### Step 4 — Create local stub
@@ -102,7 +81,7 @@ git push
 
 ```
 ✓ Created ENG-124 — Fix auth token timeout
-  Quadrant: Q1 | urgency:2 importance:2
+  Priority: High (2)
   State: Backlog (flow:queue)
   Stub: issues/ENG-124 - Fix auth token timeout/
 ```
@@ -110,6 +89,6 @@ git push
 ## Notes
 
 - Always create both the Linear issue AND the local stub in the same operation
-- Labels `urgency:N` and `importance:N` are the sole dispatch ranking mechanism
+- Linear's native `priority` field is the sole dispatch ranking mechanism — do not apply
+  separate `urgency:N`/`importance:N` labels; they are not read by any dispatcher
 - `flow:queue` is the default initial state for all new backlog items
-- If the team doesn't have urgency/importance labels yet, create them first in Linear settings

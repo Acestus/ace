@@ -750,21 +750,12 @@ TODO:
         return DefaultFlowStates.TryGetValue(flow, out var fallback) ? fallback : "Backlog";
     }
 
-    private static int PriorityToUrgency(int priority) => priority switch
-    {
-        1 => 1,
-        2 => 2,
-        3 => 3,
-        4 => 4,
-        _ => 5
-    };
+    private static int PriorityToUrgency(int priority) => LinearRanking.PriorityRank(priority);
 
     private static (int Priority, int Number) IssueRank(JsonElement issue)
     {
         var identifier = GetString(issue, "identifier");
-        var suffix = identifier.Split('-', 2).LastOrDefault() ?? string.Empty;
-        var number = int.TryParse(suffix, out var parsed) ? parsed : int.MaxValue;
-        return (GetInt(issue, "priority"), number);
+        return (LinearRanking.PriorityRank(GetInt(issue, "priority")), LinearRanking.ParseIssueNumber(identifier));
     }
 
     private static string Slugify(string text)
