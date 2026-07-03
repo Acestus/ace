@@ -26,6 +26,7 @@ public static class ToolApp
         {
             "linear" => await LinearCommands.RunAsync(args.Skip(1).ToArray(), stdout, stderr, cancellationToken),
             "rounds" => await RoundsCommands.RunAsync(args.Skip(1).ToArray(), stdout, stderr, cancellationToken),
+            "transcript" => await TranscriptCommands.RunAsync(args.Skip(1).ToArray(), stdout, stderr, cancellationToken),
             "github" => await GitHubCommands.RunAsync(args.Skip(1).ToArray(), stdout, stderr, cancellationToken),
             "legacy" => await LegacyCommands.RunAsync(args.Skip(1).ToArray(), stdout, stderr, cancellationToken),
             _ => UnknownCommand(args[0], stderr)
@@ -49,6 +50,9 @@ public static class ToolApp
         stdout.WriteLine("  rounds transition --lane <1-5> --flow <done|waiting|blocked|park>");
         stdout.WriteLine("  rounds clear-lane --lane <1-5>");
         stdout.WriteLine("  rounds status");
+        stdout.WriteLine("  transcript sync [--since <YYYY-MM-DD>] [--db <path>] [--session-store <path>]");
+        stdout.WriteLine("  transcript show-ticket --key <KEY> [--limit <n>] [--db <path>]");
+        stdout.WriteLine("  transcript save (--key <KEY>|--lane <1-5>) [--date <YYYY-MM-DD>] [--dry-run]");
         stdout.WriteLine("  github issues [gh issue args...]");
         stdout.WriteLine("  github prs [gh pr args...]");
         stdout.WriteLine("  github review-pr [args...]");
@@ -114,6 +118,9 @@ public static class ToolApp
                 stdout.WriteLine("  github issues list --repo owner/repo");
                 stdout.WriteLine("  github prs view 42 --repo owner/repo");
                 stdout.WriteLine("  github review-pr --pr 42 --repo owner/repo");
+                return;
+            case "transcript":
+                TranscriptCommands.PrintHelp(stdout);
                 return;
             case "legacy":
                 stdout.WriteLine("legacy — Run legacy scripts");

@@ -466,7 +466,7 @@ internal static class LinearCommands
                 GetInt(issue, "priority"),
                 GetString(issue.GetProperty("team"), "key"),
                 GetString(issue.GetProperty("team"), "name"),
-                FindIssueFilePath(repoRoot, GetString(issue, "identifier")),
+                IssueFileLocator.FindIssueFilePath(repoRoot, GetString(issue, "identifier")),
                 string.Empty))
             .Select(ticket => ticket with { NextStep = ReadNextStep(ticket.IssueFilePath) })
             .ToList();
@@ -656,39 +656,6 @@ TODO:
     }
 
     private static int GetBoardCapacity(int activeCount) => activeCount <= 3 ? 3 : 5;
-
-    private static string? FindIssueFilePath(string repoRoot, string key)
-    {
-        var issuesRoot = Path.Combine(repoRoot, "issues");
-        if (!Directory.Exists(issuesRoot) || string.IsNullOrWhiteSpace(key))
-        {
-            return null;
-        }
-
-        return Directory.EnumerateFiles(issuesRoot, "*.md", SearchOption.AllDirectories)
-            .Select(path => new { Path = path, Score = ScoreIssuePath(path, key) })
-            .Where(item => item.Score > 0)
-            .OrderByDescending(item => item.Score)
-            .ThenBy(item => item.Path.Length)
-            .Select(item => item.Path)
-            .FirstOrDefault();
-    }
-
-    private static int ScoreIssuePath(string path, string key)
-    {
-        var fileName = Path.GetFileName(path);
-        if (string.Equals(Path.GetFileName(Path.GetDirectoryName(path)), key, StringComparison.OrdinalIgnoreCase))
-        {
-            return 3;
-        }
-
-        if (fileName.StartsWith(key, StringComparison.OrdinalIgnoreCase))
-        {
-            return 2;
-        }
-
-        return path.Contains($"{Path.DirectorySeparatorChar}{key}{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
-    }
 
     private static string ReadNextStep(string? issueFilePath)
     {

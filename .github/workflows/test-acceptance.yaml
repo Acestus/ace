@@ -47,3 +47,21 @@ jobs:
           name: acceptance-trx-${{ inputs.environment }}
           path: artifacts/test-results/${{ inputs.environment }}/*.trx
           if-no-files-found: error
+
+  troubleshooting:
+    name: Troubleshooting hints
+    runs-on: ubuntu-latest
+    needs: acceptance-tests
+    if: failure()
+    steps:
+      - name: Print hints
+        run: |
+          echo "❌ Acceptance workflow failed."
+          echo "   Likely causes:"
+          echo "     • Environment configuration is missing for '${{ inputs.environment }}'"
+          echo "     • Acceptance test dependencies or fixtures failed to initialize"
+          echo "     • Expected report artifacts were not produced"
+          echo "   Try:"
+          echo "     • Re-run with the same environment and inspect the acceptance-tests job logs"
+          echo "     • Run locally: dotnet run --project scripts/Ace.Quality.Gates/Ace.Quality.Gates.csproj -- acceptance --environment ${{ inputs.environment }}"
+          echo "     • Verify report outputs: docs/testing/outer-loop-gherkin-score.* and artifacts/test-results/${{ inputs.environment }}/"
