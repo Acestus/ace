@@ -1,8 +1,17 @@
 ---
+LINEAR: ACE-34
 title: Catholic Daily Readings — Android App (v1: Daily Readings)
+team: ACE
+state: Backlog
+flow: queue
+urgency: 3
+importance: 
+due: 
 created: 2026-07-03
-status: draft
 ---
+
+## Description
+
 
 ## User Story
 
@@ -96,3 +105,16 @@ Pattern: thin new project (new repo, new Azure resources) — nothing in the
 7. **Explicitly deferred**
    - Play Store publishing, notifications, additional content types (saints,
      prayers, reflections), iOS, multi-day navigation UI, accounts/sync.
+
+## Actions
+
+### 2026-07-03
+WORKLOG: Filed ACE-34 in Linear from the ticket-planner draft (issues/_drafts/catholic-daily-readings-android-app-v1-daily-readings.md). Created local stub, removed the draft.
+COMMENT: Created ACE-34 from the approved ticket-planner draft — Catholic daily readings Android app, v1 scope.
+
+## Follow-up
+
+Status: Backlog
+TODO:
+- [ ] Create the separate catholic-daily-android GitHub repo
+- [ ] Start with the Azure Function scraper/parser per the implementation plan above
