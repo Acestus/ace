@@ -126,7 +126,7 @@ public sealed class LinearClient
     private const string ViewerAssignedIssuesQuery = """
         query ViewerAssignedIssues {
           viewer {
-            assignedIssues {
+            assignedIssues(first: 250) {
               nodes {
                 id
                 identifier

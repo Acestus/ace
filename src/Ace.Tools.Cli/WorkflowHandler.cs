@@ -85,7 +85,7 @@ public static class WorkflowHandler
             }
             else
             {
-                stdout.WriteLine($"   ⚠️  No tickets in database yet. Run with --import to load from Linear.");
+                stdout.WriteLine($"   ⚠️  No tickets in database yet. Run this command again to pull from Linear.");
             }
         }
         
