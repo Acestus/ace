@@ -58,6 +58,10 @@ resource dataStorageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' exist
   name: dataStorageAccountName
 }
 
+// Managed identity is granted "Storage Table Data Contributor" on dataStorageAccount out-of-band (see infra/README or
+// pim-runbook); referenced here only to make the dependency explicit for future automation.
+var dataStorageAccountId = dataStorageAccount.id
+
 resource functionPlan 'Microsoft.Web/serverfarms@2023-12-01' = {
   name: 'SouthCentralUSLinuxDynamicPlan'
   location: funcLocation
@@ -128,3 +132,6 @@ output defaultHostname string = staticWebApp.properties.defaultHostname
 
 @description('Function App default hostname')
 output functionAppHostname string = functionApp.properties.defaultHostName
+
+@description('Data storage account resource id (dependency marker)')
+output dataStorageAccountId string = dataStorageAccountId
