@@ -61,6 +61,7 @@ resource dataStorageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' exist
 // Managed identity is granted "Storage Table Data Contributor" on dataStorageAccount out-of-band (see infra/README or
 // pim-runbook); referenced here only to make the dependency explicit for future automation.
 var dataStorageAccountId = dataStorageAccount.id
+var swaHostname = staticWebApp.properties.defaultHostname
 
 resource functionPlan 'Microsoft.Web/serverfarms@2023-12-01' = {
   name: 'SouthCentralUSLinuxDynamicPlan'
@@ -90,6 +91,11 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
     reserved: true
     siteConfig: {
       linuxFxVersion: 'DOTNET-ISOLATED|8.0'
+      cors: {
+        allowedOrigins: [
+          'https://${swaHostname}'
+        ]
+      }
       appSettings: [
         {
           name: 'FUNCTIONS_WORKER_RUNTIME'
