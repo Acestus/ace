@@ -1,8 +1,24 @@
 ﻿{
-  "generated_at": "2026-06-28T00:00:24.1443083\u002B00:00",
+  "generated_at": "2026-07-12T19:23:53.4009500\u002B00:00",
   "files": [
     {
-      "path": "/home/wweeks/github/ace/tests/Quality.Reqnroll.Score.Tests/Features/QualityScoring.feature",
+      "path": "/Users/scout/git/ace/tests/Ace.Crm.Acceptance.Tests/Features/ContactManagement.feature",
+      "tests": 9,
+      "properties": {
+        "U": 9.08,
+        "M": 9.08,
+        "R": 9.08,
+        "A": 9.08,
+        "N": 8.82,
+        "G": 9.08,
+        "F": 9.08,
+        "T": 9.08
+      },
+      "quality_index": 9.05,
+      "rating": "Exemplary"
+    },
+    {
+      "path": "/Users/scout/git/ace/tests/Quality.Reqnroll.Score.Tests/Features/QualityScoring.feature",
       "tests": 2,
       "properties": {
         "U": 9.08,
@@ -18,5 +34,5 @@
       "rating": "Excellent"
     }
   ],
-  "overall_quality_index": 8.31
+  "overall_quality_index": 8.68
 }

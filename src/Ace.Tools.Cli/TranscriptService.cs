@@ -326,7 +326,7 @@ internal static class TranscriptService
               session_ts  TEXT    NOT NULL,
               synced_at   TEXT    NOT NULL,
               UNIQUE(session_id, turn_index)
-            );
+            ) STRICT;
 
             CREATE INDEX IF NOT EXISTS idx_transcript_turns_date
               ON transcript_turns(session_date);
@@ -340,7 +340,7 @@ internal static class TranscriptService
               turn_index  INTEGER NOT NULL,
               ticket_key  TEXT NOT NULL,
               UNIQUE(session_id, turn_index, ticket_key)
-            );
+            ) STRICT;
 
             CREATE INDEX IF NOT EXISTS idx_transcript_links_key
               ON transcript_ticket_links(ticket_key);

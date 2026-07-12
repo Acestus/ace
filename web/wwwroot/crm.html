@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ace — CRM</title>
+  <link rel="stylesheet" href="/css/base.css" />
+</head>
+<body>
+  <header class="site-header">
+    <nav>
+      <a href="/index.html">Home</a>
+      <a href="/crm.html">CRM</a>
+      <a href="/docs/index.html">Docs</a>
+    </nav>
+  </header>
+
+  <main id="app">
+    <h1>Companies &amp; Contacts</h1>
+
+    <section id="new-company-section">
+      <h2>New company</h2>
+      <form id="new-company-form">
+        <label>
+          Name
+          <input type="text" name="name" required />
+        </label>
+        <label>
+          Website
+          <input type="url" name="website" placeholder="https://example.com" />
+        </label>
+        <button type="submit">Add company</button>
+      </form>
+      <p id="new-company-status" role="status"></p>
+    </section>
+
+    <section id="companies-section">
+      <h2>Companies</h2>
+      <ul id="companies-list"></ul>
+    </section>
+
+    <section id="contacts-section">
+      <h2>Contacts</h2>
+      <ul id="contacts-list"></ul>
+    </section>
+  </main>
+
+  <script type="module" src="/js/crm.js"></script>
+</body>
+</html>

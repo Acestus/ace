@@ -1,0 +1,50 @@
+#+TITLE: Daily Note — 2026-07-05 (Sun)
+#+DATE: <2026-07-05 Sun>
+#+AUTHOR: acestus
+
+* Time Log
+| Ticket | Start | Stop | Duration | Notes |
+|--------|-------|------|----------|-------|
+|        |       |      |          |       |
+
+* Kanban Board — WIP: 1/3
+# Dispatcher can update this section. Status board, not a calendar.
+
+** Lane 1 (Urgent)
+*** TODO ACE-24 — ISN Interview Prep
+    :NEXT: Work through the consolidated prep checklist above
+    :ROUNDS: unclaimed-in-rounds
+
+** Lane 2 (Manual)
+*** (empty)
+
+** Lane 3 (Background)
+*** (empty)
+
+** Lane 4
+*** (empty)
+
+** Lane 5
+*** (empty)
+
+* Queue (8)
+# flow:queue tickets, ranked by priority then key. Not yet active.
+- ACE-33 — Medium — Catholic Daily Readings iOS App (MVP)
+- ACE-34 — Medium — Catholic Daily Readings — Android App (v1: Daily Readings)
+- ACE-35 — Medium — Daily Gospel Reading — Claude Code Skill (Experiment)
+- ACE-36 — Medium — Catholic Daily Readings OpenClaw Skill (Gospel v1)
+- ACE-37 — Medium — Daily Gospel Reading — GitHub Copilot CLI Plugin (Experiment)
+- ACE-38 — Medium — Catholic Daily Gospel GPT (GPT Store, Gospel v1)
+- ACE-39 — Medium — Daily Gospel Reading — Google Cloud AI Agent (Experiment)
+- ACE-40 — Medium — Daily Gospel Reader — AWS Marketplace SaaS (Private, Gospel v1)
+
+* Standup
+** Yesterday
+   - (start of day)
+** Today
+   - [ ] ACE-24 — Work through the consolidated prep checklist above
+** Blockers
+   - None
+
+* Notes
+

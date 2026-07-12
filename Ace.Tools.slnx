@@ -1,5 +1,12 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/Ace.Tools.Cli/Ace.Tools.Cli.csproj" />
+    <Project Path="src/Ace.Crm.Data/Ace.Crm.Data.csproj" />
+    <Project Path="src/Ace.Crm.Api/Ace.Crm.Api.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Quality.Reqnroll.Score.Tests/Quality.Reqnroll.Score.Tests.csproj" />
+    <Project Path="tests/Ace.Crm.Data.Tests/Ace.Crm.Data.Tests.csproj" />
+    <Project Path="tests/Ace.Crm.Acceptance.Tests/Ace.Crm.Acceptance.Tests.csproj" />
   </Folder>
 </Solution>

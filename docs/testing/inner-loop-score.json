@@ -1,5 +1,54 @@
 ﻿{
-  "generated_at": "2026-06-27T23:52:10.8755220\u002B00:00",
-  "files": [],
-  "overall_quality_index": 0
+  "generated_at": "2026-07-12T19:23:53.4449850\u002B00:00",
+  "files": [
+    {
+      "path": "/Users/scout/git/ace/tests/Ace.Crm.Data.Tests/ContactValidationTests.cs",
+      "tests": 11,
+      "properties": {
+        "U": 9.08,
+        "M": 9.08,
+        "R": 6.07,
+        "A": 9.08,
+        "N": 9.08,
+        "G": 9.08,
+        "F": 9.08,
+        "T": 9.08
+      },
+      "quality_index": 8.66,
+      "rating": "Excellent"
+    },
+    {
+      "path": "/Users/scout/git/ace/tests/Ace.Crm.Data.Tests/InMemoryCrmRepositoryTests.cs",
+      "tests": 11,
+      "properties": {
+        "U": 9.08,
+        "M": 9.08,
+        "R": 6.07,
+        "A": 9.08,
+        "N": 9.08,
+        "G": 9.08,
+        "F": 9.08,
+        "T": 9.08
+      },
+      "quality_index": 8.66,
+      "rating": "Excellent"
+    },
+    {
+      "path": "/Users/scout/git/ace/tests/Ace.Crm.Data.Tests/TableKeysTests.cs",
+      "tests": 7,
+      "properties": {
+        "U": 9.08,
+        "M": 9.08,
+        "R": 6.07,
+        "A": 9.08,
+        "N": 9.08,
+        "G": 9.08,
+        "F": 9.08,
+        "T": 9.08
+      },
+      "quality_index": 8.66,
+      "rating": "Excellent"
+    }
+  ],
+  "overall_quality_index": 8.66
 }

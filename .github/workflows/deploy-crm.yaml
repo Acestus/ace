@@ -1,0 +1,81 @@
+name: Deploy Ace CRM
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'web/**'
+      - 'infra/crm/**'
+      - '.github/workflows/deploy-crm.yaml'
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: deploy-ace-crm
+  cancel-in-progress: false
+
+env:
+  RESOURCE_GROUP_NAME: rg-crm-dev
+  SWA_NAME: swa-crm-dev-scus-001
+
+jobs:
+  build-and-deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: dev
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # ── Azure login (OIDC, no stored secrets) ──────────────────────
+      - name: Azure Login (OIDC)
+        uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          audience: api://AzureADTokenExchange
+
+      # ── Ensure resource group exists ───────────────────────────────
+      - name: Ensure resource group
+        run: |
+          az group create \
+            --name "$RESOURCE_GROUP_NAME" \
+            --location southcentralus \
+            --tags ManagedBy=https://github.com/Acestus/ace CreatedBy=acestus || true
+
+      # ── Infrastructure ─────────────────────────────────────────────
+      - name: Deploy Bicep template
+        id: infra
+        run: |
+          RESULT=$(az deployment group create \
+            --name "deploy-ace-crm-$(date +%s)" \
+            --resource-group "$RESOURCE_GROUP_NAME" \
+            --template-file infra/crm/main.bicep \
+            --query 'properties.outputs' -o json)
+          TOKEN=$(echo "$RESULT" | jq -r '.deploymentToken.value')
+          echo "::add-mask::$TOKEN"
+          echo "SWA_TOKEN=$TOKEN" >> "$GITHUB_ENV"
+          echo "hostname=$(echo "$RESULT" | jq -r '.defaultHostname.value')" >> "$GITHUB_OUTPUT"
+
+      # ── Deploy to Static Web App ───────────────────────────────────
+      - name: Deploy
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ env.SWA_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: upload
+          app_location: web/wwwroot
+          skip_app_build: true
+
+      - name: Deployment Summary
+        if: always()
+        run: |
+          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** dev" >> $GITHUB_STEP_SUMMARY
+          echo "**Resource Group:** $RESOURCE_GROUP_NAME" >> $GITHUB_STEP_SUMMARY
+          echo "**Hostname:** ${{ steps.infra.outputs.hostname }}" >> $GITHUB_STEP_SUMMARY

@@ -26,7 +26,7 @@ internal static class RoundsDb
                 key         TEXT    NOT NULL,
                 claimed_at  TEXT    NOT NULL,
                 pid         INTEGER
-            );
+            ) STRICT;
 
             CREATE TABLE IF NOT EXISTS worklogs (
                 id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -36,7 +36,7 @@ internal static class RoundsDb
                 action      TEXT,
                 note        TEXT,
                 ts          TEXT DEFAULT (datetime('now'))
-            );
+            ) STRICT;
             """;
         await cmd.ExecuteNonQueryAsync(cancellationToken);
     }

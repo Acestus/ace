@@ -1,5 +1,10 @@
 -- Acestus Local-First SQLite Schema
 -- Source of truth for daily work, synced from Linear/Notion/GitHub at start and end of day
+--
+-- STRICT tables: SQLite enforces declared column types (INTEGER, REAL, TEXT, BLOB, ANY).
+-- Non-strict-legal type names (TIMESTAMP, BOOLEAN) are mapped below:
+--   TIMESTAMP -> TEXT   (ISO-8601 strings, as produced by CURRENT_TIMESTAMP/datetime())
+--   BOOLEAN   -> INTEGER (0/1)
 
 -- ============================================================================
 -- TICKETS (from Linear)
@@ -9,8 +14,8 @@ CREATE TABLE IF NOT EXISTS tickets (
     title TEXT NOT NULL,
     description TEXT,
     status TEXT NOT NULL,                       -- pending, in_progress, blocked, waiting_review, done
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
     linear_id TEXT UNIQUE NOT NULL,             -- Internal Linear UUID
     linear_url TEXT,
     assignee TEXT,                              -- user ID
@@ -19,8 +24,8 @@ CREATE TABLE IF NOT EXISTS tickets (
     priority TEXT,                              -- P0, P1, P2, P3
     tags TEXT,                                  -- JSON array of tag strings
     depends_on TEXT,                            -- Comma-separated ticket IDs
-    last_synced_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+    last_synced_at TEXT DEFAULT CURRENT_TIMESTAMP
+) STRICT;
 
 -- ============================================================================
 -- PULL REQUESTS (from GitHub)
@@ -33,14 +38,14 @@ CREATE TABLE IF NOT EXISTS pull_requests (
     url TEXT NOT NULL,
     state TEXT NOT NULL,                        -- open, closed, merged
     author TEXT,
-    created_at TIMESTAMP,
-    updated_at TIMESTAMP,
-    merged_at TIMESTAMP,
+    created_at TEXT,
+    updated_at TEXT,
+    merged_at TEXT,
     review_status TEXT,                         -- draft, pending_review, approved, changes_requested
     related_ticket TEXT,                        -- Link to tickets table if applicable
     branch_name TEXT,
-    last_synced_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+    last_synced_at TEXT DEFAULT CURRENT_TIMESTAMP
+) STRICT;
 
 -- ============================================================================
 -- GITHUB ISSUES
@@ -53,12 +58,12 @@ CREATE TABLE IF NOT EXISTS github_issues (
     url TEXT NOT NULL,
     state TEXT NOT NULL,                        -- open, closed
     assignee TEXT,
-    created_at TIMESTAMP,
-    updated_at TIMESTAMP,
+    created_at TEXT,
+    updated_at TEXT,
     labels TEXT,                                -- JSON array
     related_ticket TEXT,
-    last_synced_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+    last_synced_at TEXT DEFAULT CURRENT_TIMESTAMP
+) STRICT;
 
 -- ============================================================================
 -- WORK LOGS (daily tracking)
@@ -69,10 +74,10 @@ CREATE TABLE IF NOT EXISTS work_logs (
     date TEXT NOT NULL,                         -- YYYY-MM-DD
     duration_minutes INTEGER,
     notes TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    synced_to_linear BOOLEAN DEFAULT 0,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    synced_to_linear INTEGER DEFAULT 0,
     FOREIGN KEY(ticket_id) REFERENCES tickets(id)
-);
+) STRICT;
 
 -- ============================================================================
 -- COMMENTS TO POST (Linear/Notion)
@@ -83,11 +88,11 @@ CREATE TABLE IF NOT EXISTS comments_pending (
     target_id TEXT NOT NULL,                    -- Linear issue ID or Notion page ID
     content TEXT NOT NULL,                      -- Markdown content
     author TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    posted_at TIMESTAMP,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    posted_at TEXT,
     status TEXT DEFAULT 'pending',              -- pending, posted, failed
     error_message TEXT
-);
+) STRICT;
 
 -- ============================================================================
 -- NOTION PAGES TO PUBLISH
@@ -98,12 +103,12 @@ CREATE TABLE IF NOT EXISTS pages_pending (
     title TEXT NOT NULL,
     content TEXT NOT NULL,                      -- Markdown/HTML content
     page_type TEXT,                             -- 'standup', 'crm', 'job_search', 'weekly', etc.
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    published_at TIMESTAMP,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    published_at TEXT,
     status TEXT DEFAULT 'pending',              -- pending, published, failed
     error_message TEXT,
     notion_page_id TEXT                         -- After creation
-);
+) STRICT;
 
 -- ============================================================================
 -- CRM (Contacts, Companies, Notes)
@@ -117,12 +122,12 @@ CREATE TABLE IF NOT EXISTS crm_contacts (
     company_id TEXT,
     title TEXT,                                 -- Job title
     notes TEXT,
-    last_contacted TIMESTAMP,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    synced_to_notion BOOLEAN DEFAULT 0,
+    last_contacted TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    synced_to_notion INTEGER DEFAULT 0,
     FOREIGN KEY(company_id) REFERENCES crm_companies(id)
-);
+) STRICT;
 
 CREATE TABLE IF NOT EXISTS crm_companies (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(8)))),
@@ -130,21 +135,21 @@ CREATE TABLE IF NOT EXISTS crm_companies (
     website TEXT,
     industry TEXT,
     notes TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    synced_to_notion BOOLEAN DEFAULT 0
-);
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    synced_to_notion INTEGER DEFAULT 0
+) STRICT;
 
 CREATE TABLE IF NOT EXISTS crm_interactions (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(8)))),
     contact_id TEXT NOT NULL,
     interaction_type TEXT,                      -- email, call, meeting, coffee, etc.
-    date TIMESTAMP NOT NULL,
+    date TEXT NOT NULL,
     notes TEXT,
-    follow_up_date TIMESTAMP,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    follow_up_date TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(contact_id) REFERENCES crm_contacts(id)
-);
+) STRICT;
 
 -- ============================================================================
 -- JOB SEARCH TRACKING
@@ -155,14 +160,14 @@ CREATE TABLE IF NOT EXISTS job_search_applications (
     position_title TEXT NOT NULL,
     url TEXT,
     status TEXT NOT NULL,                       -- applied, interviewing, offer, rejected, withdrawn
-    date_applied TIMESTAMP NOT NULL,
-    date_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    date_applied TEXT NOT NULL,
+    date_updated TEXT DEFAULT CURRENT_TIMESTAMP,
     notes TEXT,
     salary_range TEXT,
     recruiter_contact TEXT,
-    follow_up_date TIMESTAMP,
-    synced_to_notion BOOLEAN DEFAULT 0
-);
+    follow_up_date TEXT,
+    synced_to_notion INTEGER DEFAULT 0
+) STRICT;
 
 -- ============================================================================
 -- ROUNDS STATE (Kanban lanes)
@@ -172,22 +177,22 @@ CREATE TABLE IF NOT EXISTS rounds_state (
     lane_number INTEGER NOT NULL UNIQUE,        -- 1-5 for 5 lanes
     current_ticket_id TEXT,                     -- Active ticket in this lane
     status TEXT DEFAULT 'idle',                 -- idle, active, waiting, blocked
-    started_at TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    started_at TEXT,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(current_ticket_id) REFERENCES tickets(id)
-);
+) STRICT;
 
 -- ============================================================================
 -- SYNC STATE (Track last sync timestamps)
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS sync_state (
     source TEXT PRIMARY KEY,                    -- 'linear', 'notion', 'github'
-    last_sync_at TIMESTAMP,
-    next_sync_at TIMESTAMP,
+    last_sync_at TEXT,
+    next_sync_at TEXT,
     status TEXT DEFAULT 'idle',                 -- idle, syncing, success, error
     error_message TEXT,
     synced_count INTEGER DEFAULT 0
-);
+) STRICT;
 
 -- ============================================================================
 -- INBOX (Unified capture)
@@ -197,10 +202,10 @@ CREATE TABLE IF NOT EXISTS inbox_entries (
     title TEXT NOT NULL,
     notes TEXT,
     source TEXT,                                -- 'manual', 'email', 'pr', 'issue'
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    processed_at TIMESTAMP,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    processed_at TEXT,
     status TEXT DEFAULT 'inbox'                 -- inbox, backlog, in_progress, done
-);
+) STRICT;
 
 -- ============================================================================
 -- INDEXES
