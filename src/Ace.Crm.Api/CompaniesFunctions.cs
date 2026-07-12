@@ -20,7 +20,7 @@ public sealed class CompaniesFunctions
 
     [Function("ListCompanies")]
     public async Task<HttpResponseData> ListAsync(
-        [HttpTrigger(AuthorizationLevel.Function, "get", Route = "companies")] HttpRequestData request,
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "companies")] HttpRequestData request,
         CancellationToken cancellationToken)
     {
         var companies = await _repository.ListCompaniesAsync(cancellationToken);
@@ -29,7 +29,7 @@ public sealed class CompaniesFunctions
 
     [Function("GetCompany")]
     public async Task<HttpResponseData> GetAsync(
-        [HttpTrigger(AuthorizationLevel.Function, "get", Route = "companies/{id}")] HttpRequestData request,
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "companies/{id}")] HttpRequestData request,
         string id,
         CancellationToken cancellationToken)
     {
@@ -41,7 +41,7 @@ public sealed class CompaniesFunctions
 
     [Function("CreateCompany")]
     public async Task<HttpResponseData> CreateAsync(
-        [HttpTrigger(AuthorizationLevel.Function, "post", Route = "companies")] HttpRequestData request,
+        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "companies")] HttpRequestData request,
         CancellationToken cancellationToken)
     {
         var body = await JsonSerializer.DeserializeAsync<NewCompanyRequest>(

@@ -6,6 +6,8 @@ on:
     paths:
       - 'web/**'
       - 'infra/crm/**'
+      - 'src/Ace.Crm.Api/**'
+      - 'src/Ace.Crm.Data/**'
       - '.github/workflows/deploy-crm.yaml'
   workflow_dispatch:
 
@@ -20,6 +22,7 @@ concurrency:
 env:
   RESOURCE_GROUP_NAME: rg-crm-dev
   SWA_NAME: swa-crm-dev-scus-001
+  FUNCTION_APP_NAME: func-crm-dev-scus-001
 
 jobs:
   build-and-deploy:
@@ -61,6 +64,27 @@ jobs:
           echo "::add-mask::$TOKEN"
           echo "SWA_TOKEN=$TOKEN" >> "$GITHUB_ENV"
           echo "hostname=$(echo "$RESULT" | jq -r '.defaultHostname.value')" >> "$GITHUB_OUTPUT"
+
+      # ── Build & publish Functions API ──────────────────────────────
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Publish Functions API
+        run: dotnet publish src/Ace.Crm.Api/Ace.Crm.Api.csproj -c Release -o "${{ runner.temp }}/crm-api-publish"
+
+      - name: Zip Functions API package
+        run: |
+          cd "${{ runner.temp }}/crm-api-publish"
+          zip -r "${{ runner.temp }}/crm-api.zip" .
+
+      - name: Deploy Functions API (zip deploy via az CLI, OIDC auth)
+        run: |
+          az functionapp deployment source config-zip \
+            --name "$FUNCTION_APP_NAME" \
+            --resource-group "$RESOURCE_GROUP_NAME" \
+            --src "${{ runner.temp }}/crm-api.zip"
 
       # ── Deploy to Static Web App ───────────────────────────────────
       - name: Deploy

@@ -20,7 +20,7 @@ public sealed class ContactsFunctions
 
     [Function("ListContacts")]
     public async Task<HttpResponseData> ListAsync(
-        [HttpTrigger(AuthorizationLevel.Function, "get", Route = "contacts")] HttpRequestData request,
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "contacts")] HttpRequestData request,
         CancellationToken cancellationToken)
     {
         var companyId = QueryHelpers.GetValue(request, "companyId");
@@ -30,7 +30,7 @@ public sealed class ContactsFunctions
 
     [Function("GetContact")]
     public async Task<HttpResponseData> GetAsync(
-        [HttpTrigger(AuthorizationLevel.Function, "get", Route = "contacts/{id}")] HttpRequestData request,
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "contacts/{id}")] HttpRequestData request,
         string id,
         CancellationToken cancellationToken)
     {
@@ -42,7 +42,7 @@ public sealed class ContactsFunctions
 
     [Function("CreateContact")]
     public async Task<HttpResponseData> CreateAsync(
-        [HttpTrigger(AuthorizationLevel.Function, "post", Route = "contacts")] HttpRequestData request,
+        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "contacts")] HttpRequestData request,
         CancellationToken cancellationToken)
     {
         var body = await JsonSerializer.DeserializeAsync<NewContactRequest>(
@@ -69,7 +69,7 @@ public sealed class ContactsFunctions
 
     [Function("CreateInteraction")]
     public async Task<HttpResponseData> CreateInteractionAsync(
-        [HttpTrigger(AuthorizationLevel.Function, "post", Route = "contacts/{contactId}/interactions")] HttpRequestData request,
+        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "contacts/{contactId}/interactions")] HttpRequestData request,
         string contactId,
         CancellationToken cancellationToken)
     {
@@ -99,7 +99,7 @@ public sealed class ContactsFunctions
 
     [Function("ListInteractions")]
     public async Task<HttpResponseData> ListInteractionsAsync(
-        [HttpTrigger(AuthorizationLevel.Function, "get", Route = "contacts/{contactId}/interactions")] HttpRequestData request,
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "contacts/{contactId}/interactions")] HttpRequestData request,
         string contactId,
         CancellationToken cancellationToken)
     {

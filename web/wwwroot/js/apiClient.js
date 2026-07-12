@@ -1,7 +1,7 @@
 // Thin fetch wrapper over the Ace CRM Functions API.
 // Kept dependency-free (no bundler, no framework) per the vanilla/modular front-end goal.
 
-const API_BASE = "/api";
+const API_BASE = "https://func-crm-dev-scus-001.azurewebsites.net/api";
 
 async function request(path, options = {}) {
   const response = await fetch(`${API_BASE}${path}`, {
