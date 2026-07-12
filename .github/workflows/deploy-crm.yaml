@@ -69,7 +69,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '10.0.x'
+          dotnet-version: '8.0.x'
 
       - name: Publish Functions API
         run: dotnet publish src/Ace.Crm.Api/Ace.Crm.Api.csproj -c Release -o "${{ runner.temp }}/crm-api-publish"
