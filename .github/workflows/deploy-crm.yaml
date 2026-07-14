@@ -28,7 +28,7 @@ jobs:
   build-and-deploy:
     name: Build & Deploy
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 45
     environment: dev
 
     steps:
@@ -71,20 +71,22 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
+      - name: Build Functions API
+        run: dotnet build src/Ace.Crm.Api/Ace.Crm.Api.csproj -c Release
+
       - name: Publish Functions API
         run: dotnet publish src/Ace.Crm.Api/Ace.Crm.Api.csproj -c Release -o "${{ runner.temp }}/crm-api-publish"
 
-      - name: Zip Functions API package
+      # ── Install Azure Functions Core Tools ──────────────────────────
+      - name: Install Azure Functions Core Tools
+        run: |
+          npm install -g azure-functions-core-tools@4 --loglevel verbose
+
+      # ── Deploy with func CLI ───────────────────────────────────────
+      - name: Deploy Functions API (func CLI for Flex Consumption)
         run: |
           cd "${{ runner.temp }}/crm-api-publish"
-          zip -r "${{ runner.temp }}/crm-api.zip" .
-
-      - name: Deploy Functions API (zip deploy via az CLI, OIDC auth)
-        run: |
-          az functionapp deployment source config-zip \
-            --name "$FUNCTION_APP_NAME" \
-            --resource-group "$RESOURCE_GROUP_NAME" \
-            --src "${{ runner.temp }}/crm-api.zip"
+          func azure functionapp publish "$FUNCTION_APP_NAME" --build remote
 
       # ── Deploy to Static Web App ───────────────────────────────────
       - name: Deploy

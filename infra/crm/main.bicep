@@ -64,12 +64,12 @@ var dataStorageAccountId = dataStorageAccount.id
 var swaHostname = staticWebApp.properties.defaultHostname
 
 resource functionPlan 'Microsoft.Web/serverfarms@2023-12-01' = {
-  name: 'SouthCentralUSLinuxDynamicPlan'
+  name: 'AceCrmFlexConsumptionPlan'
   location: funcLocation
   kind: 'functionapp,linux'
   sku: {
-    name: 'Y1'
-    tier: 'Dynamic'
+    name: 'FC1'
+    tier: 'FlexConsumption'
   }
   properties: {
     reserved: true
@@ -89,6 +89,19 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
   properties: {
     serverFarmId: functionPlan.id
     reserved: true
+    functionAppConfig: {
+      deployment: {
+        storage: {
+          type: 'blobContainer'
+          value: '${funcStorageAccount.properties.primaryEndpoints.blob}function-deployments'
+          authentication: 'StorageAccountConnectionString'
+        }
+      }
+      scaleAndConcurrency: {
+        maximumInstanceCount: 10
+        instanceMemoryMB: 2048
+      }
+    }
     siteConfig: {
       linuxFxVersion: 'DOTNET-ISOLATED|8.0'
       cors: {
