@@ -13,6 +13,8 @@ This is the personal (Acestus) fork of the workflow-toolkit. It uses Linear + No
 | Layer | What it does |
 |---|---|
 | **CLI** (`src/Ace.Tools.Cli/`) | .NET command surface — Linear, rounds (SQLite), GitHub, legacy runner |
+| **Hugo site** (`content/`, `layouts/`, `archetypes/`) | Private knowledge-site scaffold rendered into `web/wwwroot` |
+| **Web workspace** (`web/`) | Bun/TypeScript source tree for front-end assets |
 | **Skills** (`.github/skills/`) | Thin collar skills for Copilot CLI. ~25 lines each. Routes intent to CLI. |
 | **Instructions** (`.github/instructions/`) | File-pattern-scoped rules for AI assistance |
 | **Quality Gates** (`scripts/Ace.Quality.Gates/`) | C# gate orchestration for preflight/postflight/promote/deploy |
@@ -76,6 +78,8 @@ dotnet build src/Ace.Tools.Cli
 dotnet run --project src/Ace.Tools.Cli -- --help
 dotnet run --project src/Ace.Tools.Cli -- rounds status
 dotnet run --project scripts/Ace.Quality.Gates/Ace.Quality.Gates.csproj -- preflight
+hugo
+cd web && bun install
 ```
 
 ---
@@ -196,6 +200,20 @@ dotnet run --project src/Ace.Tools.Cli -- linear --help
 | `swa-deploy` | Azure Static Web App deploys |
 | `trunk-gates` | Run preflight/postflight/promote quality gates |
 | `service-tagger` | Apply and normalize service ownership tags |
+
+---
+
+## Repo Scaffold
+
+The knowledge-site scaffold now lives at the repository root:
+
+- `content/` - Hugo content sections
+- `layouts/` - Site templates
+- `archetypes/` - `hugo new` starter files
+- `assets/plantuml/` - Diagram sources and generated-file staging area
+- `web/` - Bun workspace for TypeScript assets
+
+The Hugo site publishes into `web/wwwroot`, which remains the deployment target for the static site.
 
 ---
 

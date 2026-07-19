@@ -6,6 +6,11 @@ This repository is organized as a .NET-first workflow toolkit with thin-collar s
 
 | Path | Purpose |
 | --- | --- |
+| `content/` | Hugo content sections for the Ace knowledge site |
+| `layouts/` | Hugo templates for the site shell |
+| `archetypes/` | Hugo starter files for `hugo new` |
+| `assets/plantuml/` | PlantUML sources and generated-file staging |
+| `web/` | Bun workspace for TypeScript/front-end assets |
 | `src/Ace.Tools.Cli/` | Primary .NET CLI for rounds, Linear, GitHub, and workflow operations |
 | `tests/Quality.Reqnroll.Score.Tests/` | Reqnroll/xUnit scoring tests for inner-loop and outer-loop quality signals |
 | `scripts/Ace.Quality.Gates/` | C# orchestration for preflight/postflight/promote/deploy gate commands |
@@ -56,6 +61,14 @@ Workflows:
 3. `promote.yaml` (workflow_dispatch)
    - Runs promote gate for selected environment
    - Publishes .NET app artifact for promotion review
+
+## Tool Baseline
+
+The current scaffold assumes:
+
+- `.NET SDK 10.0.301`
+- `Hugo v0.164.0+extended`
+- `Bun 1.3.14`
 
 ## C# Gate Script Contract
 

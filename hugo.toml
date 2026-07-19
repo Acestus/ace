@@ -1,0 +1,16 @@
+baseURL = "http://localhost:1313/"
+defaultContentLanguage = "en"
+title = "Ace"
+publishDir = "web/wwwroot"
+contentDir = "content"
+layoutDir = "layouts"
+archetypeDir = "archetypes"
+staticDir = "static"
+dataDir = "data"
+
+disableKinds = ["taxonomy", "term", "RSS"]
+
+[markup]
+  [markup.goldmark]
+    [markup.goldmark.renderer]
+      unsafe = true

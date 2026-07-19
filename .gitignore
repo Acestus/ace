@@ -28,3 +28,9 @@ Thumbs.db
 # Sessions
 .copilot/
 scripts/.graph-token-cache.json
+
+# Bun / web workspace
+web/node_modules/
+web/dist/
+web/.bun-install-cache/
+.hugo_build.lock
