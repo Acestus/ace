@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <loc>http://localhost:1314/blogs/</loc>
+  </url><url>
+    <loc>http://localhost:1314/conversations/</loc>
+  </url><url>
+    <loc>http://localhost:1314/ideas/</loc>
+  </url><url>
+    <loc>http://localhost:1314/</loc>
+  </url><url>
+    <loc>http://localhost:1314/journals/</loc>
+  </url><url>
+    <loc>http://localhost:1314/planner/</loc>
+  </url><url>
+    <loc>http://localhost:1314/references/</loc>
+  </url><url>
+    <loc>http://localhost:1314/technical/</loc>
+  </url>
+</urlset>

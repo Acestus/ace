@@ -13,7 +13,7 @@ This is the personal (Acestus) fork of the workflow-toolkit. It uses Linear + No
 | Layer | What it does |
 |---|---|
 | **CLI** (`src/Ace.Tools.Cli/`) | .NET command surface — Linear, rounds (SQLite), GitHub, legacy runner |
-| **Hugo site** (`content/`, `layouts/`, `archetypes/`) | Private knowledge-site scaffold rendered into `web/wwwroot` |
+| **Hugo sites** (`content/`, `layouts/`, `archetypes/`, `sites/journal/`) | Ace site scaffold at the repo root plus the separate Journal site root |
 | **Web workspace** (`web/`) | Bun/TypeScript source tree for front-end assets |
 | **Skills** (`.github/skills/`) | Thin collar skills for Copilot CLI. ~25 lines each. Routes intent to CLI. |
 | **Instructions** (`.github/instructions/`) | File-pattern-scoped rules for AI assistance |
@@ -205,15 +205,14 @@ dotnet run --project src/Ace.Tools.Cli -- linear --help
 
 ## Repo Scaffold
 
-The knowledge-site scaffold now lives at the repository root:
+The knowledge-site scaffolds are split across two roots:
 
-- `content/` - Hugo content sections
-- `layouts/` - Site templates
-- `archetypes/` - `hugo new` starter files
+- `content/`, `layouts/`, `archetypes/` - Ace Hugo site at the repository root
+- `sites/journal/` - Separate Journal Hugo site root with its own layout/content/tooling tree
 - `assets/plantuml/` - Diagram sources and generated-file staging area
-- `web/` - Bun workspace for TypeScript assets
+- `web/` - Existing CRM app and static web assets
 
-The Hugo site publishes into `web/wwwroot`, which remains the deployment target for the static site.
+The Ace site continues to publish into `web/wwwroot`, and the Journal site publishes from its own root without touching the current site tree.
 
 ---
 

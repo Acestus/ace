@@ -33,4 +33,5 @@ scripts/.graph-token-cache.json
 web/node_modules/
 web/dist/
 web/.bun-install-cache/
+**/node_modules/
 .hugo_build.lock

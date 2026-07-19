@@ -10,6 +10,7 @@ This repository is organized as a .NET-first workflow toolkit with thin-collar s
 | `layouts/` | Hugo templates for the site shell |
 | `archetypes/` | Hugo starter files for `hugo new` |
 | `assets/plantuml/` | PlantUML sources and generated-file staging |
+| `sites/journal/` | Separate Hugo site root for the Journal knowledge site |
 | `web/` | Bun workspace for TypeScript/front-end assets |
 | `src/Ace.Tools.Cli/` | Primary .NET CLI for rounds, Linear, GitHub, and workflow operations |
 | `tests/Quality.Reqnroll.Score.Tests/` | Reqnroll/xUnit scoring tests for inner-loop and outer-loop quality signals |

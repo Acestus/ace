@@ -1,0 +1,22 @@
+{{ define "main" }}
+  <section>
+    <h1>{{ .Title }}</h1>
+    {{ with .Content }}{{ . }}{{ end }}
+  </section>
+
+  {{ if .Pages }}
+    <section aria-labelledby="entries">
+      <h2 id="entries">Entries</h2>
+      <ul>
+        {{ range .Pages.ByTitle }}
+          <li>
+            <a href="{{ .RelPermalink }}">{{ .LinkTitle }}</a>
+            {{ with .Summary }}<p>{{ . }}</p>{{ end }}
+          </li>
+        {{ end }}
+      </ul>
+    </section>
+  {{ else }}
+    <p>No entries yet.</p>
+  {{ end }}
+{{ end }}

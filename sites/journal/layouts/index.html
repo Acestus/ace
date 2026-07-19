@@ -1,0 +1,18 @@
+{{ define "main" }}
+  <section>
+    <h1>{{ .Title }}</h1>
+    {{ with .Content }}{{ . }}{{ end }}
+  </section>
+
+  <section aria-labelledby="site-sections">
+    <h2 id="site-sections">Sections</h2>
+    <ul>
+      {{ range .Site.Sections.ByTitle }}
+        <li>
+          <a href="{{ .RelPermalink }}">{{ .LinkTitle }}</a>
+          {{ with .Summary }}<p>{{ . }}</p>{{ end }}
+        </li>
+      {{ end }}
+    </ul>
+  </section>
+{{ end }}
