@@ -92,7 +92,7 @@ jobs:
       - name: Deploy Functions API (func CLI for Flex Consumption)
         run: |
           cd "${{ runner.temp }}/crm-api-publish"
-          func azure functionapp publish "$FUNCTION_APP_NAME" --build remote
+          func azure functionapp publish "$FUNCTION_APP_NAME" --build remote --dotnet-version 10.0
 
       # ── Deploy to Static Web App ───────────────────────────────────
       - name: Deploy
