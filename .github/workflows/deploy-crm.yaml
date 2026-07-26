@@ -83,16 +83,18 @@ jobs:
       - name: Publish Functions API
         run: dotnet publish src/Ace.Crm.Api/Ace.Crm.Api.csproj -c Release -o "${{ runner.temp }}/crm-api-publish"
 
-      # ── Install Azure Functions Core Tools ──────────────────────────
-      - name: Install Azure Functions Core Tools
-        run: |
-          npm install -g azure-functions-core-tools@4 --loglevel verbose
-
-      # ── Deploy with func CLI ───────────────────────────────────────
-      - name: Deploy Functions API (func CLI for Flex Consumption)
+      # ── Package and deploy Functions API ───────────────────────────
+      - name: Package function app
         run: |
           cd "${{ runner.temp }}/crm-api-publish"
-          func azure functionapp publish "$FUNCTION_APP_NAME" --build remote --dotnet-isolated --dotnet-version 10.0
+          zip -X -r "${{ runner.temp }}/crm-api.zip" . -x "*.pdb"
+
+      - name: Deploy Functions API (zip deploy)
+        run: |
+          az functionapp deployment source config-zip \
+            --resource-group "$RESOURCE_GROUP_NAME" \
+            --name "$FUNCTION_APP_NAME" \
+            --src "${{ runner.temp }}/crm-api.zip"
 
       # ── Deploy to Static Web App ───────────────────────────────────
       - name: Deploy
