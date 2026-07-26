@@ -10,6 +10,8 @@ This repository is organized as a .NET-first workflow toolkit with thin-collar s
 | `layouts/` | Hugo templates for the site shell |
 | `archetypes/` | Hugo starter files for `hugo new` |
 | `assets/plantuml/` | PlantUML sources and generated-file staging |
+| `docs/writers/` | Reusable guidance for technical and operational pages |
+| `scripts/build-site.sh` | Site build orchestration for diagrams, Bun assets, and Hugo |
 | `sites/journal/` | Separate Hugo site root for the Journal knowledge site |
 | `web/` | Bun workspace for TypeScript/front-end assets |
 | `src/Ace.Tools.Cli/` | Primary .NET CLI for rounds, Linear, GitHub, and workflow operations |
@@ -70,6 +72,8 @@ The current scaffold assumes:
 - `.NET SDK 10.0.301`
 - `Hugo v0.164.0+extended`
 - `Bun 1.3.14`
+
+The canonical local site build is `./scripts/build-site.sh`, which renders PlantUML sources, bundles the browser code, and then runs Hugo against the Ace root.
 
 ## C# Gate Script Contract
 

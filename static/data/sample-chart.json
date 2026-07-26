@@ -1,0 +1,13 @@
+{
+  "title": "Weekly note count",
+  "type": "bar",
+  "labels": ["Mon", "Tue", "Wed", "Thu", "Fri"],
+  "datasets": [
+    {
+      "label": "Notes",
+      "data": [2, 4, 3, 5, 6],
+      "backgroundColor": "rgba(26, 95, 122, 0.35)",
+      "borderColor": "rgba(26, 95, 122, 0.95)"
+    }
+  ]
+}

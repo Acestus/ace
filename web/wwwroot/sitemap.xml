@@ -3,19 +3,51 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>http://localhost:1313/</loc>
+    <lastmod>2026-07-19T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/technical/ace-operating-guide/</loc>
+    <lastmod>2026-07-19T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/technical/ace-technical-baseline/</loc>
+    <lastmod>2026-07-19T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/planner/ace-56-workplan/</loc>
+    <lastmod>2026-07-19T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/conversations/2026-07-19-agent-workflow-sync/</loc>
+    <lastmod>2026-07-19T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/blogs/</loc>
+    <lastmod>2026-07-19T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/ideas/chart-demo/</loc>
+    <lastmod>2026-07-19T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/conversations/</loc>
+    <lastmod>2026-07-19T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/ideas/</loc>
+    <lastmod>2026-07-19T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/journals/</loc>
+    <lastmod>2026-07-19T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/planner/</loc>
+    <lastmod>2026-07-19T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/references/</loc>
+    <lastmod>2026-07-19T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/journals/2026-07-19-scaffold-log/</loc>
+    <lastmod>2026-07-19T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/technical/</loc>
+    <lastmod>2026-07-19T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/references/tooling-baseline/</loc>
+    <lastmod>2026-07-19T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/blogs/why-ace-is-private/</loc>
+    <lastmod>2026-07-19T00:00:00+00:00</lastmod>
   </url>
 </urlset>

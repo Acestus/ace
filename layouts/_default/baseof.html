@@ -4,21 +4,63 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{{ block "title" . }}{{ .Title }} · {{ .Site.Title }}{{ end }}</title>
-  <link rel="stylesheet" href="/css/base.css" />
+  {{ with .Description }}<meta name="description" content="{{ . }}" />{{ end }}
+  <link rel="stylesheet" href="{{ "/css/site.css" | relURL }}" />
 </head>
 <body>
   <header class="site-header">
-    <nav>
-      <a href="/">Home</a>
-      <a href="/crm.html">CRM</a>
-      <a href="/docs/">Docs</a>
-    </nav>
+    <div class="site-shell">
+      <a class="site-brand" href="/">{{ .Site.Title }}</a>
+      <nav class="site-nav" aria-label="Primary">
+        <a href="/">Home</a>
+        {{ range .Site.Sections.ByWeight }}
+          <a href="{{ .RelPermalink }}">{{ .LinkTitle }}</a>
+        {{ end }}
+      </nav>
+    </div>
   </header>
 
-  <main id="app">
-    {{ block "main" . }}{{ end }}
+  <main id="app" class="site-main">
+    <div class="site-layout">
+      <aside class="site-sidebar" aria-label="Section navigation">
+        <section class="sidebar-panel">
+          <h2>Site map</h2>
+          {{ partial "section-tree.html" (dict "pages" .Site.Home.Sections.ByWeight "current" .) }}
+        </section>
+        <section class="sidebar-panel">
+          <h2>Quick links</h2>
+          <ul class="link-list">
+            <li><a href="/technical/">Technical</a></li>
+            <li><a href="/planner/">Planner</a></li>
+            <li><a href="/journals/">Journals</a></li>
+            <li><a href="/references/">References</a></li>
+          </ul>
+        </section>
+      </aside>
+
+      <section class="site-content">
+        <nav class="breadcrumbs" aria-label="Breadcrumb">
+          {{ if .IsHome }}
+            <span>Home</span>
+          {{ else }}
+            <a href="/">Home</a>
+            {{ range .Ancestors.Reverse }}
+              <span aria-hidden="true">/</span>
+              <a href="{{ .RelPermalink }}">{{ .LinkTitle }}</a>
+            {{ end }}
+            <span aria-hidden="true">/</span>
+            <span>{{ .LinkTitle }}</span>
+          {{ end }}
+        </nav>
+        {{ block "main" . }}{{ end }}
+      </section>
+    </div>
   </main>
 
-  <script type="module" src="/js/main.js"></script>
+  <footer class="site-footer">
+    <p>Ace private knowledge site scaffold.</p>
+  </footer>
+
+  <script type="module" src="{{ "/js/main.js" | relURL }}"></script>
 </body>
 </html>

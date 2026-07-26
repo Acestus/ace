@@ -5,7 +5,6 @@ publishDir = "web/wwwroot"
 contentDir = "content"
 layoutDir = "layouts"
 archetypeDir = "archetypes"
-staticDir = "static"
 dataDir = "data"
 
 disableKinds = ["taxonomy", "term", "RSS"]

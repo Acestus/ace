@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ace Operating Guide · Ace</title>
+  <meta name="description" content="How to edit, review, and ship content in Ace." />
+  <link rel="stylesheet" href="/css/site.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-shell">
+      <a class="site-brand" href="/">Ace</a>
+      <nav class="site-nav" aria-label="Primary">
+        <a href="/">Home</a>
+
+          <a href="/blogs/">Blogs</a>
+
+          <a href="/conversations/">Conversations</a>
+
+          <a href="/ideas/">Ideas</a>
+
+          <a href="/journals/">Journals</a>
+
+          <a href="/planner/">Planner</a>
+
+          <a href="/references/">References</a>
+
+          <a href="/technical/">Technical</a>
+
+      </nav>
+    </div>
+  </header>
+
+  <main id="app" class="site-main">
+    <div class="site-layout">
+      <aside class="site-sidebar" aria-label="Section navigation">
+        <section class="sidebar-panel">
+          <h2>Site map</h2>
+
+<ul class="nav-tree"><li>
+      <a href="/blogs/" class="">Blogs</a>
+    </li><li>
+      <a href="/conversations/" class="">Conversations</a>
+    </li><li>
+      <a href="/ideas/" class="">Ideas</a>
+    </li><li>
+      <a href="/journals/" class="">Journals</a>
+    </li><li>
+      <a href="/planner/" class="">Planner</a>
+    </li><li>
+      <a href="/references/" class="">References</a>
+    </li><li>
+      <a href="/technical/" class="active">Technical</a>
+    </li>
+</ul>
+
+        </section>
+        <section class="sidebar-panel">
+          <h2>Quick links</h2>
+          <ul class="link-list">
+            <li><a href="/technical/">Technical</a></li>
+            <li><a href="/planner/">Planner</a></li>
+            <li><a href="/journals/">Journals</a></li>
+            <li><a href="/references/">References</a></li>
+          </ul>
+        </section>
+      </aside>
+
+      <section class="site-content">
+        <nav class="breadcrumbs" aria-label="Breadcrumb">
+
+            <a href="/">Home</a>
+
+              <span aria-hidden="true">/</span>
+              <a href="/">Ace</a>
+
+              <span aria-hidden="true">/</span>
+              <a href="/technical/">Technical</a>
+
+            <span aria-hidden="true">/</span>
+            <span>Ace Operating Guide</span>
+
+        </nav>
+
+  <article>
+    <h1>Ace Operating Guide</h1>
+    <p class="lede">How to edit, review, and ship content in Ace.</p>
+    <p class="entry-meta"><time datetime="2026-07-19">July 19, 2026</time></p>
+    <h2 id="daily-loop">Daily loop</h2>
+<ol>
+<li>Edit Markdown in Neovim.</li>
+<li>Commit the change in Git.</li>
+<li>Push to GitHub.</li>
+<li>Let the deployment pipeline publish the updated site.</li>
+</ol>
+<h2 id="what-goes-where">What goes where</h2>
+<ul>
+<li><code>content/</code> holds the pages.</li>
+<li><code>archetypes/</code> holds the page starters.</li>
+<li><code>assets/plantuml/</code> holds <code>.puml</code> source files.</li>
+<li><code>static/diagrams/</code> holds rendered diagram output.</li>
+<li><code>web/</code> holds the browser bundle and TypeScript code.</li>
+</ul>
+<h2 id="working-with-agents">Working with agents</h2>
+<p>When an agent writes a page, ask it to be exact about resource names, commands, and follow-up work. If the page needs a diagram or table, include it instead of explaining it in prose.</p>
+
+  </article>
+
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p>Ace private knowledge site scaffold.</p>
+  </footer>
+
+  <script type="module" src="/js/main.js"></script>
+</body>
+</html>

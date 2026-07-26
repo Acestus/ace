@@ -1,0 +1,14 @@
+{
+  "title": "API-backed page count",
+  "type": "line",
+  "labels": ["Week 1", "Week 2", "Week 3", "Week 4"],
+  "datasets": [
+    {
+      "label": "Pages",
+      "data": [3, 5, 7, 9],
+      "borderColor": "rgba(26, 95, 122, 0.95)",
+      "backgroundColor": "rgba(26, 95, 122, 0.2)",
+      "fill": true
+    }
+  ]
+}

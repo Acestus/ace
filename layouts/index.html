@@ -1,15 +1,28 @@
 {{ define "main" }}
-  <section>
+  <section class="hero">
     <h1>{{ .Title }}</h1>
     {{ with .Content }}{{ . }}{{ end }}
   </section>
 
-  <section aria-labelledby="site-sections">
+  <section class="section-cards" aria-labelledby="site-sections">
     <h2 id="site-sections">Sections</h2>
     <ul>
-      {{ range .Site.Sections.ByTitle }}
+      {{ range .Site.Sections.ByWeight }}
         <li>
           <a href="{{ .RelPermalink }}">{{ .LinkTitle }}</a>
+          {{ with .Summary }}<p>{{ . }}</p>{{ end }}
+        </li>
+      {{ end }}
+    </ul>
+  </section>
+
+  <section class="section-cards" aria-labelledby="recent-notes">
+    <h2 id="recent-notes">Recent notes</h2>
+    <ul>
+      {{ range first 5 (where .Site.RegularPages.ByDate.Reverse "Section" "in" (slice "journals" "technical" "planner" "references" "ideas" "blogs" "conversations")) }}
+        <li>
+          <a href="{{ .RelPermalink }}">{{ .LinkTitle }}</a>
+          <time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "Jan 2, 2006" }}</time>
           {{ with .Summary }}<p>{{ . }}</p>{{ end }}
         </li>
       {{ end }}

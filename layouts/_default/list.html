@@ -1,16 +1,31 @@
 {{ define "main" }}
-  <section>
+  <section class="hero">
     <h1>{{ .Title }}</h1>
     {{ with .Content }}{{ . }}{{ end }}
   </section>
 
-  {{ if .Pages }}
-    <section aria-labelledby="entries">
-      <h2 id="entries">Entries</h2>
+  {{ with .Sections }}
+    <section class="section-cards" aria-labelledby="subsections">
+      <h2 id="subsections">Subsections</h2>
       <ul>
-        {{ range .Pages.ByTitle }}
+        {{ range .ByWeight }}
           <li>
             <a href="{{ .RelPermalink }}">{{ .LinkTitle }}</a>
+            {{ with .Summary }}<p>{{ . }}</p>{{ end }}
+          </li>
+        {{ end }}
+      </ul>
+    </section>
+  {{ end }}
+
+  {{ if .RegularPages }}
+    <section class="section-cards" aria-labelledby="entries">
+      <h2 id="entries">Entries</h2>
+      <ul>
+        {{ range .RegularPages.ByDate.Reverse }}
+          <li>
+            <a href="{{ .RelPermalink }}">{{ .LinkTitle }}</a>
+            {{ with .Date }}<time datetime="{{ .Format "2006-01-02" }}">{{ .Format "Jan 2, 2006" }}</time>{{ end }}
             {{ with .Summary }}<p>{{ . }}</p>{{ end }}
           </li>
         {{ end }}

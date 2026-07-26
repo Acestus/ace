@@ -1,0 +1,15 @@
+{{- $source := .Get "source" | default (.Get 0) -}}
+{{- $title := .Get "title" | default "Chart" -}}
+{{- $caption := .Get "caption" -}}
+{{- $height := .Get "height" | default "320px" -}}
+{{- if not $source -}}
+  {{- errorf "chart shortcode requires a source value" -}}
+{{- end -}}
+<figure class="chart" data-chart data-source="{{ $source | relURL }}" style="--chart-height: {{ $height }};">
+  <div class="chart-surface">
+    <canvas aria-label="{{ $title }}" role="img"></canvas>
+    <p class="chart-status" data-chart-status>This chart needs JavaScript to render.</p>
+    <noscript><p>This chart needs JavaScript to render.</p></noscript>
+  </div>
+  <figcaption>{{ with $caption }}{{ . | markdownify }}{{ else }}{{ $title }}{{ end }}</figcaption>
+</figure>

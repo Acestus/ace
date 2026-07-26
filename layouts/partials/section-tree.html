@@ -1,0 +1,15 @@
+{{- $current := .current -}}
+{{- $pages := .pages -}}
+{{- if $pages }}
+<ul class="nav-tree">
+  {{- range $pages.ByWeight }}
+    {{- $active := or (eq .RelPermalink $current.RelPermalink) (hasPrefix $current.RelPermalink .RelPermalink) -}}
+    <li>
+      <a href="{{ .RelPermalink }}" class="{{ if $active }}active{{ end }}">{{ .LinkTitle }}</a>
+      {{- with .Sections }}
+        {{ partial "section-tree.html" (dict "pages" . "current" $current) }}
+      {{- end }}
+    </li>
+  {{- end }}
+</ul>
+{{- end }}

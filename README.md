@@ -78,8 +78,7 @@ dotnet build src/Ace.Tools.Cli
 dotnet run --project src/Ace.Tools.Cli -- --help
 dotnet run --project src/Ace.Tools.Cli -- rounds status
 dotnet run --project scripts/Ace.Quality.Gates/Ace.Quality.Gates.csproj -- preflight
-hugo
-cd web && bun install
+./scripts/build-site.sh
 ```
 
 ---
@@ -210,6 +209,8 @@ The knowledge-site scaffolds are split across two roots:
 - `content/`, `layouts/`, `archetypes/` - Ace Hugo site at the repository root
 - `sites/journal/` - Separate Journal Hugo site root with its own layout/content/tooling tree
 - `assets/plantuml/` - Diagram sources and generated-file staging area
+- `docs/writers/` - Reusable writing guidance for technical pages
+- `scripts/build-site.sh` - Renders diagrams, bundles browser assets, and builds Hugo
 - `web/` - Existing CRM app and static web assets
 
 The Ace site continues to publish into `web/wwwroot`, and the Journal site publishes from its own root without touching the current site tree.

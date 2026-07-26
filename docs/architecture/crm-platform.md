@@ -207,7 +207,8 @@ Requires: `az` CLI logged in with `Storage Table Data Contributor` on
       API supports both. Worth building out the rest of the vanilla-JS UI
       to match the API surface.
 - [ ] Decide whether the SWA + public Function App deployment path
-      (`infra/crm/main.bicep`, `.github/workflows/deploy-crm.yaml`) stays as
+      (`~/git/acestus-iac/stacks-bicep/rg-crm-dev/main.bicep`,
+      `.github/workflows/deploy-crm.yaml`) stays as
       a documented-but-unused option, or gets removed/archived now that
       local-first is the primary mode. Currently left in place but not
       re-verified against the `net10.0` bump — if it's ever used again,

@@ -28,6 +28,7 @@ public static class ToolApp
             "rounds" => await RoundsCommands.RunAsync(args.Skip(1).ToArray(), stdout, stderr, cancellationToken),
             "transcript" => await TranscriptCommands.RunAsync(args.Skip(1).ToArray(), stdout, stderr, cancellationToken),
             "github" => await GitHubCommands.RunAsync(args.Skip(1).ToArray(), stdout, stderr, cancellationToken),
+            "lorcana" => await LorcanaCommands.RunAsync(args.Skip(1).ToArray(), stdout, stderr, cancellationToken),
             "legacy" => await LegacyCommands.RunAsync(args.Skip(1).ToArray(), stdout, stderr, cancellationToken),
             "workflow" => await WorkflowHandler.RunAsync(args.Skip(1).ToArray(), stdout, stderr),
             _ => UnknownCommand(args[0], stderr)
@@ -58,6 +59,7 @@ public static class ToolApp
         stdout.WriteLine("  github prs [gh pr args...]");
         stdout.WriteLine("  github review-pr [args...]");
         stdout.WriteLine("  github daily-summary [args...]");
+        stdout.WriteLine("  lorcana scrape <lorcanaplayer-url> [--set <name>] [--output <path>]");
         stdout.WriteLine("  legacy invoke --command <exe> -- [args...]");
         stdout.WriteLine("  workflow init-db|start-my-day|end-my-day|dispatch|standup|status");
         stdout.WriteLine();
@@ -127,6 +129,9 @@ public static class ToolApp
                 return;
             case "transcript":
                 TranscriptCommands.PrintHelp(stdout);
+                return;
+            case "lorcana":
+                LorcanaCommands.PrintHelp(stdout);
                 return;
             case "legacy":
                 stdout.WriteLine("legacy — Run legacy scripts");

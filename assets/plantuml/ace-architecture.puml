@@ -1,0 +1,24 @@
+@startuml
+skinparam shadowing false
+skinparam backgroundColor transparent
+skinparam defaultFontName Inter
+skinparam packageStyle rectangle
+
+rectangle "Markdown content\n(content/)" as Content
+rectangle "Archetypes\n(archetypes/)" as Archetypes
+rectangle "PlantUML sources\n(assets/plantuml/)" as PlantUML
+rectangle "Build script\n(scripts/build-site.sh)" as Build
+rectangle "Static site output\n(web/wwwroot/)" as Output
+rectangle "Browser bundle\n(web/src/)" as JS
+
+Content --> Build
+Archetypes --> Build
+PlantUML --> Build
+Build --> Output
+JS --> Output
+
+note right of Build
+  The build step renders SVG diagrams
+  before Hugo publishes the site.
+end note
+@enduml

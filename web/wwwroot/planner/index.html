@@ -4,30 +4,130 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Planner · Ace</title>
-  <link rel="stylesheet" href="/css/base.css" />
+
+  <link rel="stylesheet" href="/css/site.css" />
 </head>
 <body>
   <header class="site-header">
-    <nav>
-      <a href="/">Home</a>
-      <a href="/crm.html">CRM</a>
-      <a href="/docs/">Docs</a>
-    </nav>
+    <div class="site-shell">
+      <a class="site-brand" href="/">Ace</a>
+      <nav class="site-nav" aria-label="Primary">
+        <a href="/">Home</a>
+
+          <a href="/blogs/">Blogs</a>
+
+          <a href="/conversations/">Conversations</a>
+
+          <a href="/ideas/">Ideas</a>
+
+          <a href="/journals/">Journals</a>
+
+          <a href="/planner/">Planner</a>
+
+          <a href="/references/">References</a>
+
+          <a href="/technical/">Technical</a>
+
+      </nav>
+    </div>
   </header>
 
-  <main id="app">
-    
-  <section>
+  <main id="app" class="site-main">
+    <div class="site-layout">
+      <aside class="site-sidebar" aria-label="Section navigation">
+        <section class="sidebar-panel">
+          <h2>Site map</h2>
+
+<ul class="nav-tree"><li>
+      <a href="/blogs/" class="">Blogs</a>
+    </li><li>
+      <a href="/conversations/" class="">Conversations</a>
+    </li><li>
+      <a href="/ideas/" class="">Ideas</a>
+    </li><li>
+      <a href="/journals/" class="">Journals</a>
+    </li><li>
+      <a href="/planner/" class="active">Planner</a>
+    </li><li>
+      <a href="/references/" class="">References</a>
+    </li><li>
+      <a href="/technical/" class="">Technical</a>
+    </li>
+</ul>
+
+        </section>
+        <section class="sidebar-panel">
+          <h2>Quick links</h2>
+          <ul class="link-list">
+            <li><a href="/technical/">Technical</a></li>
+            <li><a href="/planner/">Planner</a></li>
+            <li><a href="/journals/">Journals</a></li>
+            <li><a href="/references/">References</a></li>
+          </ul>
+        </section>
+      </aside>
+
+      <section class="site-content">
+        <nav class="breadcrumbs" aria-label="Breadcrumb">
+
+            <a href="/">Home</a>
+
+              <span aria-hidden="true">/</span>
+              <a href="/">Ace</a>
+
+            <span aria-hidden="true">/</span>
+            <span>Planner</span>
+
+        </nav>
+
+  <section class="hero">
     <h1>Planner</h1>
     <p>Planning pages, checklists, and execution notes live here.</p>
 
   </section>
 
-  
-    <p>No entries yet.</p>
-  
 
+
+
+    <section class="section-cards" aria-labelledby="entries">
+      <h2 id="entries">Entries</h2>
+      <ul>
+
+          <li>
+            <a href="/planner/ace-56-workplan/">ACE-56 Workplan</a>
+            <time datetime="2026-07-19">Jul 19, 2026</time>
+            <p><h2 id="remaining-local-work">Remaining local work</h2>
+<ul>
+<li>Content model and archetypes</li>
+<li>Theme and navigation</li>
+<li>Writer guidance</li>
+<li>PlantUML pipeline</li>
+<li>Bun asset pipeline</li>
+<li>Chart.js sample</li>
+<li>Operating guide</li>
+</ul>
+<h2 id="blocked-work">Blocked work</h2>
+<ul>
+<li>.NET Functions baseline</li>
+<li>Storage and managed identity</li>
+<li>Azure infrastructure</li>
+<li>Static Web Apps authentication</li>
+<li>Application Insights</li>
+<li>GitHub Actions deployment</li>
+</ul></p>
+          </li>
+
+      </ul>
+    </section>
+
+
+      </section>
+    </div>
   </main>
+
+  <footer class="site-footer">
+    <p>Ace private knowledge site scaffold.</p>
+  </footer>
 
   <script type="module" src="/js/main.js"></script>
 </body>

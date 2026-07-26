@@ -1,0 +1,12 @@
+{{- $src := .Get "src" | default (.Get 0) -}}
+{{- $alt := .Get "alt" | default "Diagram" -}}
+{{- $caption := .Get "caption" -}}
+{{- if not $src -}}
+  {{- errorf "diagram shortcode requires a src value" -}}
+{{- end -}}
+<figure class="diagram">
+  <img src="{{ $src | relURL }}" alt="{{ $alt }}" loading="lazy" />
+  {{- with $caption }}
+    <figcaption>{{ . | markdownify }}</figcaption>
+  {{- end }}
+</figure>
