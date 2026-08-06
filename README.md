@@ -151,11 +151,21 @@ dotnet run --project src/Ace.Tools.Cli -- rounds status
 dotnet run --project src/Ace.Tools.Cli -- github issues list
 dotnet run --project src/Ace.Tools.Cli -- github review-pr --pr 42
 
+# Practical Cloud Systems content funnel
+dotnet run --project src/Ace.Tools.Cli -- content init
+dotnet run --project src/Ace.Tools.Cli -- content idea add --title "What does a cloud engineer actually do?" --pillar "Cloud Careers" --viewer "cloud beginner"
+dotnet run --project src/Ace.Tools.Cli -- content icahn score --id pcs-001 --views 100000 --subs 1000 --demand 9 --pain 8 --content-signal 10 --packaging-upside 8 --monetization 7 --repurposing 9
+dotnet run --project src/Ace.Tools.Cli -- content draft --id pcs-001
+dotnet run --project src/Ace.Tools.Cli -- content distribute --id pcs-001 --channel linkedin --source-url "https://youtube.com/..."
+
 # Full help
 dotnet run --project src/Ace.Tools.Cli -- --help
 dotnet run --project src/Ace.Tools.Cli -- rounds --help
 dotnet run --project src/Ace.Tools.Cli -- linear --help
+dotnet run --project src/Ace.Tools.Cli -- content --help
 ```
+
+`Ace.Tools.Cli` auto-loads `.env` from the repo root and handles Linear, GitHub, workflow state, and file-backed Practical Cloud Systems content operations directly.
 
 ---
 

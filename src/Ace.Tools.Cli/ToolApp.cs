@@ -31,6 +31,7 @@ public static class ToolApp
             "lorcana" => await LorcanaCommands.RunAsync(args.Skip(1).ToArray(), stdout, stderr, cancellationToken),
             "legacy" => await LegacyCommands.RunAsync(args.Skip(1).ToArray(), stdout, stderr, cancellationToken),
             "workflow" => await WorkflowHandler.RunAsync(args.Skip(1).ToArray(), stdout, stderr),
+            "content" => await ContentCommands.RunAsync(args.Skip(1).ToArray(), stdout, stderr),
             _ => UnknownCommand(args[0], stderr)
         };
     }
@@ -60,6 +61,7 @@ public static class ToolApp
         stdout.WriteLine("  github review-pr [args...]");
         stdout.WriteLine("  github daily-summary [args...]");
         stdout.WriteLine("  lorcana scrape <lorcanaplayer-url> [--set <name>] [--output <path>]");
+        stdout.WriteLine("  content init|health|idea|icahn|draft|distribute|self-test");
         stdout.WriteLine("  legacy invoke --command <exe> -- [args...]");
         stdout.WriteLine("  workflow init-db|start-my-day|end-my-day|dispatch|standup|status");
         stdout.WriteLine();
@@ -153,6 +155,19 @@ public static class ToolApp
                 stdout.WriteLine("EXAMPLES");
                 stdout.WriteLine("  workflow end-my-day");
                 stdout.WriteLine("  workflow standup");
+                return;
+            case "content":
+                stdout.WriteLine("Practical Cloud Systems Content Commands");
+                stdout.WriteLine("Initialize file-driven content workspace:");
+                stdout.WriteLine("  content init");
+                stdout.WriteLine("Capture content ideas:");
+                stdout.WriteLine("  content idea add --title <title> [--pillar <pillar>] [--viewer <viewer>]");
+                stdout.WriteLine("Score ideas using Shane Hummus-style Icahn validation signals:");
+                stdout.WriteLine("  content icahn score --id <pcs-001> --views <n> --subs <n> --demand 1-10 --pain 1-10 --content-signal 1-10 --packaging-upside 1-10 --monetization 1-10 --repurposing 1-10");
+                stdout.WriteLine("Create article/video/newsletter/social drafts:");
+                stdout.WriteLine("  content draft --id <pcs-001>");
+                stdout.WriteLine("Record distribution activity:");
+                stdout.WriteLine("  content distribute --id <pcs-001> --channel <channel>");
                 return;
             default:
                 PrintHelp(stdout);
