@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Naming Azure Resources with the Cloud Adoption Framework · Ace</title>
+  <meta name="description" content="A short reference pattern for applying Microsoft Cloud Adoption Framework naming guidance to Azure resources." />
+  <link rel="stylesheet" href="/css/site.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-shell">
+      <a class="site-brand" href="/">Ace</a>
+      <nav class="site-nav" aria-label="Primary">
+        <a href="/">Home</a>
+        
+          <a href="/technical/">Technical</a>
+        
+          <a href="/blogs/">Blogs</a>
+        
+          <a href="/conversations/">Conversations</a>
+        
+          <a href="/ideas/">Ideas</a>
+        
+          <a href="/journals/">Journals</a>
+        
+          <a href="/planner/">Planner</a>
+        
+          <a href="/references/">References</a>
+        
+      </nav>
+    </div>
+  </header>
+
+  <main id="app" class="site-main">
+    <div class="site-layout">
+      <aside class="site-sidebar" aria-label="Section navigation">
+        <section class="sidebar-panel">
+          <h2>Site map</h2>
+          
+<ul class="nav-tree"><li>
+      <a href="/technical/" class="active">Technical</a>
+    </li><li>
+      <a href="/blogs/" class="">Blogs</a>
+    </li><li>
+      <a href="/conversations/" class="">Conversations</a>
+    </li><li>
+      <a href="/ideas/" class="">Ideas</a>
+    </li><li>
+      <a href="/journals/" class="">Journals</a>
+    </li><li>
+      <a href="/planner/" class="">Planner</a>
+    </li><li>
+      <a href="/references/" class="">References</a>
+    </li>
+</ul>
+
+        </section>
+        <section class="sidebar-panel">
+          <h2>Quick links</h2>
+          <ul class="link-list">
+            <li><a href="/technical/">Technical</a></li>
+            <li><a href="/planner/">Planner</a></li>
+            <li><a href="/journals/">Journals</a></li>
+            <li><a href="/references/">References</a></li>
+          </ul>
+        </section>
+      </aside>
+
+      <section class="site-content">
+        <nav class="breadcrumbs" aria-label="Breadcrumb">
+          
+            <a href="/">Home</a>
+            
+              <span aria-hidden="true">/</span>
+              <a href="/">Ace</a>
+            
+              <span aria-hidden="true">/</span>
+              <a href="/technical/">Technical</a>
+            
+            <span aria-hidden="true">/</span>
+            <span>Naming Azure Resources with the Cloud Adoption Framework</span>
+          
+        </nav>
+        
+  <article>
+    <h1>Naming Azure Resources with the Cloud Adoption Framework</h1>
+    <p class="lede">A short reference pattern for applying Microsoft Cloud Adoption Framework naming guidance to Azure resources.</p>
+    <p class="entry-meta"><time datetime="2026-08-05">August 5, 2026</time></p>
+    <h2 id="question">Question</h2>
+<p>How should I use the Microsoft Cloud Adoption Framework to name Azure resources in a way that is consistent, readable, and useful later when the environment grows? The short answer is to treat naming as an operating convention, not as decoration. A good resource name should tell me what the resource is, what workload it belongs to, which environment it supports, where it lives, and which instance it is when there is more than one.</p>
+<h2 id="recommended-pattern">Recommended Pattern</h2>
+<p>My default pattern is: <code>&lt;resource-abbreviation&gt;-&lt;workload&gt;-&lt;environment&gt;-&lt;region&gt;-&lt;instance&gt;</code>. For example, an Azure Resource Group for a production API in Central US could be <code>rg-orders-prod-cus-001</code>, and the matching App Service Plan could be <code>asp-orders-prod-cus-001</code>. This follows the spirit of the Cloud Adoption Framework because the name starts with the resource type, keeps stable business context in the middle, and avoids details that should live in tags instead of names.</p>
+<h2 id="why-this-works">Why This Works</h2>
+<p>This naming format helps with search, troubleshooting, cost review, and automation. When I look at <code>kv-orders-prod-cus-001</code>, I can quickly tell that it is a Key Vault for the orders workload in production, deployed to Central US, and it is the first instance. That same structure also works well in Bicep because names can be assembled from parameters like <code>workloadName</code>, <code>environmentName</code>, <code>locationCode</code>, and <code>instanceNumber</code> instead of being hand-typed differently in every deployment.</p>
+<h2 id="example">Example</h2>
+<p>For a small application named <code>orders</code>, I might use <code>rg-orders-dev-cus-001</code> for the resource group, <code>app-orders-dev-cus-001</code> for the App Service, <code>stordersdevcus001</code> for the storage account, and <code>ai-orders-dev-cus-001</code> for Application Insights. Storage accounts are the important exception because Azure requires globally unique, lowercase alphanumeric names, so the same naming logic has to be compressed. The convention still matters even when the exact separators change.</p>
+<h2 id="reference-use">Reference Use</h2>
+<p>I use this article as a lightweight reference for future Hugo posts and short YouTube videos: start with the question, give the rule, explain why it works, then show real names. For the two-to-four minute video version, the flow is simple: introduce the problem of messy Azure names, show the CAF-inspired pattern, build three or four example names, then close by saying that tags should carry changeable metadata like owner, cost center, data classification, and lifecycle. Microsoft has more detail in the Cloud Adoption Framework pages for <a href="https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ready/azure-best-practices/resource-naming">resource naming</a>, <a href="https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ready/azure-best-practices/resource-abbreviations">resource abbreviations</a>, and <a href="https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ready/azure-best-practices/resource-tagging">tagging strategy</a>.</p>
+
+  </article>
+
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p>Ace private knowledge site scaffold.</p>
+  </footer>
+
+  <script type="module" src="/js/main.js"></script>
+</body>
+</html>

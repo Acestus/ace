@@ -14,21 +14,21 @@
       <a class="site-brand" href="/">Ace</a>
       <nav class="site-nav" aria-label="Primary">
         <a href="/">Home</a>
-
-          <a href="/blogs/">Blogs</a>
-
-          <a href="/conversations/">Conversations</a>
-
-          <a href="/ideas/">Ideas</a>
-
-          <a href="/journals/">Journals</a>
-
-          <a href="/planner/">Planner</a>
-
-          <a href="/references/">References</a>
-
+        
           <a href="/technical/">Technical</a>
-
+        
+          <a href="/blogs/">Blogs</a>
+        
+          <a href="/conversations/">Conversations</a>
+        
+          <a href="/ideas/">Ideas</a>
+        
+          <a href="/journals/">Journals</a>
+        
+          <a href="/planner/">Planner</a>
+        
+          <a href="/references/">References</a>
+        
       </nav>
     </div>
   </header>
@@ -38,8 +38,10 @@
       <aside class="site-sidebar" aria-label="Section navigation">
         <section class="sidebar-panel">
           <h2>Site map</h2>
-
+          
 <ul class="nav-tree"><li>
+      <a href="/technical/" class="">Technical</a>
+    </li><li>
       <a href="/blogs/" class="">Blogs</a>
     </li><li>
       <a href="/conversations/" class="">Conversations</a>
@@ -51,8 +53,6 @@
       <a href="/planner/" class="">Planner</a>
     </li><li>
       <a href="/references/" class="">References</a>
-    </li><li>
-      <a href="/technical/" class="">Technical</a>
     </li>
 </ul>
 
@@ -70,11 +70,11 @@
 
       <section class="site-content">
         <nav class="breadcrumbs" aria-label="Breadcrumb">
-
+          
             <span>Home</span>
-
+          
         </nav>
-
+        
   <section class="hero">
     <h1>Ace</h1>
     <p>Ace is the home for durable markdown notes, project journals, technical references, and reusable AI context.</p>
@@ -85,56 +85,63 @@
   <section class="section-cards" aria-labelledby="site-sections">
     <h2 id="site-sections">Sections</h2>
     <ul>
-
-        <li>
-          <a href="/blogs/">Blogs</a>
-          <p><p>Long-form public or semi-public writeups live here.</p></p>
-        </li>
-
-        <li>
-          <a href="/conversations/">Conversations</a>
-          <p><p>Captured discussions, transcripts, and meeting notes live here.</p></p>
-        </li>
-
-        <li>
-          <a href="/ideas/">Ideas</a>
-          <p><p>Loose concepts, opportunities, and speculative notes live here.</p></p>
-        </li>
-
-        <li>
-          <a href="/journals/">Journals</a>
-          <p><p>Daily notes, implementation logs, and working journal entries live here.</p></p>
-        </li>
-
-        <li>
-          <a href="/planner/">Planner</a>
-          <p><p>Planning pages, checklists, and execution notes live here.</p></p>
-        </li>
-
-        <li>
-          <a href="/references/">References</a>
-          <p><p>Reusable references, precedents, and evergreen notes live here.</p></p>
-        </li>
-
+      
         <li>
           <a href="/technical/">Technical</a>
           <p><p>Runbooks, references, and implementation notes live here.</p></p>
         </li>
-
+      
+        <li>
+          <a href="/blogs/">Blogs</a>
+          <p><p>Long-form public or semi-public writeups live here.</p></p>
+        </li>
+      
+        <li>
+          <a href="/conversations/">Conversations</a>
+          <p><p>Captured discussions, transcripts, and meeting notes live here.</p></p>
+        </li>
+      
+        <li>
+          <a href="/ideas/">Ideas</a>
+          <p><p>Loose concepts, opportunities, and speculative notes live here.</p></p>
+        </li>
+      
+        <li>
+          <a href="/journals/">Journals</a>
+          <p><p>Daily notes, implementation logs, and working journal entries live here.</p></p>
+        </li>
+      
+        <li>
+          <a href="/planner/">Planner</a>
+          <p><p>Planning pages, checklists, and execution notes live here.</p></p>
+        </li>
+      
+        <li>
+          <a href="/references/">References</a>
+          <p><p>Reusable references, precedents, and evergreen notes live here.</p></p>
+        </li>
+      
     </ul>
   </section>
 
   <section class="section-cards" aria-labelledby="recent-notes">
     <h2 id="recent-notes">Recent notes</h2>
     <ul>
-
+      
+        <li>
+          <a href="/technical/azure-caf-resource-naming/">Naming Azure Resources with the Cloud Adoption Framework</a>
+          <time datetime="2026-08-05">Aug 5, 2026</time>
+          <p><h2 id="question">Question</h2>
+<p>How should I use the Microsoft Cloud Adoption Framework to name Azure resources in a way that is consistent, readable, and useful later when the environment grows? The short answer is to treat naming as an operating convention, not as decoration. A good resource name should tell me what the resource is, what workload it belongs to, which environment it supports, where it lives, and which instance it is when there is more than one.</p></p>
+        </li>
+      
         <li>
           <a href="/blogs/why-ace-is-private/">Why Ace Is Private</a>
           <time datetime="2026-07-19">Jul 19, 2026</time>
           <p><p>Ace is private because the best notes are the ones that can stay blunt.</p>
 <p>The site is meant to hold implementation plans, rough ideas, and the kind of technical context that is easier to use when it does not have to be polished for an audience. That means the writing can be direct, the diagrams can stay local, and the pages can include exact resource names without turning into marketing copy.</p></p>
         </li>
-
+      
         <li>
           <a href="/references/tooling-baseline/">Tooling Baseline</a>
           <time datetime="2026-07-19">Jul 19, 2026</time>
@@ -171,7 +178,7 @@
 </table>
 <p>Keep this page in sync with <code>docs/tool-versions.md</code> when the baseline changes.</p></p>
         </li>
-
+      
         <li>
           <a href="/journals/2026-07-19-scaffold-log/">Scaffold Log - 2026-07-19</a>
           <time datetime="2026-07-19">Jul 19, 2026</time>
@@ -182,7 +189,7 @@
 </ul>
 <p>The next step is to finish the content conventions and diagram pipeline for Ace, then surface the backend and cloud tickets that still need human input.</p></p>
         </li>
-
+      
         <li>
           <a href="/ideas/chart-demo/">Chart Demo</a>
           <time datetime="2026-07-19">Jul 19, 2026</time>
@@ -207,23 +214,7 @@
   <figcaption>Mock API payload loaded at runtime.</figcaption>
 </figure></p>
         </li>
-
-        <li>
-          <a href="/conversations/2026-07-19-agent-workflow-sync/">Agent Workflow Sync</a>
-          <time datetime="2026-07-19">Jul 19, 2026</time>
-          <p><blockquote>
-<p>&ldquo;i want you to do it in autopilot until you finish or hit a roadblow&rdquo;</p>
-</blockquote>
-<p>That instruction drove the rest of the scaffold pass.</p>
-<p>The important clarifications were:</p>
-<ol>
-<li>Use Ace and template repos as reference material.</li>
-<li>Split the work into two new website roots instead of editing the current ones.</li>
-<li>Finish whatever can be done locally, then hand back only the blockers.</li>
-</ol>
-<p>Those constraints are now reflected in the site layout and the backlog notes.</p></p>
-        </li>
-
+      
     </ul>
   </section>
 

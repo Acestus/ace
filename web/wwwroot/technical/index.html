@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Technical · Ace</title>
-
+  
   <link rel="stylesheet" href="/css/site.css" />
 </head>
 <body>
@@ -13,21 +13,21 @@
       <a class="site-brand" href="/">Ace</a>
       <nav class="site-nav" aria-label="Primary">
         <a href="/">Home</a>
-
-          <a href="/blogs/">Blogs</a>
-
-          <a href="/conversations/">Conversations</a>
-
-          <a href="/ideas/">Ideas</a>
-
-          <a href="/journals/">Journals</a>
-
-          <a href="/planner/">Planner</a>
-
-          <a href="/references/">References</a>
-
+        
           <a href="/technical/">Technical</a>
-
+        
+          <a href="/blogs/">Blogs</a>
+        
+          <a href="/conversations/">Conversations</a>
+        
+          <a href="/ideas/">Ideas</a>
+        
+          <a href="/journals/">Journals</a>
+        
+          <a href="/planner/">Planner</a>
+        
+          <a href="/references/">References</a>
+        
       </nav>
     </div>
   </header>
@@ -37,8 +37,10 @@
       <aside class="site-sidebar" aria-label="Section navigation">
         <section class="sidebar-panel">
           <h2>Site map</h2>
-
+          
 <ul class="nav-tree"><li>
+      <a href="/technical/" class="active">Technical</a>
+    </li><li>
       <a href="/blogs/" class="">Blogs</a>
     </li><li>
       <a href="/conversations/" class="">Conversations</a>
@@ -50,8 +52,6 @@
       <a href="/planner/" class="">Planner</a>
     </li><li>
       <a href="/references/" class="">References</a>
-    </li><li>
-      <a href="/technical/" class="active">Technical</a>
     </li>
 </ul>
 
@@ -69,30 +69,37 @@
 
       <section class="site-content">
         <nav class="breadcrumbs" aria-label="Breadcrumb">
-
+          
             <a href="/">Home</a>
-
+            
               <span aria-hidden="true">/</span>
               <a href="/">Ace</a>
-
+            
             <span aria-hidden="true">/</span>
             <span>Technical</span>
-
+          
         </nav>
-
+        
   <section class="hero">
     <h1>Technical</h1>
     <p>Runbooks, references, and implementation notes live here.</p>
 
   </section>
 
+  
 
-
-
+  
     <section class="section-cards" aria-labelledby="entries">
       <h2 id="entries">Entries</h2>
       <ul>
-
+        
+          <li>
+            <a href="/technical/azure-caf-resource-naming/">Naming Azure Resources with the Cloud Adoption Framework</a>
+            <time datetime="2026-08-05">Aug 5, 2026</time>
+            <p><h2 id="question">Question</h2>
+<p>How should I use the Microsoft Cloud Adoption Framework to name Azure resources in a way that is consistent, readable, and useful later when the environment grows? The short answer is to treat naming as an operating convention, not as decoration. A good resource name should tell me what the resource is, what workload it belongs to, which environment it supports, where it lives, and which instance it is when there is more than one.</p></p>
+          </li>
+        
           <li>
             <a href="/technical/ace-technical-baseline/">Ace Technical Baseline</a>
             <time datetime="2026-07-19">Jul 19, 2026</time>
@@ -124,7 +131,7 @@
 <li>Complete the remaining backend and Azure tickets once the owner supplies the missing environment details.</li>
 </ul></p>
           </li>
-
+        
           <li>
             <a href="/technical/ace-operating-guide/">Ace Operating Guide</a>
             <time datetime="2026-07-19">Jul 19, 2026</time>
@@ -146,10 +153,10 @@
 <h2 id="working-with-agents">Working with agents</h2>
 <p>When an agent writes a page, ask it to be exact about resource names, commands, and follow-up work. If the page needs a diagram or table, include it instead of explaining it in prose.</p></p>
           </li>
-
+        
       </ul>
     </section>
-
+  
 
       </section>
     </div>
