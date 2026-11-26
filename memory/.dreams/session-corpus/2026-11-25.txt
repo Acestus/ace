@@ -1,0 +1,12 @@
+[ainsley/sessions/ainsley/72849cd7-eee1-4511-bb93-d6b7ccfe9235#L6] User: Reply with exactly OK. Do not use tools.
+[ainsley/sessions/ainsley/72849cd7-eee1-4511-bb93-d6b7ccfe9235#L9] Assistant: OK
+[ainsley/sessions/ainsley/0754b2fc-8f41-40f1-b0d4-850cdab9cd9e#L2] User: Reply with exactly OK. Do not use tools.
+[ainsley/sessions/ainsley/0754b2fc-8f41-40f1-b0d4-850cdab9cd9e#L3] Assistant: OK
+[ainsley/sessions/ainsley/29b04f09-5633-4162-baac-f4ed5669093c#L6] User: Reply with exactly OK. Do not use tools.
+[ainsley/sessions/ainsley/29b04f09-5633-4162-baac-f4ed5669093c#L9] Assistant: OK
+[ainsley/sessions/ainsley/45156a90-dc77-4227-925a-6bd7ba05dcc2#L2] User: Reply with exactly OK. Do not use tools.
+[ainsley/sessions/ainsley/45156a90-dc77-4227-925a-6bd7ba05dcc2#L3] Assistant: OK
+[ainsley/sessions/ainsley/4e54821a-dfbf-4737-b6e6-e52eb251be91#L6] User: Reply with exactly OK. Do not use tools.
+[ainsley/sessions/ainsley/4e54821a-dfbf-4737-b6e6-e52eb251be91#L9] Assistant: OK
+[ainsley/sessions/ainsley/d46e1ad6-989a-40f3-80a5-b2debe3dba96#L2] User: Reply with exactly OK. Do not use tools.
+[ainsley/sessions/ainsley/d46e1ad6-989a-40f3-80a5-b2debe3dba96#L3] Assistant: OK

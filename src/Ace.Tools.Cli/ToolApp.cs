@@ -32,6 +32,7 @@ public static class ToolApp
             "legacy" => await LegacyCommands.RunAsync(args.Skip(1).ToArray(), stdout, stderr, cancellationToken),
             "workflow" => await WorkflowHandler.RunAsync(args.Skip(1).ToArray(), stdout, stderr),
             "content" => await ContentCommands.RunAsync(args.Skip(1).ToArray(), stdout, stderr),
+            "jellyfin" => await JellyfinCommands.RunAsync(args.Skip(1).ToArray(), stdout, stderr, cancellationToken),
             _ => UnknownCommand(args[0], stderr)
         };
     }
@@ -62,6 +63,7 @@ public static class ToolApp
         stdout.WriteLine("  github daily-summary [args...]");
         stdout.WriteLine("  lorcana scrape <lorcanaplayer-url> [--set <name>] [--output <path>]");
         stdout.WriteLine("  content init|health|idea|icahn|draft|distribute|self-test");
+        stdout.WriteLine("  jellyfin status|libraries|scan|search|tag|collection");
         stdout.WriteLine("  legacy invoke --command <exe> -- [args...]");
         stdout.WriteLine("  workflow init-db|start-my-day|end-my-day|dispatch|standup|status");
         stdout.WriteLine();
@@ -155,6 +157,9 @@ public static class ToolApp
                 stdout.WriteLine("EXAMPLES");
                 stdout.WriteLine("  workflow end-my-day");
                 stdout.WriteLine("  workflow standup");
+                return;
+            case "jellyfin":
+                JellyfinCommands.PrintHelp(stdout);
                 return;
             case "content":
                 stdout.WriteLine("Practical Cloud Systems Content Commands");
