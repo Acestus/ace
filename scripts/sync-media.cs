@@ -5,8 +5,8 @@
 using System.Diagnostics;
 
 const string DefaultSource = "/media/acestus/INFUSE1/infuse01/";
-const string DefaultDestinationHost = "violet";
-const string DefaultDestination = "/media/violet/movies01/infuse01/";
+const string DefaultDestinationHost = "scout";
+const string DefaultDestination = "/Volumes/media01/";
 
 var source = GetOption("--source", DefaultSource);
 var host = GetOption("--host", DefaultDestinationHost);
@@ -15,7 +15,7 @@ var dryRun = HasFlag("--dry-run");
 
 if (HasFlag("--help") || HasFlag("-h"))
 {
-    Console.WriteLine("Synchronize Eleanor media to Violet without deleting destination files.");
+    Console.WriteLine("Synchronize Eleanor media to Scout without deleting destination files.");
     Console.WriteLine();
     Console.WriteLine("Usage:");
     Console.WriteLine("  dotnet run --file ~/git/ace/scripts/sync-media.cs");
@@ -55,7 +55,7 @@ if (dryRun)
 arguments.Add(source);
 arguments.Add($"{host}:{destination}");
 
-Console.WriteLine("Eleanor → Violet media sync");
+Console.WriteLine("Eleanor → Scout media sync");
 Console.WriteLine($"  Source:      {source}");
 Console.WriteLine($"  Destination: {host}:{destination}");
 Console.WriteLine($"  Dry run:     {dryRun}");
